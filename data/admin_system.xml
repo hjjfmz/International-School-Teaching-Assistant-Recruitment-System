@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<system>
+        
+    <users>
+                
+        <user account="admin" name="Administrator" password="admin" role="Admin"/>
+            
+        <user account="2023213330" enabled="true" name="zyy" password="123456" role="TA"/>
+    </users>
+        
+    <config/>
+        
+    <workload/>
+    
+</system>
