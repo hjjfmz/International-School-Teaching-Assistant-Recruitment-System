@@ -1,15 +1,47 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <system>
-        
-    <users>
-                
-        <user account="admin" name="Administrator" password="admin" role="Admin"/>
-            
-        <user account="2023213330" enabled="true" name="zyy" password="123456" role="TA"/>
-    </users>
-        
-    <config/>
-        
-    <workload/>
+                    
     
+    
+    
+    <users>
+                                        
+        
+        
+        
+        <user account="admin" name="Administrator" passwordHash="pbkdf2$sha256$120000$xxytsrm00QP7mo0LpD9p2g==$af6CSA9bbYGPqT3mVPX7uFAijzBapNULbBIJ6mPagJ4=" role="Admin"/>
+                                    
+        
+        
+        
+        <user account="2023213330" enabled="true" name="zyy" passwordHash="pbkdf2$sha256$120000$CjAE9WWx+yykN9EjCAfqfg==$zdeai7nhQONX9SGK457bETWIOjOtBfH3Ga2+gvUeRj0=" role="TA"/>
+                        
+        
+        <user account="MO10001" enabled="true" name="MO Tester" passwordHash="pbkdf2$sha256$120000$x1S1J23WyyV/yseH04NcAQ==$xnlrMQOKQ1xfv/GaIltQZ26p7B9q60aYbU21UsDVBIU=" role="MO"/>
+                
+        <user account="2023213331" enabled="true" name="Alice" passwordHash="pbkdf2$sha256$120000$ZYd1D1QSSrfF61d+yZs1eA==$4O2vPxrnK36rxgBDEDWiCdUHjSZQ7wOEEe9Ak1DLI24=" role="TA"/>
+                
+        <user account="2023213332" enabled="true" name="Bob" passwordHash="pbkdf2$sha256$120000$oY8MK2/8ms8D6OxBrHG6CQ==$34XaNPW26jgxm51u0/I29oYmvjBRnXW1JgY+FOa98do=" role="TA"/>
+                
+        <user account="MO10002" enabled="true" name="MO Alpha" passwordHash="pbkdf2$sha256$120000$xwZ/CQcPscgboULpzBC4Kg==$TxskltjIn8JqHpw9wT9zh1epwWjg9nGCkfnPGae8Rp4=" role="MO"/>
+                
+        <user account="MO10003" enabled="true" name="MO Beta" passwordHash="pbkdf2$sha256$120000$GKJPh2zHf2yEHK0cLZ7lyA==$iofNhKEdYBFaSbQO1h7jmIwhMDsb9HCwvwxYPD+TgHs=" role="MO"/>
+                            
+    
+    
+    </users>
+                    
+    
+    
+    
+    <config/>
+                    
+    
+    
+    
+    <workload/>
+                
+
+
+
 </system>

@@ -105,11 +105,11 @@ public final class WorkbenchPanel extends JPanel {
             layout.setNavSelectedIndex(0);
         } else {
             AdminHomePage home = new AdminHomePage(data, k -> layout.showContent(k));
-            AdminUserManagementPage users = new AdminUserManagementPage(data);
-            AdminWorkloadPage workload = new AdminWorkloadPage();
-            AdminJobDataPage jobs = new AdminJobDataPage(data);
-            AdminConfigPage config = new AdminConfigPage();
-            AdminExportPage export = new AdminExportPage(data);
+            AdminUserManagementPage users = new AdminUserManagementPage(data, account);
+            AdminWorkloadPage workload = new AdminWorkloadPage(data, account);
+            AdminJobDataPage jobs = new AdminJobDataPage(data, account);
+            AdminConfigPage config = new AdminConfigPage(data, account);
+            AdminExportPage export = new AdminExportPage(data, account);
             AdminLogPage logs = new AdminLogPage(data);
 
             layout.addContent("Admin Home", home);

@@ -21,15 +21,17 @@ import ebu6304.storage.DataService;
 
 public final class AdminUserManagementPage extends JPanel {
     private final DataService data;
+    private final String actor;
 
     private final JComboBox<String> roleFilter = new JComboBox<String>(new String[] { "All", "TA", "MO" });
 
     private final DefaultTableModel model;
     private final JTable table;
 
-    public AdminUserManagementPage(DataService data) {
+    public AdminUserManagementPage(DataService data, String actor) {
         super(new BorderLayout(10, 10));
         this.data = data;
+        this.actor = actor == null ? "" : actor;
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         model = new DefaultTableModel(new Object[] {
@@ -56,11 +58,13 @@ public final class AdminUserManagementPage extends JPanel {
         JButton enable = new JButton("Enable");
         JButton disable = new JButton("Disable");
         JButton addMo = new JButton("Add MO Account");
+        JButton presetMo = new JButton("Add Preset MO");
         JButton deleteTa = new JButton("Delete TA");
         actions.add(refresh);
         actions.add(enable);
         actions.add(disable);
         actions.add(addMo);
+        actions.add(presetMo);
         actions.add(deleteTa);
         top.add(actions, BorderLayout.EAST);
 
@@ -69,6 +73,7 @@ public final class AdminUserManagementPage extends JPanel {
         enable.addActionListener(e -> setUserEnabled(true));
         disable.addActionListener(e -> setUserEnabled(false));
         addMo.addActionListener(e -> addMoUser());
+        presetMo.addActionListener(e -> addPresetMoUser());
         deleteTa.addActionListener(e -> deleteTaUser());
 
         add(top, BorderLayout.NORTH);
@@ -100,12 +105,18 @@ public final class AdminUserManagementPage extends JPanel {
             JOptionPane.showMessageDialog(this, "Only TA/MO users are supported");
             return;
         }
-        boolean ok = data.setUserEnabled(role, account, enabled);
+        boolean ok = data.setUserEnabled(actor, role, account, enabled);
         if (!ok) {
             JOptionPane.showMessageDialog(this, "Operation failed");
             return;
         }
         refresh();
+    }
+
+    private void addPresetMoUser() {
+        String account = data.createPresetMoAccount(actor);
+        refresh();
+        JOptionPane.showMessageDialog(this, "Created preset MO: " + account + " (default password: 123456)");
     }
 
     private void addMoUser() {
@@ -153,9 +164,8 @@ public final class AdminUserManagementPage extends JPanel {
         int ok = JOptionPane.showConfirmDialog(this, "This cannot be undone. Delete this TA account?", "Confirm", JOptionPane.YES_NO_OPTION);
         if (ok != JOptionPane.YES_OPTION) return;
 
-        boolean deletedUser = data.deleteUser("TA", account);
-        boolean deletedTa = data.deleteApplicantByAccount(account);
-        if (!deletedUser && !deletedTa) {
+        boolean deleted = data.deleteTaAccount(actor, account);
+        if (!deleted) {
             JOptionPane.showMessageDialog(this, "Delete failed");
             return;
         }

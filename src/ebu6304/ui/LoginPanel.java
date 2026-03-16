@@ -45,7 +45,6 @@ public final class LoginPanel extends JPanel {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JComboBox<Role> roleBox = new JComboBox<Role>(Role.values());
         JTextField accountField = new JTextField(18);
         JPasswordField passField = new JPasswordField(18);
 
@@ -56,23 +55,19 @@ public final class LoginPanel extends JPanel {
         c.insets = new Insets(6, 6, 6, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
 
-        c.gridx = 0; c.gridy = 0; p.add(new JLabel("Role"), c);
-        c.gridx = 1; c.gridy = 0; p.add(roleBox, c);
+        c.gridx = 0; c.gridy = 0; p.add(new JLabel(I18n.t("login.account")), c);
+        c.gridx = 1; c.gridy = 0; p.add(accountField, c);
 
-        c.gridx = 0; c.gridy = 1; p.add(new JLabel(I18n.t("login.account")), c);
-        c.gridx = 1; c.gridy = 1; p.add(accountField, c);
-
-        c.gridx = 0; c.gridy = 2; p.add(new JLabel(I18n.t("login.password")), c);
-        c.gridx = 1; c.gridy = 2; p.add(passField, c);
+        c.gridx = 0; c.gridy = 1; p.add(new JLabel(I18n.t("login.password")), c);
+        c.gridx = 1; c.gridy = 1; p.add(passField, c);
 
         JPanel btns = new JPanel();
         btns.add(loginBtn);
         btns.add(forgotBtn);
 
-        c.gridx = 1; c.gridy = 3; p.add(btns, c);
+        c.gridx = 1; c.gridy = 2; p.add(btns, c);
 
         loginBtn.addActionListener(e -> {
-            Role role = (Role) roleBox.getSelectedItem();
             String account = accountField.getText().trim();
             String password = new String(passField.getPassword());
 
@@ -81,10 +76,19 @@ public final class LoginPanel extends JPanel {
                 return;
             }
 
-            boolean ok = data.authenticate(role.authRole(), account, password);
-            if (!ok) {
-                JOptionPane.showMessageDialog(this, "Account / password / role mismatch");
+            java.util.Optional<String> roleName = data.authenticateAndGetRole(account, password);
+            if (!roleName.isPresent()) {
+                JOptionPane.showMessageDialog(this, "Account or password incorrect");
                 return;
+            }
+
+            Role role;
+            if ("Admin".equalsIgnoreCase(roleName.get())) {
+                role = Role.ADMIN;
+            } else if ("MO".equalsIgnoreCase(roleName.get())) {
+                role = Role.MO;
+            } else {
+                role = Role.TA;
             }
 
             if (handler != null) handler.onLogin(role, account);
@@ -168,6 +172,12 @@ public final class LoginPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Passwords do not match");
                 return;
             }
+
+            int minLen = data.getConfig().passwordMinLength();
+            if (pass.length() < minLen) {
+                JOptionPane.showMessageDialog(this, "Password must be at least " + minLen + " characters");
+                return;
+            }
             if (!agreeBox.isSelected()) {
                 JOptionPane.showMessageDialog(this, "Please accept the registration terms");
                 return;
@@ -176,8 +186,8 @@ public final class LoginPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Account already exists");
                 return;
             }
-            if (!isSupportedCv(cvPath)) {
-                JOptionPane.showMessageDialog(this, "Only PDF/Word formats are supported");
+            if (!isSupportedCv(cvPath, data.getConfig().cvFormats())) {
+                JOptionPane.showMessageDialog(this, "Unsupported CV format. Allowed: " + data.getConfig().cvFormats());
                 return;
             }
 
@@ -189,9 +199,21 @@ public final class LoginPanel extends JPanel {
         return p;
     }
 
-    private static boolean isSupportedCv(String path) {
+    private static boolean isSupportedCv(String path, String formatsCsv) {
         if (path == null) return false;
         String p = path.toLowerCase();
-        return p.endsWith(".pdf") || p.endsWith(".doc") || p.endsWith(".docx");
+        int dot = p.lastIndexOf('.');
+        if (dot < 0) return false;
+        String ext = p.substring(dot + 1);
+        if (formatsCsv == null || formatsCsv.trim().isEmpty()) {
+            return ext.equals("pdf") || ext.equals("doc") || ext.equals("docx");
+        }
+        String[] parts = formatsCsv.toLowerCase().split(",");
+        for (String s : parts) {
+            String f = s.trim();
+            if (f.isEmpty()) continue;
+            if (ext.equals(f)) return true;
+        }
+        return false;
     }
 }

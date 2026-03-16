@@ -69,8 +69,8 @@ public final class TaResumePage extends JPanel {
         File f = chooser.getSelectedFile();
         if (f == null) return;
         String path = f.getAbsolutePath();
-        if (!isSupported(path)) {
-            JOptionPane.showMessageDialog(this, "Only PDF/Word formats are supported");
+        if (!isSupported(path, data.getConfig().cvFormats())) {
+            JOptionPane.showMessageDialog(this, "Unsupported CV format. Allowed: " + data.getConfig().cvFormats());
             return;
         }
 
@@ -94,9 +94,21 @@ public final class TaResumePage extends JPanel {
         }
     }
 
-    private static boolean isSupported(String path) {
+    private static boolean isSupported(String path, String formatsCsv) {
         if (path == null) return false;
         String p = path.toLowerCase();
-        return p.endsWith(".pdf") || p.endsWith(".doc") || p.endsWith(".docx");
+        int dot = p.lastIndexOf('.');
+        if (dot < 0) return false;
+        String ext = p.substring(dot + 1);
+        if (formatsCsv == null || formatsCsv.trim().isEmpty()) {
+            return ext.equals("pdf") || ext.equals("doc") || ext.equals("docx");
+        }
+        String[] parts = formatsCsv.toLowerCase().split(",");
+        for (String s : parts) {
+            String f = s.trim();
+            if (f.isEmpty()) continue;
+            if (ext.equals(f)) return true;
+        }
+        return false;
     }
 }
