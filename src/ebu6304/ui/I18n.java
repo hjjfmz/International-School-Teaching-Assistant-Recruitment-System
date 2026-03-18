@@ -18,8 +18,8 @@ public final class I18n {
         zh.put("app.title", "BUPT International School TA Recruitment System");
         en.put("app.title", "BUPT International School TA Recruitment System");
 
-        zh.put("start.subtitle", "All data is stored locally under the data folder");
-        en.put("start.subtitle", "All data is stored locally under the data folder");
+        zh.put("start.subtitle", "");
+        en.put("start.subtitle", "");
 
         zh.put("start.button", "Start");
         en.put("start.button", "Start");
