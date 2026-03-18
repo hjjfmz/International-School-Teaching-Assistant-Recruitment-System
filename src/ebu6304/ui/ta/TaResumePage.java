@@ -76,7 +76,16 @@ public final class TaResumePage extends JPanel {
 
         Applicant a = data.getApplicant(account).orElse(null);
         if (a == null) return;
-        Applicant updated = a.withProfile(a.name(), a.email(), a.skills(), path);
+
+        String storedCvPath;
+        try {
+            storedCvPath = data.storeCv(a.id(), path);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Unable to save CV into project data folder");
+            return;
+        }
+
+        Applicant updated = a.withProfile(a.name(), a.email(), a.skills(), storedCvPath);
         data.upsertApplicant(updated);
         JOptionPane.showMessageDialog(this, "Upload success");
         load();

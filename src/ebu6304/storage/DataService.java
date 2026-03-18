@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -287,6 +288,26 @@ public final class DataService {
         return a;
     }
 
+    public synchronized String storeCv(String applicantId, String sourcePath) {
+        if (applicantId == null || applicantId.trim().isEmpty()) throw new IllegalArgumentException("applicantId");
+        if (sourcePath == null || sourcePath.trim().isEmpty()) throw new IllegalArgumentException("sourcePath");
+
+        try {
+            Path src = Paths.get(sourcePath);
+            if (!Files.exists(src)) throw new IOException("CV file not found");
+
+            String safeId = toSafeFileToken(applicantId);
+            String ext = getFileExt(sourcePath);
+            Path cvDir = dataDir.resolve("cv");
+            Files.createDirectories(cvDir);
+            Path dest = cvDir.resolve(safeId + (ext.isEmpty() ? "" : ("." + ext)));
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            return dest.toAbsolutePath().toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public synchronized boolean deleteApplicantByAccount(String account) {
         if (account == null) return false;
         Applicant removed = applicants.remove(account);
@@ -321,6 +342,22 @@ public final class DataService {
     public synchronized void upsertApplicant(Applicant applicant) {
         applicants.put(applicant.id(), applicant);
         persistApplicants();
+    }
+
+    private static String getFileExt(String path) {
+        if (path == null) return "";
+        String p = path.trim();
+        int dot = p.lastIndexOf('.');
+        if (dot < 0) return "";
+        String ext = p.substring(dot + 1).trim().toLowerCase();
+        if (ext.length() > 10) return "";
+        return ext;
+    }
+
+    private static String toSafeFileToken(String raw) {
+        String s = raw == null ? "" : raw.trim();
+        if (s.isEmpty()) return "cv";
+        return s.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
     public synchronized List<Job> listJobs() {

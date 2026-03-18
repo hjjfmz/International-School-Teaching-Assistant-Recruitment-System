@@ -37,8 +37,6 @@ public final class MainFrame extends JFrame {
     }
 
     private void buildScreens() {
-        StartPanel start = new StartPanel(() -> show("login"));
-
         LoginPanel login = new LoginPanel(data, new LoginPanel.LoginHandler() {
             @Override
             public void onLogin(Role role, String account) {
@@ -53,11 +51,10 @@ public final class MainFrame extends JFrame {
 
         ForgotPasswordPanel forgot = new ForgotPasswordPanel(data, () -> show("login"));
 
-        container.add(start, "start");
         container.add(login, "login");
         container.add(forgot, "forgot");
 
-        show("start");
+        show("login");
     }
 
     private void showWorkbench(Role role, String account) {
