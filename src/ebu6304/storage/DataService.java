@@ -1,0 +1,712 @@
+package ebu6304.storage;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import ebu6304.model.Applicant;
+import ebu6304.model.Application;
+import ebu6304.model.Job;
+import ebu6304.storage.AuthStore;
+
+public final class DataService {
+    public static final class Config {
+        private final String dataPath;
+        private final int passwordMinLength;
+        private final String cvFormats;
+        private final String defaultLang;
+
+        public Config(String dataPath, int passwordMinLength, String cvFormats, String defaultLang) {
+            this.dataPath = dataPath == null ? "" : dataPath;
+            this.passwordMinLength = passwordMinLength <= 0 ? 6 : passwordMinLength;
+            this.cvFormats = cvFormats == null ? "pdf,doc,docx" : cvFormats;
+            this.defaultLang = defaultLang == null ? "EN" : defaultLang;
+        }
+
+        public String dataPath() { return dataPath; }
+        public int passwordMinLength() { return passwordMinLength; }
+        public String cvFormats() { return cvFormats; }
+        public String defaultLang() { return defaultLang; }
+    }
+
+    private final Path dataDir;
+    private final Path taInfoFile;
+    private final Path moJobsFile;
+    private final Path adminSystemFile;
+    private final Path tempOperationFile;
+
+    private Config config = new Config("", 6, "pdf,doc,docx", "EN");
+
+    private final Map<String, Applicant> applicants = new HashMap<String, Applicant>();
+    private final Map<String, Job> jobs = new HashMap<String, Job>();
+    private final Map<String, Application> applications = new HashMap<String, Application>();
+
+    public DataService() {
+        this(loadBootstrapDataDir());
+    }
+
+    public DataService(Path dataDir) {
+        this.dataDir = dataDir;
+        this.taInfoFile = dataDir.resolve("ta_info.csv");
+        this.moJobsFile = dataDir.resolve("mo_jobs.json");
+        this.adminSystemFile = dataDir.resolve("admin_system.xml");
+        this.tempOperationFile = dataDir.resolve("temp_operation.txt");
+    }
+
+    public void init() {
+        try {
+            Files.createDirectories(dataDir);
+
+            if (!Files.exists(taInfoFile)) {
+                Files.write(taInfoFile,
+                        ("id,name,email,skills,cvPath" + System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
+                        StandardOpenOption.CREATE);
+            }
+            if (!Files.exists(moJobsFile)) {
+                Files.write(moJobsFile, "{\"jobs\":[]}".getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+            }
+            XmlStore.ensureAdminSystemXmlExists(adminSystemFile);
+            AuthStore.migratePlaintextPasswords(adminSystemFile);
+            if (!Files.exists(tempOperationFile)) Files.write(tempOperationFile, new byte[0], StandardOpenOption.CREATE);
+
+            this.config = readConfig(adminSystemFile);
+
+            loadAll();
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "ERROR", "Init failed: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized void reload() {
+        try {
+            loadAll();
+        } catch (RuntimeException ex) {
+            OperationLog.append(tempOperationFile, "ERROR", "Reload failed: " + ex.getMessage());
+            throw ex;
+        }
+    }
+
+    public synchronized Config getConfig() {
+        return config;
+    }
+
+    public synchronized boolean updateConfig(String actor, Config newConfig) {
+        if (newConfig == null) return false;
+        boolean ok = writeConfig(adminSystemFile, newConfig);
+        if (ok) this.config = newConfig;
+        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=updateConfig ok=" + ok + " dataPath=" + newConfig.dataPath() + " passwordMinLength=" + newConfig.passwordMinLength() + " cvFormats=" + newConfig.cvFormats() + " defaultLang=" + newConfig.defaultLang());
+        return ok;
+    }
+
+    public Path dataDir() {
+        return dataDir;
+    }
+
+    public Path adminSystemFile() {
+        return adminSystemFile;
+    }
+
+    public Path tempOperationFile() {
+        return tempOperationFile;
+    }
+
+    private static Path loadBootstrapDataDir() {
+        Path base = Paths.get("data");
+        Path xml = base.resolve("admin_system.xml");
+        if (!Files.exists(xml)) return base;
+        try {
+            Config cfg = readConfig(xml);
+            String p = cfg.dataPath();
+            if (p == null || p.trim().isEmpty()) return base;
+            Path candidate = Paths.get(p.trim());
+            return candidate;
+        } catch (RuntimeException ex) {
+            return base;
+        }
+    }
+
+    private static Config readConfig(Path adminSystemXml) {
+        try {
+            DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+            f.setNamespaceAware(false);
+            DocumentBuilder b = f.newDocumentBuilder();
+            Document doc = b.parse(adminSystemXml.toFile());
+            Element root = doc.getDocumentElement();
+            if (root == null) return new Config("", 6, "pdf,doc,docx", "EN");
+            Element cfg = firstChildElement(root, "config");
+            if (cfg == null) return new Config("", 6, "pdf,doc,docx", "EN");
+            String dataPath = cfg.getAttribute("dataPath");
+            String pmlRaw = cfg.getAttribute("passwordMinLength");
+            int pml = 6;
+            try {
+                if (pmlRaw != null && !pmlRaw.trim().isEmpty()) pml = Integer.parseInt(pmlRaw.trim());
+            } catch (NumberFormatException ignored) {
+            }
+            String cvFormats = cfg.getAttribute("cvFormats");
+            String defaultLang = cfg.getAttribute("defaultLang");
+            return new Config(dataPath, pml, cvFormats, defaultLang);
+        } catch (Exception e) {
+            return new Config("", 6, "pdf,doc,docx", "EN");
+        }
+    }
+
+    private static boolean writeConfig(Path adminSystemXml, Config c) {
+        try {
+            DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+            f.setNamespaceAware(false);
+            DocumentBuilder b = f.newDocumentBuilder();
+            Document doc = b.parse(adminSystemXml.toFile());
+            Element root = doc.getDocumentElement();
+            if (root == null) return false;
+            Element cfg = firstChildElement(root, "config");
+            if (cfg == null) {
+                cfg = doc.createElement("config");
+                root.appendChild(cfg);
+            }
+            cfg.setAttribute("dataPath", c.dataPath());
+            cfg.setAttribute("passwordMinLength", String.valueOf(c.passwordMinLength()));
+            cfg.setAttribute("cvFormats", c.cvFormats());
+            cfg.setAttribute("defaultLang", c.defaultLang());
+            XmlStore.write(adminSystemXml, doc);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static Element firstChildElement(Element parent, String tagName) {
+        if (parent == null) return null;
+        NodeList kids = parent.getChildNodes();
+        for (int i = 0; i < kids.getLength(); i++) {
+            Node n = kids.item(i);
+            if (!(n instanceof Element)) continue;
+            Element e = (Element) n;
+            if (tagName.equals(e.getTagName())) return e;
+        }
+        return null;
+    }
+
+    public synchronized boolean authenticate(String role, String account, String password) {
+        return AuthStore.authenticate(adminSystemFile, role, account, password);
+    }
+
+    public synchronized Optional<String> authenticateAndGetRole(String account, String password) {
+        return AuthStore.authenticateAndGetRole(adminSystemFile, account, password);
+    }
+
+    public synchronized void upsertUser(String role, String account, String password, String name) {
+        AuthStore.upsertUser(adminSystemFile, new AuthStore.User(role, account, password, name));
+    }
+
+    public synchronized List<AuthStore.User> listUsers() {
+        return AuthStore.listUsers(adminSystemFile);
+    }
+
+    public synchronized boolean setUserEnabled(String role, String account, boolean enabled) {
+        return AuthStore.setEnabled(adminSystemFile, role, account, enabled);
+    }
+
+    public synchronized boolean setUserEnabled(String actor, String role, String account, boolean enabled) {
+        boolean ok = AuthStore.setEnabled(adminSystemFile, role, account, enabled);
+        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=setUserEnabled role=" + (role == null ? "" : role) + " account=" + (account == null ? "" : account) + " enabled=" + enabled + " ok=" + ok);
+        return ok;
+    }
+
+    public synchronized boolean deleteUser(String role, String account) {
+        return AuthStore.deleteUser(adminSystemFile, role, account);
+    }
+
+    public synchronized boolean deleteTaAccount(String actor, String account) {
+        boolean deletedUser = AuthStore.deleteUser(adminSystemFile, "TA", account);
+        boolean deletedTa = deleteApplicantByAccount(account);
+        int removedApps = removeApplicationsForApplicant(account);
+        if (removedApps > 0) persistApplications();
+        boolean ok = deletedUser || deletedTa || removedApps > 0;
+        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=deleteTaAccount account=" + (account == null ? "" : account) + " deletedUser=" + deletedUser + " deletedTa=" + deletedTa + " removedApps=" + removedApps);
+        return ok;
+    }
+
+    public synchronized String createPresetMoAccount(String actor) {
+        int next = 10001;
+        for (AuthStore.User u : listUsers()) {
+            if (!"MO".equalsIgnoreCase(u.role())) continue;
+            String a = u.account();
+            if (a == null) continue;
+            if (a.toUpperCase().startsWith("MO")) {
+                String suffix = a.substring(2).trim();
+                try {
+                    int n = Integer.parseInt(suffix);
+                    if (n >= next) next = n + 1;
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        String account = "MO" + String.valueOf(next);
+        String name = "MO " + String.valueOf(next);
+        String password = "123456";
+        upsertUser("MO", account, password, name);
+        AuthStore.setEnabled(adminSystemFile, "MO", account, true);
+        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=createPresetMoAccount account=" + account);
+        return account;
+    }
+
+    public synchronized boolean resetPassword(String role, String account, String newPassword) {
+        Optional<AuthStore.User> u = AuthStore.findUser(adminSystemFile, role, account);
+        if (!u.isPresent()) return false;
+        upsertUser(role, account, newPassword, u.get().name());
+        return true;
+    }
+
+    public synchronized Applicant upsertApplicantByAccount(String account, String name, String email, String skills, String cvPath) {
+        Applicant a = new Applicant(account, name, email, skills, cvPath);
+        applicants.put(a.id(), a);
+        persistApplicants();
+        return a;
+    }
+
+    public synchronized String storeCv(String applicantId, String sourcePath) {
+        if (applicantId == null || applicantId.trim().isEmpty()) throw new IllegalArgumentException("applicantId");
+        if (sourcePath == null || sourcePath.trim().isEmpty()) throw new IllegalArgumentException("sourcePath");
+
+        try {
+            Path src = Paths.get(sourcePath);
+            if (!Files.exists(src)) throw new IOException("CV file not found");
+
+            String safeId = toSafeFileToken(applicantId);
+            String ext = getFileExt(sourcePath);
+            Path cvDir = dataDir.resolve("cv");
+            Files.createDirectories(cvDir);
+            Path dest = cvDir.resolve(safeId + (ext.isEmpty() ? "" : ("." + ext)));
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            return dest.toAbsolutePath().toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized boolean deleteApplicantByAccount(String account) {
+        if (account == null) return false;
+        Applicant removed = applicants.remove(account);
+        if (removed == null) return false;
+        persistApplicants();
+        return true;
+    }
+
+    public synchronized List<Applicant> listApplicants() {
+        List<Applicant> out = new ArrayList<Applicant>(applicants.values());
+        Collections.sort(out, new Comparator<Applicant>() {
+            @Override
+            public int compare(Applicant o1, Applicant o2) {
+                return String.CASE_INSENSITIVE_ORDER.compare(o1.name(), o2.name());
+            }
+        });
+        return out;
+    }
+
+    public synchronized Optional<Applicant> getApplicant(String id) {
+        return Optional.ofNullable(applicants.get(id));
+    }
+
+    public synchronized Applicant createApplicant(String name, String email) {
+        String id = UUID.randomUUID().toString();
+        Applicant a = new Applicant(id, name, email, "", "");
+        applicants.put(id, a);
+        persistApplicants();
+        return a;
+    }
+
+    public synchronized void upsertApplicant(Applicant applicant) {
+        applicants.put(applicant.id(), applicant);
+        persistApplicants();
+    }
+
+    private static String getFileExt(String path) {
+        if (path == null) return "";
+        String p = path.trim();
+        int dot = p.lastIndexOf('.');
+        if (dot < 0) return "";
+        String ext = p.substring(dot + 1).trim().toLowerCase();
+        if (ext.length() > 10) return "";
+        return ext;
+    }
+
+    private static String toSafeFileToken(String raw) {
+        String s = raw == null ? "" : raw.trim();
+        if (s.isEmpty()) return "cv";
+        return s.replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+
+    public synchronized List<Job> listJobs() {
+        List<Job> out = new ArrayList<Job>(jobs.values());
+        Collections.sort(out, new Comparator<Job>() {
+            @Override
+            public int compare(Job o1, Job o2) {
+                return String.CASE_INSENSITIVE_ORDER.compare(o1.title(), o2.title());
+            }
+        });
+        return out;
+    }
+
+    public synchronized Optional<Job> getJob(String id) {
+        return Optional.ofNullable(jobs.get(id));
+    }
+
+    public synchronized Job createJob(String title, String description, String requiredSkills, int hoursPerWeek, String postedBy) {
+        String id = UUID.randomUUID().toString();
+        Job j = new Job(id, title, description, requiredSkills, hoursPerWeek, postedBy);
+        jobs.put(id, j);
+        persistJobs();
+        return j;
+    }
+
+    public synchronized boolean setJobStatus(String actor, String jobId, Job.Status status) {
+        if (jobId == null || status == null) return false;
+        Job j = jobs.get(jobId);
+        if (j == null) return false;
+        jobs.put(jobId, j.withStatus(status));
+        persistJobs();
+        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=setJobStatus jobId=" + jobId + " status=" + status.name());
+        return true;
+    }
+
+    public synchronized boolean setJobCategory(String actor, String jobId, String category) {
+        if (jobId == null) return false;
+        Job j = jobs.get(jobId);
+        if (j == null) return false;
+        jobs.put(jobId, j.withCategory(category == null ? "" : category));
+        persistJobs();
+        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=setJobCategory jobId=" + jobId + " category=" + (category == null ? "" : category));
+        return true;
+    }
+
+    public synchronized List<Application> listApplicationsForApplicant(String applicantId) {
+        List<Application> out = new ArrayList<Application>();
+        for (Application a : applications.values()) {
+            if (a.applicantId().equals(applicantId)) out.add(a);
+        }
+        Collections.sort(out, new Comparator<Application>() {
+            @Override
+            public int compare(Application o1, Application o2) {
+                return o1.id().compareTo(o2.id());
+            }
+        });
+        return out;
+    }
+
+    public synchronized List<Application> listApplicationsForJob(String jobId) {
+        List<Application> out = new ArrayList<Application>();
+        for (Application a : applications.values()) {
+            if (a.jobId().equals(jobId)) out.add(a);
+        }
+        Collections.sort(out, new Comparator<Application>() {
+            @Override
+            public int compare(Application o1, Application o2) {
+                return o1.id().compareTo(o2.id());
+            }
+        });
+        return out;
+    }
+
+    public synchronized Optional<Application> findApplication(String applicantId, String jobId) {
+        for (Application a : applications.values()) {
+            if (a.applicantId().equals(applicantId) && a.jobId().equals(jobId)) return Optional.of(a);
+        }
+        return Optional.empty();
+    }
+
+    public synchronized Application submitApplication(String applicantId, String jobId) {
+        Optional<Application> existing = findApplication(applicantId, jobId);
+        if (existing.isPresent()) return existing.get();
+
+        String id = UUID.randomUUID().toString();
+        Application a = new Application(id, applicantId, jobId, Application.Status.SUBMITTED, System.currentTimeMillis());
+        applications.put(id, a);
+        persistApplications();
+        return a;
+    }
+
+    public synchronized void setApplicationStatus(String applicationId, Application.Status status) {
+        Application a = applications.get(applicationId);
+        if (a == null) return;
+        applications.put(applicationId, a.withStatus(status));
+        persistApplications();
+    }
+
+    public synchronized boolean withdrawApplication(String applicantId, String jobId) {
+        if (applicantId == null || jobId == null) return false;
+        Application target = null;
+        for (Application a : applications.values()) {
+            if (applicantId.equals(a.applicantId()) && jobId.equals(a.jobId())) {
+                target = a;
+                break;
+            }
+        }
+        if (target == null) return false;
+        if (target.status() != Application.Status.SUBMITTED) return false;
+        applications.remove(target.id());
+        persistApplications();
+        return true;
+    }
+
+    public synchronized int acceptedWeeklyHoursForApplicant(String applicantId) {
+        int sum = 0;
+        for (Application a : applications.values()) {
+            if (!a.applicantId().equals(applicantId)) continue;
+            if (a.status() != Application.Status.ACCEPTED) continue;
+            Job j = jobs.get(a.jobId());
+            if (j != null) sum += j.hoursPerWeek();
+        }
+        return sum;
+    }
+
+    private void seedDemoJobs() {
+        createJob("TA - Software Engineering", "Support EBU6304 labs and tutorials", "Java,Git,Agile", 6, "MO");
+        createJob("Invigilation Assistant", "Help with exam invigilation", "Attention to detail", 4, "Admin");
+        createJob("TA - Databases (Support)", "Assist with Q&A and marking support", "SQL,Basics", 5, "MO");
+    }
+
+    private void loadAll() {
+        applicants.clear();
+        jobs.clear();
+        applications.clear();
+        loadApplicants();
+        loadJobs();
+    }
+
+    private void loadApplicants() {
+        List<String> lines = readAllLines(taInfoFile, StandardCharsets.UTF_8);
+        for (int idx = 0; idx < lines.size(); idx++) {
+            String line = lines.get(idx);
+            if (line == null) continue;
+            if (line.trim().isEmpty()) continue;
+            if (idx == 0 && line.toLowerCase().startsWith("id,")) continue;
+            String[] p = Csv.splitLine(line, 5);
+            Applicant a = new Applicant(p[0], p[1], p[2], p[3], p[4]);
+            applicants.put(a.id(), a);
+        }
+    }
+
+    private void loadJobs() {
+        String json;
+        try {
+            json = new String(Files.readAllBytes(moJobsFile), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "ERROR", "Read mo_jobs.json failed: " + e.getMessage());
+            return;
+        }
+
+        Object rootObj;
+        try {
+            rootObj = MiniJson.parse(json);
+        } catch (RuntimeException ex) {
+            OperationLog.append(tempOperationFile, "ERROR", "Parse mo_jobs.json failed: " + ex.getMessage());
+            return;
+        }
+
+        if (!(rootObj instanceof Map)) return;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> root = (Map<String, Object>) rootObj;
+        Object jobsArrObj = root.get("jobs");
+        if (!(jobsArrObj instanceof List)) return;
+
+        @SuppressWarnings("unchecked")
+        List<Object> jobsArr = (List<Object>) jobsArrObj;
+        for (Object jo : jobsArr) {
+            if (!(jo instanceof Map)) continue;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> jm = (Map<String, Object>) jo;
+            String id = asString(jm.get("id"));
+            String title = asString(jm.get("title"));
+            String description = asString(jm.get("description"));
+            String requiredSkills = asString(jm.get("requiredSkills"));
+            int hours = asInt(jm.get("hoursPerWeek"));
+            String postedBy = asString(jm.get("postedBy"));
+            String statusRaw = asString(jm.get("status"));
+            String category = asString(jm.get("category"));
+
+            if (id.isEmpty() || title.isEmpty()) continue;
+            Job.Status st;
+            try {
+                st = Job.Status.valueOf(statusRaw);
+            } catch (IllegalArgumentException iae) {
+                st = Job.Status.OPEN;
+            }
+            Job j = new Job(id, title, description, requiredSkills, hours, postedBy, st, category);
+            jobs.put(j.id(), j);
+
+            Object appsObj = jm.get("applications");
+            if (!(appsObj instanceof List)) continue;
+            @SuppressWarnings("unchecked")
+            List<Object> appsArr = (List<Object>) appsObj;
+            for (Object ao : appsArr) {
+                if (!(ao instanceof Map)) continue;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> am = (Map<String, Object>) ao;
+                String appId = asString(am.get("id"));
+                String applicantId = asString(am.get("applicantId"));
+                String jobId = asString(am.get("jobId"));
+                String appStatusRaw = asString(am.get("status"));
+                long createdAt = asLong(am.get("createdAt"));
+                if (jobId.isEmpty()) jobId = id;
+                Application.Status appSt;
+                try {
+                    appSt = Application.Status.valueOf(appStatusRaw);
+                } catch (IllegalArgumentException iae) {
+                    appSt = Application.Status.SUBMITTED;
+                }
+                if (appId.isEmpty() || applicantId.isEmpty() || jobId.isEmpty()) continue;
+                if (createdAt <= 0) createdAt = System.currentTimeMillis();
+                applications.put(appId, new Application(appId, applicantId, jobId, appSt, createdAt));
+            }
+        }
+    }
+
+    private void persistApplicants() {
+        List<String> lines = new ArrayList<String>();
+        lines.add("id,name,email,skills,cvPath");
+        for (Applicant a : applicants.values()) {
+            lines.add(Csv.join(a.id(), a.name(), a.email(), a.skills(), a.cvPath()));
+        }
+        if (lines.size() > 1) {
+            List<String> dataLines = new ArrayList<String>(lines.subList(1, lines.size()));
+            Collections.sort(dataLines);
+            List<String> out = new ArrayList<String>();
+            out.add(lines.get(0));
+            out.addAll(dataLines);
+            writeAllLines(taInfoFile, out, StandardCharsets.UTF_8);
+        } else {
+            writeAllLines(taInfoFile, lines, StandardCharsets.UTF_8);
+        }
+    }
+
+    private void persistJobs() {
+        Map<String, Object> root = new LinkedHashMap<String, Object>();
+        List<Object> jobsArr = new LinkedList<Object>();
+
+        List<Job> jobList = new ArrayList<Job>(jobs.values());
+        Collections.sort(jobList, new Comparator<Job>() {
+            @Override
+            public int compare(Job o1, Job o2) {
+                return String.CASE_INSENSITIVE_ORDER.compare(o1.title(), o2.title());
+            }
+        });
+
+        for (Job j : jobList) {
+            Map<String, Object> jm = new LinkedHashMap<String, Object>();
+            jm.put("id", j.id());
+            jm.put("title", j.title());
+            jm.put("description", j.description());
+            jm.put("requiredSkills", j.requiredSkills());
+            jm.put("hoursPerWeek", Integer.valueOf(j.hoursPerWeek()));
+            jm.put("postedBy", j.postedBy());
+            jm.put("status", j.status().name());
+            jm.put("category", j.category());
+
+            List<Object> appsArr = new LinkedList<Object>();
+            for (Application a : applications.values()) {
+                if (!j.id().equals(a.jobId())) continue;
+                Map<String, Object> am = new LinkedHashMap<String, Object>();
+                am.put("id", a.id());
+                am.put("applicantId", a.applicantId());
+                am.put("jobId", a.jobId());
+                am.put("status", a.status().name());
+                am.put("createdAt", Long.valueOf(a.createdAt()));
+                appsArr.add(am);
+            }
+            jm.put("applications", appsArr);
+            jobsArr.add(jm);
+        }
+
+        root.put("jobs", jobsArr);
+        String json = MiniJson.stringify(root);
+        try {
+            Files.write(moJobsFile, json.getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "ERROR", "Write mo_jobs.json failed: " + e.getMessage());
+        }
+    }
+
+    private void persistApplications() {
+        persistJobs();
+    }
+
+    private int removeApplicationsForApplicant(String applicantId) {
+        if (applicantId == null) return 0;
+        int removed = 0;
+        List<String> ids = new ArrayList<String>();
+        for (Application a : applications.values()) {
+            if (applicantId.equals(a.applicantId())) ids.add(a.id());
+        }
+        for (String id : ids) {
+            if (applications.remove(id) != null) removed++;
+        }
+        return removed;
+    }
+
+    private static List<String> readAllLines(Path p, Charset cs) {
+        try {
+            return Files.readAllLines(p, cs);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void writeAllLines(Path p, List<String> lines, Charset cs) {
+        try {
+            Files.write(p, lines, cs, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String asString(Object v) {
+        if (v == null) return "";
+        if (v instanceof String) return (String) v;
+        return String.valueOf(v);
+    }
+
+    private static int asInt(Object v) {
+        if (v == null) return 0;
+        if (v instanceof Number) return ((Number) v).intValue();
+        try {
+            return Integer.parseInt(String.valueOf(v));
+        } catch (NumberFormatException nfe) {
+            return 0;
+        }
+    }
+
+    private static long asLong(Object v) {
+        if (v == null) return 0L;
+        if (v instanceof Number) return ((Number) v).longValue();
+        try {
+            return Long.parseLong(String.valueOf(v));
+        } catch (NumberFormatException nfe) {
+            return 0L;
+        }
+    }
+}
