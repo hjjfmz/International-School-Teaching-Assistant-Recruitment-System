@@ -272,8 +272,7 @@ public final class AuthStore {
         return r == 0;
     }
 
-    public static boolean deleteUser(Path adminSystemXml, String role, String account) {
-        if (role == null) role = "";
+    public static boolean deleteUser(Path adminSystemXml, String account) {
         if (account == null) account = "";
         Document doc = read(adminSystemXml);
         Element root = doc.getDocumentElement();
@@ -287,7 +286,7 @@ public final class AuthStore {
             if (!(n instanceof Element)) continue;
             Element e = (Element) n;
             if (!"user".equals(e.getTagName())) continue;
-            if (role.equalsIgnoreCase(e.getAttribute("role")) && account.equals(e.getAttribute("account"))) {
+            if (account.equals(e.getAttribute("account"))) {
                 usersEl.removeChild(e);
                 try {
                     XmlStore.write(adminSystemXml, doc);

@@ -1,0 +1,6 @@
+2026-03-19T13:35:42.980264700	INFO	actor=admin action=deleteTaAccount account=0123321 deletedUser=false deletedTa=false removedApps=0
+2026-03-19T13:35:57.360285	INFO	actor=admin action=deleteTaAccount account=2023213330 deletedUser=true deletedTa=true removedApps=3
+2026-03-19T13:36:00.768239300	INFO	actor=admin action=deleteTaAccount account=0123321 deletedUser=false deletedTa=false removedApps=0
+2026-03-19T13:40:31.104524600	INFO	actor=admin action=deleteTaAccount account=0123321 deletedUser=true deletedMo=false removedApps=0
+2026-03-19T14:46:21.933513	INFO	actor=admin action=deleteTaAccount account=111111 deletedUser=true deletedTa=true removedApps=0
+2026-03-19T14:46:37.351751	INFO	actor=admin action=deleteTaAccount account=testdelete deletedUser=true deletedTa=false removedApps=0
