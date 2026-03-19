@@ -6,6 +6,6 @@
 ## Group Name-list
 
 XYLeell：25421(TA)
-Forest1ogic: 231225281
+Forest1ogic: 231225281(member)
 
 github user name：QMID(lead/Member)
