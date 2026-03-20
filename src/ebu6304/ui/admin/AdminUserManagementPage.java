@@ -58,14 +58,12 @@ public final class AdminUserManagementPage extends JPanel {
         JButton enable = new JButton("Enable");
         JButton disable = new JButton("Disable");
         JButton addMo = new JButton("Add MO Account");
-        JButton presetMo = new JButton("Add Preset MO");
-        JButton deleteTa = new JButton("Delete TA");
+        JButton delete = new JButton("Delete");
         actions.add(refresh);
         actions.add(enable);
         actions.add(disable);
         actions.add(addMo);
-        actions.add(presetMo);
-        actions.add(deleteTa);
+        actions.add(delete);
         top.add(actions, BorderLayout.EAST);
 
         refresh.addActionListener(e -> refresh());
@@ -73,8 +71,7 @@ public final class AdminUserManagementPage extends JPanel {
         enable.addActionListener(e -> setUserEnabled(true));
         disable.addActionListener(e -> setUserEnabled(false));
         addMo.addActionListener(e -> addMoUser());
-        presetMo.addActionListener(e -> addPresetMoUser());
-        deleteTa.addActionListener(e -> deleteTaUser());
+        delete.addActionListener(e -> delete());
 
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
@@ -113,12 +110,6 @@ public final class AdminUserManagementPage extends JPanel {
         refresh();
     }
 
-    private void addPresetMoUser() {
-        String account = data.createPresetMoAccount(actor);
-        refresh();
-        JOptionPane.showMessageDialog(this, "Created preset MO: " + account + " (default password: 123456)");
-    }
-
     private void addMoUser() {
         JTextField acc = new JTextField(16);
         JTextField pass = new JTextField(16);
@@ -148,7 +139,7 @@ public final class AdminUserManagementPage extends JPanel {
         JOptionPane.showMessageDialog(this, "Created");
     }
 
-    private void deleteTaUser() {
+    private void delete() {
         int r = table.getSelectedRow();
         if (r < 0) {
             JOptionPane.showMessageDialog(this, "Please select a user");
@@ -156,15 +147,11 @@ public final class AdminUserManagementPage extends JPanel {
         }
         String role = String.valueOf(model.getValueAt(r, 0));
         String account = String.valueOf(model.getValueAt(r, 1));
-        if (!"TA".equalsIgnoreCase(role)) {
-            JOptionPane.showMessageDialog(this, "Only TA accounts can be deleted");
-            return;
-        }
 
-        int ok = JOptionPane.showConfirmDialog(this, "This cannot be undone. Delete this TA account?", "Confirm", JOptionPane.YES_NO_OPTION);
+        int ok = JOptionPane.showConfirmDialog(this, "This cannot be undone. Delete this account?", "Confirm", JOptionPane.YES_NO_OPTION);
         if (ok != JOptionPane.YES_OPTION) return;
 
-        boolean deleted = data.deleteTaAccount(actor, account);
+        boolean deleted = data.delete(actor, account);
         if (!deleted) {
             JOptionPane.showMessageDialog(this, "Delete failed");
             return;

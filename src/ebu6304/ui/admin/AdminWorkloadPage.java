@@ -13,9 +13,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -39,7 +37,7 @@ public final class AdminWorkloadPage extends JPanel {
     private final DataService data;
     private final String actor;
 
-    private final JComboBox<String> view = new JComboBox<String>(new String[] { "By TA", "By Category", "By Job" });
+    private final JComboBox<String> view = new JComboBox<String>(new String[] { "By TA", "By Job" });
     private final JTextField from = new JTextField(10);
     private final JTextField to = new JTextField(10);
     private final JTextField category = new JTextField(10);
@@ -108,9 +106,7 @@ public final class AdminWorkloadPage extends JPanel {
         String catFilter = category.getText().trim().toLowerCase();
 
         String v = String.valueOf(view.getSelectedItem());
-        if ("By Category".equalsIgnoreCase(v)) {
-            refreshByCategory(fromMs, toMs, catFilter);
-        } else if ("By Job".equalsIgnoreCase(v)) {
+        if ("By Job".equalsIgnoreCase(v)) {
             refreshByJob(fromMs, toMs, catFilter);
         } else {
             refreshByTa(fromMs, toMs, catFilter);
@@ -132,32 +128,6 @@ public final class AdminWorkloadPage extends JPanel {
                 hours += j.hoursPerWeek();
             }
             model.addRow(new Object[] { ta.id(), ta.name(), Integer.valueOf(accepted), Integer.valueOf(hours) });
-        }
-    }
-
-    private void refreshByCategory(long fromMs, long toMs, String catFilter) {
-        Map<String, int[]> agg = new HashMap<String, int[]>();
-        for (Job j : data.listJobs()) {
-            if (!catFilter.isEmpty() && !j.category().toLowerCase().contains(catFilter)) continue;
-            for (Application a : data.listApplicationsForJob(j.id())) {
-                if (a.status() != Application.Status.ACCEPTED) continue;
-                if (!within(a.createdAt(), fromMs, toMs)) continue;
-                String key = j.category() == null || j.category().trim().isEmpty() ? "(empty)" : j.category().trim();
-                int[] v = agg.get(key);
-                if (v == null) {
-                    v = new int[] { 0, 0 };
-                    agg.put(key, v);
-                }
-                v[0] += 1;
-                v[1] += j.hoursPerWeek();
-            }
-        }
-
-        List<String> keys = new ArrayList<String>(agg.keySet());
-        Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
-        for (String k : keys) {
-            int[] v = agg.get(k);
-            model.addRow(new Object[] { k, k, Integer.valueOf(v[0]), Integer.valueOf(v[1]) });
         }
     }
 
