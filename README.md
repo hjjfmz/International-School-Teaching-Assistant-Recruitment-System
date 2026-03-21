@@ -10,6 +10,7 @@
 - hjjfmz: 231225591 (lead)
 - Stephen-QwQ:231225340(member)
 - whitebird11111: 231225269(member)
+- 6zyy6：231225177（member）
 ## GitHub User Name
 
 QMID (lead/member)
