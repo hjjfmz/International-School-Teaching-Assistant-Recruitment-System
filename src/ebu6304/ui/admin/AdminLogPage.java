@@ -35,8 +35,8 @@ public final class AdminLogPage extends JPanel {
 
         area.setEditable(false);
 
-        JPanel top = new JPanel(new BorderLayout());
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel top = new JPanel(new BorderLayout(10, 10));
+        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         filters.add(new JLabel("Actor:"));
         filters.add(actor);
         filters.add(new JLabel("Action:"));
@@ -45,16 +45,19 @@ public final class AdminLogPage extends JPanel {
         filters.add(level);
         filters.add(new JLabel("Keyword:"));
         filters.add(keyword);
-        top.add(filters, BorderLayout.WEST);
 
-        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         JButton refresh = new JButton("Refresh");
         JButton export = new JButton("Export");
         JButton clear = new JButton("Clear");
         actionsPanel.add(refresh);
         actionsPanel.add(export);
         actionsPanel.add(clear);
-        top.add(actionsPanel, BorderLayout.EAST);
+
+        JPanel topContent = new JPanel(new BorderLayout(10, 5));
+        topContent.add(filters, BorderLayout.NORTH);
+        topContent.add(actionsPanel, BorderLayout.SOUTH);
+        top.add(topContent, BorderLayout.CENTER);
 
         refresh.addActionListener(e -> refresh());
         export.addActionListener(e -> export());

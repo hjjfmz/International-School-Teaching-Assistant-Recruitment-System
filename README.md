@@ -15,6 +15,11 @@
 ## GitHub User Name
 
 Q MID (lead/member)
+- whitebird11111: 231225269(member)
+- 6zyy6：231225177（member）
+## GitHub User Name
+
+QMID (lead/member)
 A comprehensive software application for BUPT International School to manage Teaching Assistant (TA) recruitment process.
 
 ## Table of Contents
@@ -99,7 +104,7 @@ The system follows a layered architecture:
 ### Default Login Credentials
 
 | Role | Username | Password |
-|-------|---------|----------|
+|------|----------|----------|
 | Admin | admin | admin |
 | MO | MO10001 | 123456 |
 | TA | 2023213330 | (set during registration) |
@@ -153,3 +158,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+

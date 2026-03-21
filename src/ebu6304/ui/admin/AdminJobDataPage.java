@@ -43,10 +43,10 @@ public final class AdminJobDataPage extends JPanel {
         };
         table = new JTable(model);
 
-        JPanel top = new JPanel(new BorderLayout());
+        JPanel top = new JPanel(new BorderLayout(10, 10));
         top.setBorder(BorderFactory.createTitledBorder("Job Data"));
 
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         filters.add(new JLabel("Keyword:"));
         filters.add(keyword);
         filters.add(new JLabel("Posted by:"));
@@ -55,9 +55,8 @@ public final class AdminJobDataPage extends JPanel {
         filters.add(status);
         filters.add(new JLabel("Category:"));
         filters.add(category);
-        top.add(filters, BorderLayout.WEST);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         JButton refresh = new JButton("Refresh");
         JButton forceClose = new JButton("Force Close");
         JButton complete = new JButton("Mark Completed");
@@ -66,7 +65,11 @@ public final class AdminJobDataPage extends JPanel {
         actions.add(forceClose);
         actions.add(complete);
         actions.add(setCategory);
-        top.add(actions, BorderLayout.EAST);
+
+        JPanel topContent = new JPanel(new BorderLayout(10, 5));
+        topContent.add(filters, BorderLayout.NORTH);
+        topContent.add(actions, BorderLayout.SOUTH);
+        top.add(topContent, BorderLayout.CENTER);
 
         refresh.addActionListener(e -> refresh());
         keyword.addActionListener(e -> refresh());

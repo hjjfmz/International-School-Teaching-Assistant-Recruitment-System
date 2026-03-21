@@ -236,42 +236,18 @@ public final class DataService {
         return ok;
     }
 
-    public synchronized boolean deleteUser(String role, String account) {
-        return AuthStore.deleteUser(adminSystemFile, role, account);
+    public synchronized boolean deleteUser(String account) {
+        return AuthStore.deleteUser(adminSystemFile, account);
     }
 
-    public synchronized boolean deleteTaAccount(String actor, String account) {
-        boolean deletedUser = AuthStore.deleteUser(adminSystemFile, "TA", account);
+    public synchronized boolean delete(String actor, String account) {
+        boolean deleted = AuthStore.deleteUser(adminSystemFile, account);
         boolean deletedTa = deleteApplicantByAccount(account);
         int removedApps = removeApplicationsForApplicant(account);
         if (removedApps > 0) persistApplications();
-        boolean ok = deletedUser || deletedTa || removedApps > 0;
-        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=deleteTaAccount account=" + (account == null ? "" : account) + " deletedUser=" + deletedUser + " deletedTa=" + deletedTa + " removedApps=" + removedApps);
+        boolean ok = deleted || deletedTa || removedApps > 0;
+        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=deleteTaAccount account=" + (account == null ? "" : account) + " deletedUser=" + deleted + " deletedTa=" + deletedTa + " removedApps=" + removedApps);
         return ok;
-    }
-
-    public synchronized String createPresetMoAccount(String actor) {
-        int next = 10001;
-        for (AuthStore.User u : listUsers()) {
-            if (!"MO".equalsIgnoreCase(u.role())) continue;
-            String a = u.account();
-            if (a == null) continue;
-            if (a.toUpperCase().startsWith("MO")) {
-                String suffix = a.substring(2).trim();
-                try {
-                    int n = Integer.parseInt(suffix);
-                    if (n >= next) next = n + 1;
-                } catch (NumberFormatException ignored) {
-                }
-            }
-        }
-        String account = "MO" + String.valueOf(next);
-        String name = "MO " + String.valueOf(next);
-        String password = "123456";
-        upsertUser("MO", account, password, name);
-        AuthStore.setEnabled(adminSystemFile, "MO", account, true);
-        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=createPresetMoAccount account=" + account);
-        return account;
     }
 
     public synchronized boolean resetPassword(String role, String account, String newPassword) {
