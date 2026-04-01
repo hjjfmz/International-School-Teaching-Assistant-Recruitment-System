@@ -1,5 +1,7 @@
 package ebu6304.ui.ta;
 
+import ebu6304.model.Applicant;
+import ebu6304.storage.DataService;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -9,7 +11,6 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -19,9 +20,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-
-import ebu6304.model.Applicant;
-import ebu6304.storage.DataService;
 
 public final class TaProfilePage extends JPanel {
 

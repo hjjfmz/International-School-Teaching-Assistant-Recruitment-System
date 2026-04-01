@@ -1,9 +1,10 @@
 package ebu6304.ui.ta;
 
+import ebu6304.model.Job;
+import ebu6304.storage.DataService;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.util.List;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -13,9 +14,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
-
-import ebu6304.model.Job;
-import ebu6304.storage.DataService;
 
 public final class TaJobsPage extends JPanel {
     private final DataService data;
