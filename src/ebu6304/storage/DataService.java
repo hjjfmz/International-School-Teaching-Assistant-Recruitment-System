@@ -258,7 +258,9 @@ public final class DataService {
     }
 
     public synchronized Applicant upsertApplicantByAccount(String account, String name, String email, String skills, String cvPath) {
-        Applicant a = new Applicant(account, name, email, skills, cvPath);
+        Applicant existing = applicants.get(account);
+        String desc = existing != null ? existing.description() : "";
+        Applicant a = new Applicant(account, name, email, skills, cvPath, desc);
         applicants.put(a.id(), a);
         persistApplicants();
         return a;
@@ -480,8 +482,8 @@ public final class DataService {
             if (line == null) continue;
             if (line.trim().isEmpty()) continue;
             if (idx == 0 && line.toLowerCase().startsWith("id,")) continue;
-            String[] p = Csv.splitLine(line, 5);
-            Applicant a = new Applicant(p[0], p[1], p[2], p[3], p[4]);
+            String[] p = Csv.splitLine(line, 6);
+            Applicant a = new Applicant(p[0], p[1], p[2], p[3], p[4], p[5]);
             applicants.put(a.id(), a);
         }
     }
@@ -563,9 +565,9 @@ public final class DataService {
 
     private void persistApplicants() {
         List<String> lines = new ArrayList<String>();
-        lines.add("id,name,email,skills,cvPath");
+        lines.add("id,name,email,skills,cvPath,description");
         for (Applicant a : applicants.values()) {
-            lines.add(Csv.join(a.id(), a.name(), a.email(), a.skills(), a.cvPath()));
+            lines.add(Csv.join(a.id(), a.name(), a.email(), a.skills(), a.cvPath(), a.description()));
         }
         if (lines.size() > 1) {
             List<String> dataLines = new ArrayList<String>(lines.subList(1, lines.size()));

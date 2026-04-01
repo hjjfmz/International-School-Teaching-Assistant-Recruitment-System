@@ -75,9 +75,9 @@ public final class WorkbenchPanel extends JPanel {
             TaHomePage home = new TaHomePage(data, account, k -> layout.showContent(k));
             TaProfilePage profile = new TaProfilePage(data, account);
             TaResumePage resume = new TaResumePage(data, account);
-            TaJobsPage jobs = new TaJobsPage(data, account);
+            TaJobsPage jobs = new TaJobsPage(data, account, () -> { layout.showContent("TA Home"); layout.setNavSelectedIndex(0); });
             TaMyApplicationsPage myApps = new TaMyApplicationsPage(data, account);
-            TaApplicationStatusPage status = new TaApplicationStatusPage(data, account);
+            TaApplicationStatusPage status = new TaApplicationStatusPage(data, account, () -> { layout.showContent("TA Home"); layout.setNavSelectedIndex(0); });
 
             layout.addContent("TA Home", home);
             layout.addContent("Profile", profile);

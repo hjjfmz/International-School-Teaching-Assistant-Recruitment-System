@@ -24,7 +24,7 @@ public final class TaJobsPage extends JPanel {
     private final DefaultTableModel model;
     private final JTable table;
 
-    public TaJobsPage(DataService data, String account) {
+    public TaJobsPage(DataService data, String account, Runnable onBack) {
         super(new BorderLayout(10, 10));
         this.data = data;
         this.account = account;
@@ -46,13 +46,17 @@ public final class TaJobsPage extends JPanel {
         top.add(new JLabel("Select a job and use the buttons on the right"), BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton backBtn = new JButton("< Back");
         JButton refresh = new JButton("Refresh");
         JButton details = new JButton("Details");
         JButton apply = new JButton("Apply");
+        actions.add(backBtn);
         actions.add(refresh);
         actions.add(details);
         actions.add(apply);
         top.add(actions, BorderLayout.EAST);
+
+        backBtn.addActionListener(e -> { if (onBack != null) onBack.run(); });
 
         refresh.addActionListener(e -> refresh());
         details.addActionListener(e -> showDetails());

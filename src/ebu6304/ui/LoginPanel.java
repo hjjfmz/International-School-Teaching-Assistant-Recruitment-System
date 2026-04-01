@@ -93,7 +93,7 @@ public final class LoginPanel extends JPanel {
         logo.setPreferredSize(new Dimension(72, 72));
 
         try {
-            File imgFile = new File(System.getProperty("user.dir"), "1.jpg");
+            File imgFile = new File(System.getProperty("user.dir"), "images/images.png");
             if (imgFile.isFile()) {
                 BufferedImage img = ImageIO.read(imgFile);
                 if (img != null) {
