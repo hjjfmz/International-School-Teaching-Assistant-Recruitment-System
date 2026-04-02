@@ -24,7 +24,7 @@ public final class TaApplicationStatusPage extends JPanel {
     private final DefaultTableModel model;
     private final JTable table;
 
-    public TaApplicationStatusPage(DataService data, String account) {
+    public TaApplicationStatusPage(DataService data, String account, Runnable onBack) {
         super(new BorderLayout(10, 10));
         this.data = data;
         this.account = account;
@@ -49,9 +49,13 @@ public final class TaApplicationStatusPage extends JPanel {
         top.add(left, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton backBtn = new JButton("< Back");
         JButton refresh = new JButton("Refresh");
+        actions.add(backBtn);
         actions.add(refresh);
         top.add(actions, BorderLayout.EAST);
+
+        backBtn.addActionListener(e -> { if (onBack != null) onBack.run(); });
 
         refresh.addActionListener(e -> refresh());
         filter.addActionListener(e -> refresh());
