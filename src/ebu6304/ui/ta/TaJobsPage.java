@@ -1,9 +1,10 @@
 package ebu6304.ui.ta;
 
+import ebu6304.model.Job;
+import ebu6304.storage.DataService;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.util.List;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -14,9 +15,6 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-import ebu6304.model.Job;
-import ebu6304.storage.DataService;
-
 public final class TaJobsPage extends JPanel {
     private final DataService data;
     private final String account;
@@ -24,7 +22,7 @@ public final class TaJobsPage extends JPanel {
     private final DefaultTableModel model;
     private final JTable table;
 
-    public TaJobsPage(DataService data, String account) {
+    public TaJobsPage(DataService data, String account, Runnable onBack) {
         super(new BorderLayout(10, 10));
         this.data = data;
         this.account = account;
@@ -46,13 +44,17 @@ public final class TaJobsPage extends JPanel {
         top.add(new JLabel("Select a job and use the buttons on the right"), BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton backBtn = new JButton("< Back");
         JButton refresh = new JButton("Refresh");
         JButton details = new JButton("Details");
         JButton apply = new JButton("Apply");
+        actions.add(backBtn);
         actions.add(refresh);
         actions.add(details);
         actions.add(apply);
         top.add(actions, BorderLayout.EAST);
+
+        backBtn.addActionListener(e -> { if (onBack != null) onBack.run(); });
 
         refresh.addActionListener(e -> refresh());
         details.addActionListener(e -> showDetails());
