@@ -38,7 +38,7 @@ public final class LoginPanel extends JPanel {
 
     private final DataService data;
 
-    private static final Color BG = new Color(245, 247, 250);
+    private static final Color BG = Color.WHITE;
     private static final Color CARD = Color.WHITE;
     private static final Color PRIMARY = new Color(22, 119, 255);
 
