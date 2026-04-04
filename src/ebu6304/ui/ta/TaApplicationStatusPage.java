@@ -60,8 +60,11 @@ public final class TaApplicationStatusPage extends JPanel {
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         actions.setOpaque(false);
+        JButton backBtn = new JButton("< Back");
         JButton refresh = new JButton("Refresh");
+        styleActionButton(backBtn);
         styleActionButton(refresh);
+        actions.add(backBtn);
         actions.add(refresh);
         top.add(actions, BorderLayout.EAST);
 
