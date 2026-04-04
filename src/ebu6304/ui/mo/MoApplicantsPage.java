@@ -112,35 +112,36 @@ public final class MoApplicantsPage extends JPanel {
         styleActionButton(searchBtn);
         filters.add(searchBtn);
         
-        top.add(filters, BorderLayout.WEST);
+        // Layout: stack filters and actions vertically to avoid any overlap in narrow windows
+        JPanel topContent = new JPanel(new BorderLayout());
+        topContent.setOpaque(false);
+        topContent.add(filters, BorderLayout.NORTH);
 
-        // Action buttons (right side)
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // Action buttons
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 2));
         actions.setOpaque(false);
         JButton refresh = new JButton("Refresh");
         JButton openCv = new JButton("Open CV");
         JButton accept = new JButton("Accept");
         JButton reject = new JButton("Reject");
-        JButton batchAccept = new JButton("Batch Accept");
-        JButton batchReject = new JButton("Batch Reject");
         JButton details = new JButton("View Details");
+
 
         styleActionButton(refresh);
         styleActionButton(details);
         styleActionButton(openCv);
         stylePrimaryButton(accept, new Color(0, 191, 165));
         styleDangerButton(reject);
-        stylePrimaryButton(batchAccept, new Color(0, 191, 165));
-        styleDangerButton(batchReject);
         
         actions.add(refresh);
         actions.add(details);
         actions.add(openCv);
         actions.add(accept);
         actions.add(reject);
-        actions.add(batchAccept);
-        actions.add(batchReject);
-        top.add(actions, BorderLayout.EAST);
+
+        topContent.add(actions, BorderLayout.SOUTH);
+        top.add(topContent, BorderLayout.CENTER);
+
 
         // Button actions
         refresh.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { refresh(); } });
@@ -149,8 +150,6 @@ public final class MoApplicantsPage extends JPanel {
         searchBtn.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { applyFilter(); } });
         accept.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setStatusSelected(Application.Status.ACCEPTED); } });
         reject.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setStatusSelected(Application.Status.REJECTED); } });
-        batchAccept.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { batchSetStatus(Application.Status.ACCEPTED); } });
-        batchReject.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { batchSetStatus(Application.Status.REJECTED); } });
         openCv.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { openCv(); } });
         details.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { showDetails(); } });
 
