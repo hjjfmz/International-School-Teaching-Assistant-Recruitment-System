@@ -6,3 +6,5 @@
 2026-03-19T13:40:31.104524600	INFO	actor=admin action=deleteTaAccount account=0123321 deletedUser=true deletedMo=false removedApps=0
 2026-03-19T14:46:21.933513	INFO	actor=admin action=deleteTaAccount account=111111 deletedUser=true deletedTa=true removedApps=0
 2026-03-19T14:46:37.351751	INFO	actor=admin action=deleteTaAccount account=testdelete deletedUser=true deletedTa=false removedApps=0
+2026-03-22T18:42:34.126055200	INFO	actor=admin action=setUserEnabled role=TA account=2023213330 enabled=false ok=true
+2026-03-22T18:42:35.990770800	INFO	actor=admin action=setUserEnabled role=TA account=2023213330 enabled=true ok=true

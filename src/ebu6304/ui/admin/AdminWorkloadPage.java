@@ -2,6 +2,7 @@ package ebu6304.ui.admin;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import javax.swing.BoxLayout;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -58,7 +59,7 @@ public final class AdminWorkloadPage extends JPanel {
         };
         table = new JTable(model);
 
-        JPanel top = new JPanel(new BorderLayout());
+        JPanel top = new JPanel(new BorderLayout(10, 10));
         top.setBorder(BorderFactory.createTitledBorder("TA Workload"));
 
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -73,11 +74,11 @@ public final class AdminWorkloadPage extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton refresh = new JButton("Refresh");
         JButton export = new JButton("Export CSV");
-        JButton ai = new JButton("AI Balancing (placeholder)");
+        JButton ai = new JButton("AI Balancing");
         actions.add(refresh);
         actions.add(export);
         actions.add(ai);
-        top.add(actions, BorderLayout.EAST);
+        top.add(actions, BorderLayout.SOUTH);
 
         refresh.addActionListener(e -> refresh());
         export.addActionListener(e -> exportCsv());

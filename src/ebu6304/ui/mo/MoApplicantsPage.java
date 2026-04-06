@@ -1,6 +1,9 @@
 package ebu6304.ui.mo;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -21,6 +24,9 @@ import javax.swing.RowFilter;
 import javax.swing.RowSorter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
+import javax.swing.table.JTableHeader;
+import javax.swing.border.Border;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import ebu6304.model.Applicant;
 import ebu6304.model.Application;
@@ -39,6 +45,7 @@ import ebu6304.util.SkillMatcher;
  * - Sort by match percentage
  */
 public final class MoApplicantsPage extends JPanel {
+
     private final DataService data;
     private final String account;
 
@@ -75,7 +82,10 @@ public final class MoApplicantsPage extends JPanel {
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION); // Enable multi-select
         table.setAutoCreateRowSorter(true);
-        
+        styleTable(table);
+        table.setDefaultRenderer(Object.class, new ZebraRenderer());
+        table.setDefaultRenderer(Integer.class, new ZebraRenderer());
+
         // Custom sorter for proper numeric sorting on match percentage
         sorter = new TableRowSorter<DefaultTableModel>(model);
         table.setRowSorter(sorter);
@@ -83,39 +93,55 @@ public final class MoApplicantsPage extends JPanel {
         // Top panel with filters
         JPanel top = new JPanel(new BorderLayout());
         top.setBorder(BorderFactory.createTitledBorder("Applicants"));
+        top.setOpaque(false);
 
         // Filter panel (left side)
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        filters.setOpaque(false);
         filters.add(new JLabel("Job:"));
+        styleCombo(jobsBox);
         filters.add(jobsBox);
         filters.add(new JLabel("Status:"));
+        styleCombo(statusFilter);
         filters.add(statusFilter);
         filters.add(new JLabel("Search:"));
+        styleSearchField(searchField);
         filters.add(searchField);
         
         JButton searchBtn = new JButton("Search");
+        styleActionButton(searchBtn);
         filters.add(searchBtn);
         
-        top.add(filters, BorderLayout.WEST);
+        // Layout: stack filters and actions vertically to avoid any overlap in narrow windows
+        JPanel topContent = new JPanel(new BorderLayout());
+        topContent.setOpaque(false);
+        topContent.add(filters, BorderLayout.NORTH);
 
-        // Action buttons (right side)
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // Action buttons
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 2));
+        actions.setOpaque(false);
         JButton refresh = new JButton("Refresh");
         JButton openCv = new JButton("Open CV");
         JButton accept = new JButton("Accept");
         JButton reject = new JButton("Reject");
-        JButton batchAccept = new JButton("Batch Accept");
-        JButton batchReject = new JButton("Batch Reject");
         JButton details = new JButton("View Details");
+
+
+        styleActionButton(refresh);
+        styleActionButton(details);
+        styleActionButton(openCv);
+        stylePrimaryButton(accept, new Color(0, 191, 165));
+        styleDangerButton(reject);
         
         actions.add(refresh);
         actions.add(details);
         actions.add(openCv);
         actions.add(accept);
         actions.add(reject);
-        actions.add(batchAccept);
-        actions.add(batchReject);
-        top.add(actions, BorderLayout.EAST);
+
+        topContent.add(actions, BorderLayout.SOUTH);
+        top.add(topContent, BorderLayout.CENTER);
+
 
         // Button actions
         refresh.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { refresh(); } });
@@ -124,16 +150,86 @@ public final class MoApplicantsPage extends JPanel {
         searchBtn.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { applyFilter(); } });
         accept.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setStatusSelected(Application.Status.ACCEPTED); } });
         reject.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setStatusSelected(Application.Status.REJECTED); } });
-        batchAccept.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { batchSetStatus(Application.Status.ACCEPTED); } });
-        batchReject.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { batchSetStatus(Application.Status.REJECTED); } });
         openCv.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { openCv(); } });
         details.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { showDetails(); } });
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createEmptyBorder());
+        if (sp.getViewport() != null) sp.getViewport().setBackground(Color.WHITE);
+        add(sp, BorderLayout.CENTER);
 
         reloadJobs();
         refresh();
+    }
+
+    private static void styleTable(JTable t) {
+        t.setRowHeight(34);
+        t.setShowGrid(false);
+        t.setIntercellSpacing(new Dimension(0, 0));
+        t.setFillsViewportHeight(true);
+        t.setSelectionBackground(new Color(230, 244, 255));
+        t.setSelectionForeground(new Color(30, 41, 59));
+        t.setBackground(Color.WHITE);
+
+        JTableHeader h = t.getTableHeader();
+        h.setReorderingAllowed(false);
+        h.setBackground(new Color(248, 250, 252));
+        h.setForeground(new Color(71, 85, 105));
+        h.setFont(h.getFont().deriveFont(Font.BOLD, 12f));
+        h.setPreferredSize(new Dimension(h.getPreferredSize().width, 36));
+        h.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(226, 232, 240)));
+    }
+
+    private static void styleCombo(JComboBox<?> c) {
+        c.setBackground(Color.WHITE);
+        c.setPreferredSize(new Dimension(150, 30));
+        c.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(226, 232, 240)),
+                BorderFactory.createEmptyBorder(2, 8, 2, 8)));
+    }
+
+    private static void styleSearchField(JTextField f) {
+        Border b = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(226, 232, 240)),
+                BorderFactory.createEmptyBorder(2, 8, 2, 8));
+        f.setBorder(b);
+        f.setPreferredSize(new Dimension(180, 30));
+    }
+
+    private static void styleActionButton(JButton b) {
+        b.setFocusPainted(false);
+        b.setBackground(Color.WHITE);
+        b.setForeground(new Color(30, 41, 59));
+    }
+
+    private static void stylePrimaryButton(JButton b, Color bg) {
+        b.setFocusPainted(false);
+        b.setBackground(bg);
+        b.setForeground(Color.WHITE);
+    }
+
+    private static void styleDangerButton(JButton b) {
+        styleActionButton(b);
+        b.setForeground(new Color(220, 38, 38));
+    }
+
+    private static final class ZebraRenderer extends DefaultTableCellRenderer {
+        private static final Color ODD = new Color(255, 255, 255);
+        private static final Color EVEN = new Color(249, 251, 253);
+
+        @Override
+        public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                boolean hasFocus, int row, int column) {
+            java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? ODD : EVEN);
+                c.setForeground(new Color(30, 41, 59));
+            }
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+            return c;
+        }
     }
 
     public void reloadJobs() {

@@ -9,7 +9,14 @@
 - Forest1ogic: 231225281 (member)
 - hjjfmz: 231225591 (lead)
 - Stephen-QwQ:231225340(member)
+- whitebird1111: 231225269(member)
+- 6zyy6：231225173（member）
+- tdxb423: 231225144 (member)
+## GitHub User Name
+
+Q MID (lead/member)
 - whitebird11111: 231225269(member)
+- 6zyy6：231225177（member）
 ## GitHub User Name
 
 QMID (lead/member)
@@ -151,4 +158,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
 

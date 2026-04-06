@@ -1,6 +1,9 @@
 package ebu6304.ui.admin;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FlowLayout;
 import java.util.List;
 
@@ -14,7 +17,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.JTextField;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 
 import ebu6304.storage.AuthStore;
 import ebu6304.storage.DataService;
@@ -44,21 +49,34 @@ public final class AdminUserManagementPage extends JPanel {
         };
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        styleTable(table);
+        table.setDefaultRenderer(Object.class, new ZebraRenderer());
 
         JPanel top = new JPanel(new BorderLayout());
         top.setBorder(BorderFactory.createTitledBorder("User Management"));
+        top.setOpaque(false);
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        left.setOpaque(false);
         left.add(new JLabel("Role filter:"));
+        styleCombo(roleFilter);
         left.add(roleFilter);
         top.add(left, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        actions.setOpaque(false);
         JButton refresh = new JButton("Refresh");
         JButton enable = new JButton("Enable");
         JButton disable = new JButton("Disable");
         //JButton addMo = new JButton("Add MO Account");
         JButton delete = new JButton("Delete");
+
+        styleActionButton(refresh);
+        styleActionButton(enable);
+        styleActionButton(disable);
+        styleActionButton(addMo);
+        styleDangerButton(delete);
+
         actions.add(refresh);
         actions.add(enable);
         actions.add(disable);
@@ -74,9 +92,67 @@ public final class AdminUserManagementPage extends JPanel {
         delete.addActionListener(e -> delete());
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createEmptyBorder());
+        if (sp.getViewport() != null) sp.getViewport().setBackground(Color.WHITE);
+        add(sp, BorderLayout.CENTER);
 
         refresh();
+    }
+
+    private static void styleTable(JTable t) {
+        t.setRowHeight(34);
+        t.setShowGrid(false);
+        t.setIntercellSpacing(new Dimension(0, 0));
+        t.setFillsViewportHeight(true);
+        t.setSelectionBackground(new Color(230, 244, 255));
+        t.setSelectionForeground(new Color(30, 41, 59));
+        t.setBackground(Color.WHITE);
+
+        JTableHeader h = t.getTableHeader();
+        h.setReorderingAllowed(false);
+        h.setBackground(new Color(248, 250, 252));
+        h.setForeground(new Color(71, 85, 105));
+        h.setFont(h.getFont().deriveFont(Font.BOLD, 12f));
+        h.setPreferredSize(new Dimension(h.getPreferredSize().width, 36));
+        h.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(226, 232, 240)));
+    }
+
+    private static void styleCombo(JComboBox<?> c) {
+        c.setBackground(Color.WHITE);
+        c.setPreferredSize(new Dimension(120, 30));
+        c.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(226, 232, 240)),
+                BorderFactory.createEmptyBorder(2, 8, 2, 8)));
+    }
+
+    private static void styleActionButton(JButton b) {
+        b.setFocusPainted(false);
+        b.setBackground(Color.WHITE);
+        b.setForeground(new Color(30, 41, 59));
+    }
+
+    private static void styleDangerButton(JButton b) {
+        styleActionButton(b);
+        b.setForeground(new Color(220, 38, 38));
+    }
+
+    private static final class ZebraRenderer extends DefaultTableCellRenderer {
+        private static final Color ODD = new Color(255, 255, 255);
+        private static final Color EVEN = new Color(249, 251, 253);
+
+        @Override
+        public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                boolean hasFocus, int row, int column) {
+            java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground((row % 2 == 0) ? ODD : EVEN);
+                c.setForeground(new Color(30, 41, 59));
+            }
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+            return c;
+        }
     }
 
     public void refresh() {

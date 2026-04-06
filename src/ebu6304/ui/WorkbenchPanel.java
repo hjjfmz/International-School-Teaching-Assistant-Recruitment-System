@@ -1,8 +1,13 @@
 package ebu6304.ui;
 
 import java.awt.BorderLayout;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 import ebu6304.storage.DataService;
 import ebu6304.ui.ta.TaApplicationStatusPage;
@@ -26,6 +31,9 @@ import ebu6304.ui.admin.AdminWorkloadPage;
 
 public final class WorkbenchPanel extends JPanel {
     private final AppLayout layout;
+    private Timer notifTimer;
+    private int lastReadLineCount;
+    private int lastSeenLineCount;
 
     public WorkbenchPanel(DataService data, Role role, String account, Runnable logout) {
         super(new BorderLayout());
@@ -61,7 +69,7 @@ public final class WorkbenchPanel extends JPanel {
         }
 
         final AppLayout[] holder = new AppLayout[1];
-        holder[0] = new AppLayout(nav, () -> {
+        holder[0] = new AppLayout(role, nav, () -> {
             if (logout != null) logout.run();
         }, key -> {
             if (key == null) return;
@@ -70,14 +78,15 @@ public final class WorkbenchPanel extends JPanel {
         layout = holder[0];
 
         layout.setUser(role, account);
+        startOperationLogNotifications(data);
 
         if (role == Role.TA) {
             TaHomePage home = new TaHomePage(data, account, k -> layout.showContent(k));
             TaProfilePage profile = new TaProfilePage(data, account);
             TaResumePage resume = new TaResumePage(data, account);
-            TaJobsPage jobs = new TaJobsPage(data, account);
+            TaJobsPage jobs = new TaJobsPage(data, account, () -> { layout.showContent("TA Home"); layout.setNavSelectedIndex(0); });
             TaMyApplicationsPage myApps = new TaMyApplicationsPage(data, account);
-            TaApplicationStatusPage status = new TaApplicationStatusPage(data, account);
+            TaApplicationStatusPage status = new TaApplicationStatusPage(data, account, () -> { layout.showContent("TA Home"); layout.setNavSelectedIndex(0); });
 
             layout.addContent("TA Home", home);
             layout.addContent("Profile", profile);
@@ -125,5 +134,73 @@ public final class WorkbenchPanel extends JPanel {
         }
 
         add(layout, BorderLayout.CENTER);
+    }
+
+    private void startOperationLogNotifications(DataService data) {
+        if (data == null) return;
+        final Path log = data.tempOperationFile();
+        lastReadLineCount = safeLineCount(log);
+        lastSeenLineCount = lastReadLineCount;
+        layout.setUnreadNotifications(0);
+
+        layout.setNotificationsTextSupplier(() -> buildNotificationsText(log, 200));
+
+        layout.setOnNotificationsOpened(() -> {
+            lastReadLineCount = safeLineCount(log);
+            lastSeenLineCount = lastReadLineCount;
+            layout.setUnreadNotifications(0);
+        });
+
+        notifTimer = new Timer(2000, e -> {
+            int lines = safeLineCount(log);
+            if (lines > lastSeenLineCount) lastSeenLineCount = lines;
+            int unread = Math.max(0, lastSeenLineCount - lastReadLineCount);
+            layout.setUnreadNotifications(unread);
+        });
+        notifTimer.setRepeats(true);
+        notifTimer.start();
+
+        addHierarchyListener(e -> {
+            if (!isDisplayable() && notifTimer != null) {
+                notifTimer.stop();
+                notifTimer = null;
+            }
+        });
+    }
+
+    private static long safeSize(Path p) {
+        try {
+            if (p == null || !Files.exists(p)) return 0L;
+            return Files.size(p);
+        } catch (Exception ex) {
+            return 0L;
+        }
+    }
+
+    private static int safeLineCount(Path p) {
+        try {
+            if (p == null || !Files.exists(p)) return 0;
+            List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
+            return lines == null ? 0 : lines.size();
+        } catch (Exception ex) {
+            return 0;
+        }
+    }
+
+    private static String buildNotificationsText(Path p, int tailLines) {
+        try {
+            if (p == null || !Files.exists(p)) return "No notifications.";
+            List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
+            if (lines == null || lines.isEmpty()) return "No notifications.";
+
+            int start = Math.max(0, lines.size() - Math.max(1, tailLines));
+            StringBuilder sb = new StringBuilder();
+            for (int i = start; i < lines.size(); i++) {
+                sb.append(lines.get(i)).append("\n");
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            return "Unable to load notifications.";
+        }
     }
 }
