@@ -40,7 +40,6 @@ public final class AdminWorkloadPage extends JPanel {
     private final JComboBox<String> view = new JComboBox<String>(new String[] { "By TA", "By Job" });
     private final JTextField from = new JTextField(10);
     private final JTextField to = new JTextField(10);
-    private final JTextField category = new JTextField(10);
 
     private final DefaultTableModel model;
     private final JTable table;
@@ -69,8 +68,6 @@ public final class AdminWorkloadPage extends JPanel {
         filters.add(from);
         filters.add(new JLabel("To (yyyy-MM-dd):"));
         filters.add(to);
-        filters.add(new JLabel("Category:"));
-        filters.add(category);
         top.add(filters, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -89,7 +86,6 @@ public final class AdminWorkloadPage extends JPanel {
         view.addActionListener(e -> refresh());
         from.addActionListener(e -> refresh());
         to.addActionListener(e -> refresh());
-        category.addActionListener(e -> refresh());
 
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
@@ -103,17 +99,16 @@ public final class AdminWorkloadPage extends JPanel {
 
         long fromMs = parseDateStart(from.getText().trim());
         long toMs = parseDateEnd(to.getText().trim());
-        String catFilter = category.getText().trim().toLowerCase();
 
         String v = String.valueOf(view.getSelectedItem());
         if ("By Job".equalsIgnoreCase(v)) {
-            refreshByJob(fromMs, toMs, catFilter);
+            refreshByJob(fromMs, toMs);
         } else {
-            refreshByTa(fromMs, toMs, catFilter);
+            refreshByTa(fromMs, toMs);
         }
     }
 
-    private void refreshByTa(long fromMs, long toMs, String catFilter) {
+    private void refreshByTa(long fromMs, long toMs) {
         List<Applicant> tas = data.listApplicants();
         for (Applicant ta : tas) {
             int accepted = 0;
@@ -123,7 +118,6 @@ public final class AdminWorkloadPage extends JPanel {
                 if (!within(a.createdAt(), fromMs, toMs)) continue;
                 Job j = data.getJob(a.jobId()).orElse(null);
                 if (j == null) continue;
-                if (!catFilter.isEmpty() && !j.category().toLowerCase().contains(catFilter)) continue;
                 accepted++;
                 hours += j.hoursPerWeek();
             }
@@ -131,7 +125,7 @@ public final class AdminWorkloadPage extends JPanel {
         }
     }
 
-    private void refreshByJob(long fromMs, long toMs, String catFilter) {
+    private void refreshByJob(long fromMs, long toMs) {
         List<Job> jobs = data.listJobs();
         Collections.sort(jobs, new Comparator<Job>() {
             @Override
@@ -141,7 +135,6 @@ public final class AdminWorkloadPage extends JPanel {
         });
 
         for (Job j : jobs) {
-            if (!catFilter.isEmpty() && !j.category().toLowerCase().contains(catFilter)) continue;
             int accepted = 0;
             for (Application a : data.listApplicationsForJob(j.id())) {
                 if (a.status() != Application.Status.ACCEPTED) continue;
