@@ -2,6 +2,7 @@ package ebu6304.ui.admin;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import javax.swing.BoxLayout;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -59,28 +60,36 @@ public final class AdminWorkloadPage extends JPanel {
         };
         table = new JTable(model);
 
-        JPanel top = new JPanel(new BorderLayout());
+        JPanel top = new JPanel(new BorderLayout(10, 10));
         top.setBorder(BorderFactory.createTitledBorder("TA Workload"));
 
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filters.add(new JLabel("View:"));
-        filters.add(view);
-        filters.add(new JLabel("From (yyyy-MM-dd):"));
-        filters.add(from);
-        filters.add(new JLabel("To (yyyy-MM-dd):"));
-        filters.add(to);
-        filters.add(new JLabel("Category:"));
-        filters.add(category);
-        top.add(filters, BorderLayout.WEST);
+        JPanel filters = new JPanel();
+        filters.setLayout(new BoxLayout(filters, BoxLayout.Y_AXIS));
+        
+        JPanel filterRow1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        filterRow1.add(new JLabel("View:"));
+        filterRow1.add(view);
+        filterRow1.add(new JLabel("From (yyyy-MM-dd):"));
+        filterRow1.add(from);
+        filterRow1.add(new JLabel("To (yyyy-MM-dd):"));
+        filterRow1.add(to);
+        
+        JPanel filterRow2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        filterRow2.add(new JLabel("Category:"));
+        filterRow2.add(category);
+        
+        filters.add(filterRow1);
+        filters.add(filterRow2);
+        top.add(filters, BorderLayout.CENTER);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         JButton refresh = new JButton("Refresh");
         JButton export = new JButton("Export CSV");
-        JButton ai = new JButton("AI Balancing (placeholder)");
+        JButton ai = new JButton("AI Balancing");
         actions.add(refresh);
         actions.add(export);
         actions.add(ai);
-        top.add(actions, BorderLayout.EAST);
+        top.add(actions, BorderLayout.SOUTH);
 
         refresh.addActionListener(e -> refresh());
         export.addActionListener(e -> exportCsv());
