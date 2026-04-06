@@ -2,6 +2,7 @@ package ebu6304.ui.admin;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import javax.swing.BoxLayout;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -81,7 +82,7 @@ public final class AdminWorkloadPage extends JPanel {
         actions.add(refresh);
         actions.add(export);
         actions.add(ai);
-        top.add(actions, BorderLayout.EAST);
+        top.add(actions, BorderLayout.SOUTH);
 
         refresh.addActionListener(e -> refresh());
         export.addActionListener(e -> exportCsv());
