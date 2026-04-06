@@ -32,7 +32,11 @@ public final class App {
                 }
             }
 
-            Font font = new Font("Segoe UI", Font.PLAIN, 13);
+            // Use a font that supports multiple languages (including Japanese)
+            Font font = new Font("Arial Unicode MS", Font.PLAIN, 13);
+            if (font.getName().equals("Dialog")) { // Fallback if Arial Unicode MS is not available
+                font = new Font("SansSerif", Font.PLAIN, 13);
+            }
             UIManager.put("Label.font", font);
             UIManager.put("Button.font", font);
             UIManager.put("TextField.font", font);
