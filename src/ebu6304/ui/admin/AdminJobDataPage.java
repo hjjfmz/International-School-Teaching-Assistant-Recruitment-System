@@ -18,6 +18,7 @@ import javax.swing.table.DefaultTableModel;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class AdminJobDataPage extends JPanel {
     private final DataService data;
@@ -37,30 +38,30 @@ public final class AdminJobDataPage extends JPanel {
         this.actor = actor == null ? "" : actor;
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
-        model = new DefaultTableModel(new Object[] { "Job ID", "Posted by", "Title", "Hours/week", "Status", "Category", "Applications", "Accepted" }, 0) {
+        model = new DefaultTableModel(new Object[] { I18n.t("admin.jobdata.col.id"), I18n.t("admin.jobdata.col.postedby"), I18n.t("admin.jobdata.col.title"), I18n.t("admin.jobdata.col.hours"), I18n.t("admin.jobdata.col.status"), I18n.t("admin.jobdata.col.category"), I18n.t("admin.jobdata.col.apps"), I18n.t("admin.jobdata.col.accepted") }, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
         table = new JTable(model);
 
         JPanel top = new JPanel(new BorderLayout(10, 10));
-        top.setBorder(BorderFactory.createTitledBorder("Job Data"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.jobdata.title")));
 
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        filters.add(new JLabel("Keyword:"));
+        filters.add(new JLabel(I18n.t("admin.jobdata.keyword")));
         filters.add(keyword);
-        filters.add(new JLabel("Posted by:"));
+        filters.add(new JLabel(I18n.t("admin.jobdata.postedby")));
         filters.add(postedBy);
-        filters.add(new JLabel("Status:"));
+        filters.add(new JLabel(I18n.t("admin.jobdata.status")));
         filters.add(status);
-        filters.add(new JLabel("Category:"));
+        filters.add(new JLabel(I18n.t("admin.jobdata.category")));
         filters.add(category);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        JButton refresh = new JButton("Refresh");
-        JButton forceClose = new JButton("Force Close");
-        JButton complete = new JButton("Mark Completed");
-        JButton setCategory = new JButton("Set Category");
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton forceClose = new JButton(I18n.t("admin.jobdata.forceclose"));
+        JButton complete = new JButton(I18n.t("admin.jobdata.complete"));
+        JButton setCategory = new JButton(I18n.t("admin.jobdata.setcategory"));
         actions.add(refresh);
         actions.add(forceClose);
         actions.add(complete);
@@ -119,13 +120,13 @@ public final class AdminJobDataPage extends JPanel {
     private void setStatusSelected(Job.Status newStatus) {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a job");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.job"));
             return;
         }
         String jobId = String.valueOf(model.getValueAt(r, 0));
         boolean ok = data.setJobStatus(actor, jobId, newStatus);
         if (!ok) {
-            JOptionPane.showMessageDialog(this, "Operation failed");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.operation.failed"));
             return;
         }
         refresh();
@@ -134,16 +135,16 @@ public final class AdminJobDataPage extends JPanel {
     private void setCategorySelected() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a job");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.job"));
             return;
         }
         String jobId = String.valueOf(model.getValueAt(r, 0));
         String current = String.valueOf(model.getValueAt(r, 5));
-        String input = JOptionPane.showInputDialog(this, "Category:", current);
+        String input = JOptionPane.showInputDialog(this, I18n.t("admin.jobdata.categoryprompt"), current);
         if (input == null) return;
         boolean ok = data.setJobCategory(actor, jobId, input.trim());
         if (!ok) {
-            JOptionPane.showMessageDialog(this, "Operation failed");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.operation.failed"));
             return;
         }
         refresh();

@@ -7,18 +7,21 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
-import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -27,8 +30,8 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 
 public final class LoginPanel extends JPanel {
     public interface LoginHandler {
@@ -38,142 +41,246 @@ public final class LoginPanel extends JPanel {
 
     private final DataService data;
 
-    private static final Color BG = Color.WHITE;
-    private static final Color CARD = Color.WHITE;
-    private static final Color PRIMARY = new Color(22, 119, 255);
+    private static final Color PRIMARY = new Color(0, 51, 153);
+    private static final Color HEADER_BG = new Color(0, 51, 153, 200);
+    private static final Color CARD_BG = new Color(255, 255, 255, 240);
+    private static final Color FOOTER_BG = new Color(0, 0, 0, 100);
+    private static final Color INPUT_BORDER = new Color(200, 200, 200);
+    private static final Color LINK_COLOR = PRIMARY;
+
+    private BufferedImage bgImage;
 
     public LoginPanel(DataService data, LoginHandler handler) {
-        super(new GridBagLayout());
+        super(new BorderLayout());
         this.data = data;
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        setBackground(BG);
+        setBackground(new Color(128, 128, 128));
+
+        loadBackground();
+
+        add(buildHeaderBar(), BorderLayout.NORTH);
+
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setOpaque(false);
 
         CardLayout cards = new CardLayout();
         JPanel cardPanel = new JPanel(cards);
         cardPanel.setOpaque(false);
 
-        JPanel registerPanel = buildRegisterTab(() -> cards.show(cardPanel, "login"));
-        JPanel loginPanel = buildLoginTab(handler, () -> cards.show(cardPanel, "register"));
-
-        cardPanel.add(loginPanel, "login");
-        cardPanel.add(registerPanel, "register");
-
+        JPanel loginTab = buildLoginTab(handler, () -> cards.show(cardPanel, "register"));
+        JPanel registerTab = buildRegisterTab(() -> cards.show(cardPanel, "login"));
+        cardPanel.add(loginTab, "login");
+        cardPanel.add(registerTab, "register");
         cards.show(cardPanel, "login");
 
-        JPanel content = new JPanel(new BorderLayout());
-        content.setOpaque(false);
-        content.add(buildHeader(), BorderLayout.NORTH);
-        content.add(cardPanel, BorderLayout.CENTER);
+        RoundedPanel sideCard = new RoundedPanel(12);
+        sideCard.setBackground(CARD_BG);
+        sideCard.setLayout(new BorderLayout());
+        sideCard.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        sideCard.setPreferredSize(new Dimension(400, 300));
+        sideCard.setMinimumSize(new Dimension(380, 280));
+        sideCard.add(cardPanel, BorderLayout.CENTER);
 
-        RoundedPanel card = new RoundedPanel(18);
-        card.setBackground(CARD);
-        card.setBorder(BorderFactory.createEmptyBorder(18, 22, 18, 22));
-        card.setLayout(new BorderLayout());
-        card.add(content, BorderLayout.CENTER);
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.gridx = 1;
+        gc.gridy = 0;
+        gc.weightx = 0;
+        gc.weighty = 1;
+        gc.anchor = GridBagConstraints.EAST;
+        gc.fill = GridBagConstraints.NONE;
+        gc.insets = new java.awt.Insets(20, 0, 20, 60);
 
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(0, 0, 0, 0);
-        c.gridx = 0;
-        c.gridy = 0;
-        c.anchor = GridBagConstraints.CENTER;
-        c.fill = GridBagConstraints.NONE;
-        add(card, c);
+        GridBagConstraints spacer = new GridBagConstraints();
+        spacer.gridx = 0;
+        spacer.gridy = 0;
+        spacer.weightx = 1;
+        spacer.fill = GridBagConstraints.HORIZONTAL;
+        centerWrapper.add(Box.createGlue(), spacer);
+
+        centerWrapper.add(sideCard, gc);
+        add(centerWrapper, BorderLayout.CENTER);
+
+        add(buildFooterBar(), BorderLayout.SOUTH);
     }
 
-    private JPanel buildHeader() {
-        JPanel header = new JPanel(new BorderLayout(12, 12));
-        header.setBorder(BorderFactory.createEmptyBorder(0, 0, 16, 0));
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (bgImage != null) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                int pw = getWidth(), ph = getHeight();
+                int iw = bgImage.getWidth(), ih = bgImage.getHeight();
+                double scale = Math.max((double) pw / iw, (double) ph / ih);
+                int sw = (int) (iw * scale), sh = (int) (ih * scale);
+                int x = (pw - sw) / 2, y = (ph - sh) / 2;
+                g2.drawImage(bgImage, x, y, sw, sh, null);
+            } finally {
+                g2.dispose();
+            }
+        }
+    }
+
+    private void loadBackground() {
+        String base = System.getProperty("user.dir");
+        String[] candidates = { "images/login-bg.jpg", "images/login-bg.png", "images/bg.png" };
+        for (String c : candidates) {
+            try {
+                File f = new File(base, c);
+                if (f.isFile()) {
+                    bgImage = ImageIO.read(f);
+                    if (bgImage != null) return;
+                }
+            } catch (IOException ignored) {}
+        }
+    }
+
+    private JPanel buildHeaderBar() {
+        JPanel header = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    g2.setColor(HEADER_BG);
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                } finally {
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
         header.setOpaque(false);
+        header.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        header.setPreferredSize(new Dimension(0, 56));
 
-        JLabel logo = new JLabel("");
-        logo.setHorizontalAlignment(SwingConstants.CENTER);
-        logo.setPreferredSize(new Dimension(72, 72));
+        JPanel logoRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        logoRow.setOpaque(false);
 
+        JLabel logoLabel = new JLabel();
         try {
-            File imgFile = new File(System.getProperty("user.dir"), "images/images.png");
-            if (imgFile.isFile()) {
-                BufferedImage img = ImageIO.read(imgFile);
+            File logoFile = new File(System.getProperty("user.dir"), "images/logo-full.png");
+            if (logoFile.isFile()) {
+                BufferedImage img = ImageIO.read(logoFile);
                 if (img != null) {
-                    Image scaled = img.getScaledInstance(64, 64, Image.SCALE_SMOOTH);
-                    logo.setIcon(new ImageIcon(scaled));
+                    int h = 32;
+                    int w = (int) ((double) img.getWidth() / img.getHeight() * h);
+                    Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+                    logoLabel.setIcon(new ImageIcon(scaled));
                 }
             }
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
 
-        JPanel titles = new JPanel(new BorderLayout());
-        titles.setOpaque(false);
-        JLabel title = new JLabel(I18n.t("app.title"));
-        title.setFont(title.getFont().deriveFont(22f));
-        JLabel subtitle = new JLabel(I18n.t("start.subtitle"));
-        titles.add(title, BorderLayout.NORTH);
-        titles.add(subtitle, BorderLayout.CENTER);
+        JLabel titleLabel = new JLabel(I18n.t("app.title"));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
 
-        header.add(logo, BorderLayout.WEST);
-        header.add(titles, BorderLayout.CENTER);
+        logoRow.add(logoLabel);
+        logoRow.add(titleLabel);
+        header.add(logoRow, BorderLayout.WEST);
+
         return header;
     }
 
-    private JPanel buildLoginTab(LoginHandler handler, Runnable showRegister) {
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        p.setOpaque(false);
+    private JPanel buildFooterBar() {
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    g2.setColor(FOOTER_BG);
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                } finally {
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
+        footer.setOpaque(false);
+        footer.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
+        JLabel copy = new JLabel(I18n.t("login.footer"));
+        copy.setForeground(new Color(220, 220, 220));
+        copy.setFont(copy.getFont().deriveFont(Font.PLAIN, 11f));
+        footer.add(copy);
+        return footer;
+    }
 
-        JTextField accountField = new JTextField(18);
-        JPasswordField passField = new JPasswordField(18);
+    /* ── Login tab ───────────────────────────────────────── */
+
+    private JPanel buildLoginTab(LoginHandler handler, Runnable showRegister) {
+        JPanel wrapper = new JPanel(new GridBagLayout());
+        wrapper.setOpaque(false);
+
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBorder(BorderFactory.createEmptyBorder(24, 32, 24, 32));
+
+        JLabel tabTitle = new JLabel(I18n.t("login.button"));
+        tabTitle.setFont(tabTitle.getFont().deriveFont(Font.BOLD, 18f));
+        tabTitle.setForeground(new Color(51, 51, 51));
+        tabTitle.setAlignmentX(0f);
+        p.add(tabTitle);
+
+        JPanel underline = new JPanel();
+        underline.setBackground(PRIMARY);
+        underline.setMaximumSize(new Dimension(40, 3));
+        underline.setAlignmentX(0f);
+        p.add(Box.createVerticalStrut(6));
+        p.add(underline);
+
+        p.add(Box.createVerticalStrut(24));
+
+        PlaceholderTextField accountField = new PlaceholderTextField(20, I18n.t("login.placeholder.account"));
+        styleInput(accountField);
+        JPanel accRow = inputWithPlaceholder(accountField, I18n.t("login.account"));
+        accRow.setAlignmentX(0f);
+        p.add(accRow);
+
+        p.add(Box.createVerticalStrut(16));
+
+        PlaceholderPasswordField passField = new PlaceholderPasswordField(20, I18n.t("login.placeholder.password"));
+        styleInput(passField);
+        JPanel passRow = inputWithPlaceholder(passField, I18n.t("login.password"));
+        passRow.setAlignmentX(0f);
+        p.add(passRow);
+
+        p.add(Box.createVerticalStrut(24));
 
         JButton loginBtn = new JButton(I18n.t("login.button"));
-        JButton forgotBtn = new JButton(I18n.t("login.forgot"));
-        JButton registerBtn = new JButton(I18n.t("login.tab.register"));
-
         stylePrimaryButton(loginBtn);
-        styleLinkButton(forgotBtn);
-        styleLinkButton(registerBtn);
+        loginBtn.setAlignmentX(0f);
+        loginBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        p.add(loginBtn);
 
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(6, 6, 6, 6);
-        c.fill = GridBagConstraints.HORIZONTAL;
-
-        c.gridx = 0; c.gridy = 0; p.add(new JLabel(I18n.t("login.account")), c);
-        c.gridx = 1; c.gridy = 0; p.add(accountField, c);
-
-        c.gridx = 0; c.gridy = 1; p.add(new JLabel(I18n.t("login.password")), c);
-        c.gridx = 1; c.gridy = 1; p.add(passField, c);
-
-        GridBagConstraints cBtn = new GridBagConstraints();
-        cBtn.insets = new Insets(14, 6, 6, 6);
-        cBtn.fill = GridBagConstraints.HORIZONTAL;
-        cBtn.gridx = 0;
-        cBtn.gridy = 2;
-        cBtn.gridwidth = 2;
-        loginBtn.setPreferredSize(new Dimension(0, 38));
-        p.add(loginBtn, cBtn);
+        p.add(Box.createVerticalStrut(14));
 
         JPanel links = new JPanel(new BorderLayout());
         links.setOpaque(false);
+        links.setAlignmentX(0f);
+        links.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        JButton forgotBtn = new JButton(I18n.t("login.forgot"));
+        JButton registerBtn = new JButton(I18n.t("login.tab.register"));
+        styleLinkButton(forgotBtn);
+        styleLinkButton(registerBtn);
         links.add(forgotBtn, BorderLayout.WEST);
         links.add(registerBtn, BorderLayout.EAST);
+        p.add(links);
 
-        GridBagConstraints cLinks = new GridBagConstraints();
-        cLinks.insets = new Insets(4, 6, 0, 6);
-        cLinks.fill = GridBagConstraints.HORIZONTAL;
-        cLinks.gridx = 0;
-        cLinks.gridy = 3;
-        cLinks.gridwidth = 2;
-        p.add(links, cLinks);
+        accountField.addActionListener(e -> loginBtn.doClick());
+        passField.addActionListener(e -> loginBtn.doClick());
 
         loginBtn.addActionListener(e -> {
             String account = accountField.getText().trim();
             String password = new String(passField.getPassword());
 
             if (account.isEmpty() || password.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Account and password are required");
+                JOptionPane.showMessageDialog(this, I18n.t("msg.account.password.required"));
                 return;
             }
 
             java.util.Optional<String> roleName = data.authenticateAndGetRole(account, password);
             if (!roleName.isPresent()) {
-                JOptionPane.showMessageDialog(this, "Account or password incorrect");
+                JOptionPane.showMessageDialog(this, I18n.t("msg.login.failed"));
                 return;
             }
 
@@ -197,7 +304,199 @@ public final class LoginPanel extends JPanel {
             if (showRegister != null) showRegister.run();
         });
 
-        return p;
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        gc.weightx = 1;
+        gc.anchor = GridBagConstraints.CENTER;
+        wrapper.add(p, gc);
+        return wrapper;
+    }
+
+    /* ── Register tab ────────────────────────────────────── */
+
+    private JPanel buildRegisterTab(Runnable showLogin) {
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBorder(BorderFactory.createEmptyBorder(20, 32, 20, 32));
+
+        JLabel tabTitle = new JLabel(I18n.t("register.button"));
+        tabTitle.setFont(tabTitle.getFont().deriveFont(Font.BOLD, 18f));
+        tabTitle.setForeground(new Color(51, 51, 51));
+        tabTitle.setAlignmentX(0f);
+        p.add(tabTitle);
+
+        JPanel underline = new JPanel();
+        underline.setBackground(PRIMARY);
+        underline.setMaximumSize(new Dimension(40, 3));
+        underline.setAlignmentX(0f);
+        p.add(Box.createVerticalStrut(4));
+        p.add(underline);
+        p.add(Box.createVerticalStrut(14));
+
+        JTextField accountField = new JTextField(20);
+        JTextField nameField = new JTextField(20);
+        JTextField emailField = new JTextField(20);
+        JPasswordField passField = new JPasswordField(20);
+        JPasswordField pass2Field = new JPasswordField(20);
+        JTextField skillsField = new JTextField(20);
+        JTextField cvPathField = new JTextField(20);
+
+        for (JTextField tf : new JTextField[]{accountField, nameField, emailField,
+                passField, pass2Field, skillsField, cvPathField}) {
+            styleInput(tf);
+        }
+
+        addField(p, accountField, I18n.t("register.account"));
+        addField(p, nameField, I18n.t("register.name"));
+        addField(p, emailField, I18n.t("register.email"));
+        addField(p, passField, I18n.t("register.password"));
+        addField(p, pass2Field, I18n.t("register.password2"));
+        addField(p, skillsField, I18n.t("register.skills"));
+
+        JPanel cvRow = new JPanel(new BorderLayout(6, 0));
+        cvRow.setOpaque(false);
+        cvRow.setAlignmentX(0f);
+        cvRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        cvPathField.setPreferredSize(new Dimension(0, 32));
+        JButton browse = new JButton(I18n.t("register.browse"));
+        browse.setPreferredSize(new Dimension(70, 32));
+        cvRow.add(cvPathField, BorderLayout.CENTER);
+        cvRow.add(browse, BorderLayout.EAST);
+
+        JLabel cvLabel = new JLabel(I18n.t("register.cv"));
+        cvLabel.setFont(cvLabel.getFont().deriveFont(Font.PLAIN, 12f));
+        cvLabel.setForeground(new Color(102, 102, 102));
+        cvLabel.setAlignmentX(0f);
+        p.add(cvLabel);
+        p.add(Box.createVerticalStrut(4));
+        p.add(cvRow);
+        p.add(Box.createVerticalStrut(10));
+
+        JCheckBox agreeBox = new JCheckBox(I18n.t("register.agree"));
+        agreeBox.setOpaque(false);
+        agreeBox.setAlignmentX(0f);
+        p.add(agreeBox);
+        p.add(Box.createVerticalStrut(14));
+
+        JButton registerBtn = new JButton(I18n.t("register.button"));
+        stylePrimaryButton(registerBtn);
+        registerBtn.setAlignmentX(0f);
+        registerBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        p.add(registerBtn);
+
+        p.add(Box.createVerticalStrut(10));
+
+        JButton backBtn = new JButton(I18n.t("login.tab.login"));
+        styleLinkButton(backBtn);
+        backBtn.setAlignmentX(0f);
+        p.add(backBtn);
+
+        JScrollPane sp = new JScrollPane(p);
+        sp.setOpaque(false);
+        sp.getViewport().setOpaque(false);
+        sp.setBorder(null);
+        wrapper.add(sp, BorderLayout.CENTER);
+
+        browse.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            int res = chooser.showOpenDialog(this);
+            if (res == JFileChooser.APPROVE_OPTION) {
+                File f = chooser.getSelectedFile();
+                if (f != null) cvPathField.setText(f.getAbsolutePath());
+            }
+        });
+
+        backBtn.addActionListener(e -> {
+            if (showLogin != null) showLogin.run();
+        });
+
+        registerBtn.addActionListener(e -> {
+            String account = accountField.getText().trim();
+            String name = nameField.getText().trim();
+            String email = emailField.getText().trim();
+            String pass = new String(passField.getPassword());
+            String pass2 = new String(pass2Field.getPassword());
+            String skills = skillsField.getText().trim();
+            String cvPath = cvPathField.getText().trim();
+
+            if (account.isEmpty() || name.isEmpty() || email.isEmpty() || pass.isEmpty() || pass2.isEmpty() || cvPath.isEmpty()) {
+                JOptionPane.showMessageDialog(this, I18n.t("msg.fields.required"));
+                return;
+            }
+            if (!pass.equals(pass2)) {
+                JOptionPane.showMessageDialog(this, I18n.t("msg.password.mismatch"));
+                return;
+            }
+
+            int minLen = data.getConfig().passwordMinLength();
+            if (pass.length() < minLen) {
+                JOptionPane.showMessageDialog(this, I18n.t("msg.password.tooshort", minLen));
+                return;
+            }
+            if (!agreeBox.isSelected()) {
+                JOptionPane.showMessageDialog(this, I18n.t("msg.agree.required"));
+                return;
+            }
+            if (data.getApplicant(account).isPresent()) {
+                JOptionPane.showMessageDialog(this, I18n.t("msg.account.exists"));
+                return;
+            }
+            if (!isSupportedCv(cvPath, data.getConfig().cvFormats())) {
+                JOptionPane.showMessageDialog(this, I18n.t("ta.profile.unsupported.cv") + data.getConfig().cvFormats());
+                return;
+            }
+
+            String storedCvPath;
+            try {
+                storedCvPath = data.storeCv(account, cvPath);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, I18n.t("ta.profile.cv.savefailed"));
+                return;
+            }
+
+            Applicant a = data.upsertApplicantByAccount(account, name, email, skills, storedCvPath);
+            data.upsertUser(Role.TA.authRole(), a.id(), pass, a.name());
+            JOptionPane.showMessageDialog(this, I18n.t("msg.register.success"));
+            if (showLogin != null) showLogin.run();
+        });
+
+        return wrapper;
+    }
+
+    /* ── Helpers ──────────────────────────────────────────── */
+
+    private static void addField(JPanel p, JTextField tf, String label) {
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(lbl.getFont().deriveFont(Font.PLAIN, 12f));
+        lbl.setForeground(new Color(102, 102, 102));
+        lbl.setAlignmentX(0f);
+        p.add(lbl);
+        p.add(Box.createVerticalStrut(4));
+        JPanel row = inputWithPlaceholder(tf, label);
+        row.setAlignmentX(0f);
+        p.add(row);
+        p.add(Box.createVerticalStrut(10));
+    }
+
+    private static JPanel inputWithPlaceholder(JTextField tf, String placeholder) {
+        tf.putClientProperty("placeholder", placeholder);
+        JPanel row = new JPanel(new BorderLayout());
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        tf.setPreferredSize(new Dimension(0, 36));
+        row.add(tf, BorderLayout.CENTER);
+        return row;
+    }
+
+    private static void styleInput(JTextField tf) {
+        tf.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(INPUT_BORDER, 1),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        tf.setFont(tf.getFont().deriveFont(Font.PLAIN, 14f));
     }
 
     private static void stylePrimaryButton(JButton b) {
@@ -206,7 +505,9 @@ public final class LoginPanel extends JPanel {
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setOpaque(true);
-        b.setPreferredSize(new Dimension(120, 36));
+        b.setFont(b.getFont().deriveFont(Font.BOLD, 15f));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setPreferredSize(new Dimension(0, 42));
     }
 
     private static void styleLinkButton(JButton b) {
@@ -214,7 +515,8 @@ public final class LoginPanel extends JPanel {
         b.setBorderPainted(false);
         b.setContentAreaFilled(false);
         b.setOpaque(false);
-        b.setForeground(PRIMARY);
+        b.setForeground(LINK_COLOR);
+        b.setFont(b.getFont().deriveFont(Font.PLAIN, 12f));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
@@ -241,124 +543,68 @@ public final class LoginPanel extends JPanel {
         }
     }
 
-    private JPanel buildRegisterTab(Runnable showLogin) {
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        p.setOpaque(false);
+    private static final class PlaceholderTextField extends JTextField {
+        private final String placeholder;
 
-        JTextField accountField = new JTextField(18);
-        JTextField nameField = new JTextField(18);
-        JTextField emailField = new JTextField(18);
-        JPasswordField passField = new JPasswordField(18);
-        JPasswordField pass2Field = new JPasswordField(18);
-        JTextField skillsField = new JTextField(18);
-        JTextField cvPathField = new JTextField(18);
-        JCheckBox agreeBox = new JCheckBox(I18n.t("register.agree"));
+        PlaceholderTextField(int columns, String placeholder) {
+            super(columns);
+            this.placeholder = placeholder;
+            addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override public void focusGained(java.awt.event.FocusEvent e) { repaint(); }
+                @Override public void focusLost(java.awt.event.FocusEvent e) { repaint(); }
+            });
+        }
 
-        JButton browse = new JButton(I18n.t("register.browse"));
-        JButton registerBtn = new JButton(I18n.t("register.button"));
-        JButton backBtn = new JButton(I18n.t("login.tab.login"));
-
-        stylePrimaryButton(registerBtn);
-        styleLinkButton(backBtn);
-
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(6, 6, 6, 6);
-        c.fill = GridBagConstraints.HORIZONTAL;
-
-        c.gridx = 0; c.gridy = 0; p.add(new JLabel(I18n.t("register.account")), c);
-        c.gridx = 1; c.gridy = 0; p.add(accountField, c);
-
-        c.gridx = 0; c.gridy = 1; p.add(new JLabel(I18n.t("register.name")), c);
-        c.gridx = 1; c.gridy = 1; p.add(nameField, c);
-
-        c.gridx = 0; c.gridy = 2; p.add(new JLabel(I18n.t("register.email")), c);
-        c.gridx = 1; c.gridy = 2; p.add(emailField, c);
-
-        c.gridx = 0; c.gridy = 3; p.add(new JLabel(I18n.t("register.password")), c);
-        c.gridx = 1; c.gridy = 3; p.add(passField, c);
-
-        c.gridx = 0; c.gridy = 4; p.add(new JLabel(I18n.t("register.password2")), c);
-        c.gridx = 1; c.gridy = 4; p.add(pass2Field, c);
-
-        c.gridx = 0; c.gridy = 5; p.add(new JLabel(I18n.t("register.skills")), c);
-        c.gridx = 1; c.gridy = 5; p.add(skillsField, c);
-
-        c.gridx = 0; c.gridy = 6; p.add(new JLabel(I18n.t("register.cv")), c);
-        c.gridx = 1; c.gridy = 6; p.add(cvPathField, c);
-        c.gridx = 2; c.gridy = 6; p.add(browse, c);
-
-        c.gridx = 1; c.gridy = 7; p.add(agreeBox, c);
-        JPanel actionBtns = new JPanel();
-        actionBtns.setOpaque(false);
-        actionBtns.add(backBtn);
-        actionBtns.add(registerBtn);
-        c.gridx = 1; c.gridy = 8; p.add(actionBtns, c);
-
-        browse.addActionListener(e -> {
-            JFileChooser chooser = new JFileChooser();
-            int res = chooser.showOpenDialog(this);
-            if (res == JFileChooser.APPROVE_OPTION) {
-                File f = chooser.getSelectedFile();
-                if (f != null) cvPathField.setText(f.getAbsolutePath());
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (getText().isEmpty() && placeholder != null) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    g2.setColor(new Color(160, 160, 160, 102));
+                    g2.setFont(getFont());
+                    java.awt.FontMetrics fm = g2.getFontMetrics();
+                    int x = getInsets().left;
+                    int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                    g2.drawString(placeholder, x, y);
+                } finally {
+                    g2.dispose();
+                }
             }
-        });
+        }
+    }
 
-        backBtn.addActionListener(e -> {
-            if (showLogin != null) showLogin.run();
-        });
+    private static final class PlaceholderPasswordField extends JPasswordField {
+        private final String placeholder;
 
-        registerBtn.addActionListener(e -> {
-            String account = accountField.getText().trim();
-            String name = nameField.getText().trim();
-            String email = emailField.getText().trim();
-            String pass = new String(passField.getPassword());
-            String pass2 = new String(pass2Field.getPassword());
-            String skills = skillsField.getText().trim();
-            String cvPath = cvPathField.getText().trim();
+        PlaceholderPasswordField(int columns, String placeholder) {
+            super(columns);
+            this.placeholder = placeholder;
+            addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override public void focusGained(java.awt.event.FocusEvent e) { repaint(); }
+                @Override public void focusLost(java.awt.event.FocusEvent e) { repaint(); }
+            });
+        }
 
-            if (account.isEmpty() || name.isEmpty() || email.isEmpty() || pass.isEmpty() || pass2.isEmpty() || cvPath.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "All fields marked with * are required");
-                return;
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (getPassword().length == 0 && placeholder != null) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    g2.setColor(new Color(160, 160, 160, 102));
+                    g2.setFont(getFont());
+                    java.awt.FontMetrics fm = g2.getFontMetrics();
+                    int x = getInsets().left;
+                    int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                    g2.drawString(placeholder, x, y);
+                } finally {
+                    g2.dispose();
+                }
             }
-            if (!pass.equals(pass2)) {
-                JOptionPane.showMessageDialog(this, "Passwords do not match");
-                return;
-            }
-
-            int minLen = data.getConfig().passwordMinLength();
-            if (pass.length() < minLen) {
-                JOptionPane.showMessageDialog(this, "Password must be at least " + minLen + " characters");
-                return;
-            }
-            if (!agreeBox.isSelected()) {
-                JOptionPane.showMessageDialog(this, "Please accept the registration terms");
-                return;
-            }
-            if (data.getApplicant(account).isPresent()) {
-                JOptionPane.showMessageDialog(this, "Account already exists");
-                return;
-            }
-            if (!isSupportedCv(cvPath, data.getConfig().cvFormats())) {
-                JOptionPane.showMessageDialog(this, "Unsupported CV format. Allowed: " + data.getConfig().cvFormats());
-                return;
-            }
-
-            String storedCvPath;
-            try {
-                storedCvPath = data.storeCv(account, cvPath);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Unable to save CV into project data folder");
-                return;
-            }
-
-            Applicant a = data.upsertApplicantByAccount(account, name, email, skills, storedCvPath);
-            data.upsertUser(Role.TA.authRole(), a.id(), pass, a.name());
-            JOptionPane.showMessageDialog(this, "Registration successful. Please login.");
-            if (showLogin != null) showLogin.run();
-        });
-
-        return p;
+        }
     }
 
     private static boolean isSupportedCv(String path, String formatsCsv) {

@@ -18,6 +18,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class AdminLogPage extends JPanel {
     private final DataService data;
@@ -31,25 +32,25 @@ public final class AdminLogPage extends JPanel {
     public AdminLogPage(DataService data) {
         super(new BorderLayout(10, 10));
         this.data = data;
-        setBorder(BorderFactory.createTitledBorder("Operation Logs"));
+        setBorder(BorderFactory.createTitledBorder(I18n.t("admin.logs.title")));
 
         area.setEditable(false);
 
         JPanel top = new JPanel(new BorderLayout(10, 10));
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        filters.add(new JLabel("Actor:"));
+        filters.add(new JLabel(I18n.t("admin.logs.actor")));
         filters.add(actor);
-        filters.add(new JLabel("Action:"));
+        filters.add(new JLabel(I18n.t("admin.logs.action")));
         filters.add(action);
-        filters.add(new JLabel("Level:"));
+        filters.add(new JLabel(I18n.t("admin.logs.level")));
         filters.add(level);
-        filters.add(new JLabel("Keyword:"));
+        filters.add(new JLabel(I18n.t("admin.logs.keyword")));
         filters.add(keyword);
 
         JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        JButton refresh = new JButton("Refresh");
-        JButton export = new JButton("Export");
-        JButton clear = new JButton("Clear");
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton export = new JButton(I18n.t("common.export"));
+        JButton clear = new JButton(I18n.t("common.clear"));
         actionsPanel.add(refresh);
         actionsPanel.add(export);
         actionsPanel.add(clear);
@@ -111,7 +112,7 @@ public final class AdminLogPage extends JPanel {
 
     private void export() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Export Logs");
+        chooser.setDialogTitle(I18n.t("admin.logs.export.title"));
         int res = chooser.showSaveDialog(this);
         if (res != JFileChooser.APPROVE_OPTION) return;
 
@@ -123,7 +124,7 @@ public final class AdminLogPage extends JPanel {
     }
 
     private void clear() {
-        int ok = javax.swing.JOptionPane.showConfirmDialog(this, "Clear all logs?", "Confirm", javax.swing.JOptionPane.YES_NO_OPTION);
+        int ok = javax.swing.JOptionPane.showConfirmDialog(this, I18n.t("admin.logs.confirm.clear"), I18n.t("common.confirm"), javax.swing.JOptionPane.YES_NO_OPTION);
         if (ok != javax.swing.JOptionPane.YES_OPTION) return;
         try {
             Files.write(data.dataDir().resolve("temp_operation.txt"), new byte[0], StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);

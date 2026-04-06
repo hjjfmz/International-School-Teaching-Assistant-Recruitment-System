@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class MoHomePage extends JPanel {
     public interface Nav {
@@ -23,26 +24,26 @@ public final class MoHomePage extends JPanel {
         super(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
-        JLabel welcome = new JLabel("Hi " + account + ", welcome to the TA recruitment system");
+        JLabel welcome = new JLabel(I18n.t("mo.home.welcome", account));
         add(welcome, BorderLayout.NORTH);
 
         JPanel quick = new JPanel(new GridLayout(1, 2, 10, 10));
-        JButton postBtn = new JButton("Post a new job");
-        JButton pendingBtn = new JButton("Pending applicants");
+        JButton postBtn = new JButton(I18n.t("mo.home.postjob"));
+        JButton pendingBtn = new JButton(I18n.t("mo.home.pending"));
         quick.add(postBtn);
         quick.add(pendingBtn);
         add(quick, BorderLayout.CENTER);
 
         JPanel bottom = new JPanel(new BorderLayout());
-        bottom.setBorder(BorderFactory.createTitledBorder("Stats"));
+        bottom.setBorder(BorderFactory.createTitledBorder(I18n.t("mo.home.stats")));
         bottom.add(statsLabel, BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
 
         postBtn.addActionListener(e -> {
-            if (nav != null) nav.go("Post Job");
+            if (nav != null) nav.go(I18n.t("nav.mo.post"));
         });
         pendingBtn.addActionListener(e -> {
-            if (nav != null) nav.go("Applicants");
+            if (nav != null) nav.go(I18n.t("nav.mo.applicants"));
         });
 
         refreshStats(data, account);
@@ -60,6 +61,6 @@ public final class MoHomePage extends JPanel {
                 if (a.status() == Application.Status.ACCEPTED) accepted++;
             }
         }
-        statsLabel.setText("Jobs posted: " + jobs + "   Pending applicants: " + pending + "   Accepted: " + accepted);
+        statsLabel.setText(I18n.t("mo.home.stats.text", jobs, pending, accepted));
     }
 }

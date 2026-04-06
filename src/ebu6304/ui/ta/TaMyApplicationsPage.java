@@ -22,6 +22,7 @@ import javax.swing.table.DefaultTableModel;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class TaMyApplicationsPage extends JPanel {
     private final DataService data;
@@ -37,7 +38,7 @@ public final class TaMyApplicationsPage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         model = new DefaultTableModel(new Object[] {
-                "Application ID", "Job ID", "Job Title", "Status"
+                I18n.t("ta.myapps.col.appid"), I18n.t("ta.myapps.col.jobid"), I18n.t("ta.myapps.col.jobtitle"), I18n.t("ta.myapps.col.status")
         }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -48,13 +49,13 @@ public final class TaMyApplicationsPage extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("My Applications"));
-        top.add(new JLabel("Only pending applications can be withdrawn"), BorderLayout.WEST);
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.myapps.title")));
+        top.add(new JLabel(I18n.t("ta.myapps.hint")), BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton refresh = new JButton("Refresh");
-        JButton withdraw = new JButton("Withdraw");
-        JButton export = new JButton("Export CSV" );
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton withdraw = new JButton(I18n.t("common.withdraw"));
+        JButton export = new JButton(I18n.t("common.exportcsv"));
         actions.add(refresh);
         actions.add(withdraw);
         actions.add(export);
@@ -82,24 +83,25 @@ public final class TaMyApplicationsPage extends JPanel {
     private void withdrawSelected() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select an application");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.application"));
             return;
         }
-        String status = String.valueOf(model.getValueAt(r, 3));
+        int modelRow = table.convertRowIndexToModel(r);
+        String status = String.valueOf(model.getValueAt(modelRow, 3));
         if (!"SUBMITTED".equalsIgnoreCase(status)) {
-            JOptionPane.showMessageDialog(this, "Only pending applications can be withdrawn");
+            JOptionPane.showMessageDialog(this, I18n.t("ta.myapps.cannot.withdraw"));
             return;
         }
-        String jobId = String.valueOf(model.getValueAt(r, 1));
-        int ok = JOptionPane.showConfirmDialog(this, "Withdraw this application?", "Confirm", JOptionPane.YES_NO_OPTION);
+        String jobId = String.valueOf(model.getValueAt(modelRow, 1));
+        int ok = JOptionPane.showConfirmDialog(this, I18n.t("ta.myapps.confirm.withdraw"), I18n.t("common.confirm"), JOptionPane.YES_NO_OPTION);
         if (ok != JOptionPane.YES_OPTION) return;
 
         boolean done = data.withdrawApplication(account, jobId);
         if (!done) {
-            JOptionPane.showMessageDialog(this, "Withdraw failed");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.withdraw.failed"));
             return;
         }
-        JOptionPane.showMessageDialog(this, "Withdrawn" );
+        JOptionPane.showMessageDialog(this, I18n.t("msg.withdrawn"));
         refresh();
     }
 
@@ -119,9 +121,9 @@ public final class TaMyApplicationsPage extends JPanel {
 
         try {
             Files.write(chooser.getSelectedFile().toPath(), lines, StandardCharsets.UTF_8);
-            JOptionPane.showMessageDialog(this, "Exported" );
+            JOptionPane.showMessageDialog(this, I18n.t("msg.export.success"));
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Export failed" );
+            JOptionPane.showMessageDialog(this, I18n.t("msg.export.failed"));
         }
     }
 }

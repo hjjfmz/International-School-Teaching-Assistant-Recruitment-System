@@ -30,6 +30,7 @@ import ebu6304.storage.Csv;
 import ebu6304.storage.DataService;
 import ebu6304.storage.MiniJson;
 import ebu6304.storage.OperationLog;
+import ebu6304.ui.I18n;
 
 public final class AdminExportPage extends JPanel {
     private final DataService data;
@@ -46,17 +47,17 @@ public final class AdminExportPage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("Data Export"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.export.title")));
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        left.add(new JLabel("Type:"));
+        left.add(new JLabel(I18n.t("admin.export.type")));
         left.add(type);
-        left.add(new JLabel("Format:"));
+        left.add(new JLabel(I18n.t("admin.export.format")));
         left.add(format);
         top.add(left, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton export = new JButton("Export" );
+        JButton export = new JButton(I18n.t("common.export"));
         actions.add(export);
         top.add(actions, BorderLayout.EAST);
 
@@ -69,7 +70,7 @@ public final class AdminExportPage extends JPanel {
 
         preview.setEditable(false);
         JPanel center = new JPanel(new BorderLayout(6, 6));
-        center.add(new JLabel("Preview (shows first ~50 lines of what will be exported)"), BorderLayout.NORTH);
+        center.add(new JLabel(I18n.t("admin.export.preview")), BorderLayout.NORTH);
         center.add(new JScrollPane(preview), BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
 
@@ -96,9 +97,9 @@ public final class AdminExportPage extends JPanel {
                 exportOne(dir, t, f);
             }
             OperationLog.append(data.tempOperationFile(), "INFO", "actor=" + actor + " action=export type=" + t + " format=" + f + " dir=" + dir.toAbsolutePath());
-            JOptionPane.showMessageDialog(this, "Exported" );
+            JOptionPane.showMessageDialog(this, I18n.t("msg.export.success"));
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Export failed" );
+            JOptionPane.showMessageDialog(this, I18n.t("msg.export.failed"));
         }
     }
 

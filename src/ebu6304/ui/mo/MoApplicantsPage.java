@@ -3,11 +3,10 @@ package ebu6304.ui.mo;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -32,6 +31,7 @@ import ebu6304.model.Applicant;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 import ebu6304.util.SkillMatcher;
 
 /**
@@ -65,7 +65,7 @@ public final class MoApplicantsPage extends JPanel {
 
         // Enhanced table model with skill match column
         model = new DefaultTableModel(new Object[] {
-                "Application ID", "TA Account", "TA Name", "Email", "Skills", "Match %", "Status"
+                I18n.t("mo.applicants.col.appid"), I18n.t("mo.applicants.col.taaccount"), I18n.t("mo.applicants.col.taname"), I18n.t("mo.applicants.col.email"), I18n.t("mo.applicants.col.skills"), I18n.t("mo.applicants.col.match"), I18n.t("mo.applicants.col.status")
         }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -84,7 +84,7 @@ public final class MoApplicantsPage extends JPanel {
         table.setAutoCreateRowSorter(true);
         styleTable(table);
         table.setDefaultRenderer(Object.class, new ZebraRenderer());
-        table.setDefaultRenderer(Integer.class, new ZebraRenderer());
+        table.setDefaultRenderer(Integer.class, new MatchPercentRenderer());
 
         // Custom sorter for proper numeric sorting on match percentage
         sorter = new TableRowSorter<DefaultTableModel>(model);
@@ -92,25 +92,25 @@ public final class MoApplicantsPage extends JPanel {
 
         // Top panel with filters
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("Applicants"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("mo.applicants.title")));
         top.setOpaque(false);
 
         // Filter panel (left side)
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel filters = new JPanel(new BorderLayout());
         filters.setOpaque(false);
-        filters.add(new JLabel("Job:"));
+        filters.add(new JLabel(I18n.t("common.job")), BorderLayout.NORTH);
         styleCombo(jobsBox);
-        filters.add(jobsBox);
-        filters.add(new JLabel("Status:"));
+        filters.add(jobsBox, BorderLayout.CENTER);
+        filters.add(new JLabel(I18n.t("common.status")), BorderLayout.EAST);
         styleCombo(statusFilter);
-        filters.add(statusFilter);
-        filters.add(new JLabel("Search:"));
+        filters.add(statusFilter, BorderLayout.SOUTH);
+        filters.add(new JLabel(I18n.t("common.search.label")), BorderLayout.WEST);
         styleSearchField(searchField);
-        filters.add(searchField);
+        filters.add(searchField, BorderLayout.EAST);
         
-        JButton searchBtn = new JButton("Search");
+        JButton searchBtn = new JButton(I18n.t("common.search"));
         styleActionButton(searchBtn);
-        filters.add(searchBtn);
+        filters.add(searchBtn, BorderLayout.SOUTH);
         
         // Layout: stack filters and actions vertically to avoid any overlap in narrow windows
         JPanel topContent = new JPanel(new BorderLayout());
@@ -120,11 +120,11 @@ public final class MoApplicantsPage extends JPanel {
         // Action buttons
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 2));
         actions.setOpaque(false);
-        JButton refresh = new JButton("Refresh");
-        JButton openCv = new JButton("Open CV");
-        JButton accept = new JButton("Accept");
-        JButton reject = new JButton("Reject");
-        JButton details = new JButton("View Details");
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton openCv = new JButton(I18n.t("mo.applicants.opencv"));
+        JButton accept = new JButton(I18n.t("common.accept"));
+        JButton reject = new JButton(I18n.t("common.reject"));
+        JButton details = new JButton(I18n.t("mo.applicants.viewdetails"));
 
 
         styleActionButton(refresh);
@@ -148,8 +148,15 @@ public final class MoApplicantsPage extends JPanel {
         jobsBox.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { refresh(); } });
         statusFilter.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { applyFilter(); } });
         searchBtn.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { applyFilter(); } });
-        accept.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setStatusSelected(Application.Status.ACCEPTED); } });
-        reject.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { setStatusSelected(Application.Status.REJECTED); } });
+        searchField.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { applyFilter(); } });
+        accept.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
+            if (table.getSelectedRowCount() > 1) batchSetStatus(Application.Status.ACCEPTED);
+            else setStatusSelected(Application.Status.ACCEPTED);
+        } });
+        reject.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) {
+            if (table.getSelectedRowCount() > 1) batchSetStatus(Application.Status.REJECTED);
+            else setStatusSelected(Application.Status.REJECTED);
+        } });
         openCv.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { openCv(); } });
         details.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { showDetails(); } });
 
@@ -215,6 +222,26 @@ public final class MoApplicantsPage extends JPanel {
         b.setForeground(new Color(220, 38, 38));
     }
 
+    private static final class MatchPercentRenderer extends DefaultTableCellRenderer {
+        @Override
+        public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                boolean hasFocus, int row, int column) {
+            java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected && value instanceof Integer) {
+                int pct = ((Integer) value).intValue();
+                if (pct >= 70) c.setForeground(new Color(22, 163, 74));
+                else if (pct >= 40) c.setForeground(new Color(202, 138, 4));
+                else c.setForeground(new Color(220, 38, 38));
+                setFont(getFont().deriveFont(Font.BOLD));
+            } else if (!isSelected) {
+                c.setForeground(new Color(30, 41, 59));
+            }
+            c.setBackground(isSelected ? table.getSelectionBackground() : (row % 2 == 0 ? Color.WHITE : new Color(249, 251, 253)));
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+            return c;
+        }
+    }
+
     private static final class ZebraRenderer extends DefaultTableCellRenderer {
         private static final Color ODD = new Color(255, 255, 255);
         private static final Color EVEN = new Color(249, 251, 253);
@@ -269,6 +296,7 @@ public final class MoApplicantsPage extends JPanel {
         
         // Sort by match percentage (descending) by default
         sorter.setSortKeys(java.util.Collections.singletonList(new RowSorter.SortKey(5, javax.swing.SortOrder.DESCENDING)));
+        applyFilter();
     }
 
     /**
@@ -309,7 +337,7 @@ public final class MoApplicantsPage extends JPanel {
     private void setStatusSelected(Application.Status st) {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select an applicant");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.applicant"));
             return;
         }
         
@@ -318,7 +346,7 @@ public final class MoApplicantsPage extends JPanel {
         String appId = String.valueOf(model.getValueAt(modelRow, 0));
         
         data.setApplicationStatus(appId, st);
-        JOptionPane.showMessageDialog(this, "Application " + st.name());
+        JOptionPane.showMessageDialog(this, I18n.t("msg.status.updated", st.name()));
         refresh();
     }
 
@@ -328,13 +356,13 @@ public final class MoApplicantsPage extends JPanel {
     private void batchSetStatus(Application.Status st) {
         int[] selectedRows = table.getSelectedRows();
         if (selectedRows.length == 0) {
-            JOptionPane.showMessageDialog(this, "Please select one or more applicants (hold Ctrl or Shift to multi-select)");
+            JOptionPane.showMessageDialog(this, I18n.t("mo.applicants.batch.multiselect"));
             return;
         }
         
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to " + st.name() + " " + selectedRows.length + " applicant(s)?", 
-            "Confirm Batch Operation", 
+            I18n.t("mo.applicants.batch.confirm", st.name(), selectedRows.length), 
+            I18n.t("mo.applicants.batch.title"), 
             JOptionPane.YES_NO_OPTION);
         
         if (confirm != JOptionPane.YES_OPTION) return;
@@ -347,7 +375,7 @@ public final class MoApplicantsPage extends JPanel {
             success++;
         }
         
-        JOptionPane.showMessageDialog(this, success + " application(s) " + st.name());
+        JOptionPane.showMessageDialog(this, I18n.t("msg.status.updated.batch", success, st.name()));
         refresh();
     }
 
@@ -357,7 +385,7 @@ public final class MoApplicantsPage extends JPanel {
     private void openCv() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select an applicant");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.applicant"));
             return;
         }
         
@@ -367,14 +395,14 @@ public final class MoApplicantsPage extends JPanel {
         
         Applicant ta = data.getApplicant(taAccount).orElse(null);
         if (ta == null || ta.cvPath() == null || ta.cvPath().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No CV available for this applicant");
+            JOptionPane.showMessageDialog(this, I18n.t("mo.applicants.nocv"));
             return;
         }
         
         try {
             java.awt.Desktop.getDesktop().open(new java.io.File(ta.cvPath()));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Unable to open CV file: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, I18n.t("mo.applicants.cv.openfailed") + ex.getMessage());
         }
     }
 
@@ -384,21 +412,13 @@ public final class MoApplicantsPage extends JPanel {
     private void showDetails() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select an applicant");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.applicant"));
             return;
         }
         
         int modelRow = table.convertRowIndexToModel(r);
-        String appId = String.valueOf(model.getValueAt(modelRow, 0));
         String taAccount = String.valueOf(model.getValueAt(modelRow, 1));
-        
-        Application app = null;
-        for (Application a : data.listApplicationsForApplicant(taAccount)) {
-            if (a.id().equals(appId)) {
-                app = a;
-                break;
-            }
-        }
+        String appStatus = String.valueOf(model.getValueAt(modelRow, 6));
         
         Applicant ta = data.getApplicant(taAccount).orElse(null);
         JobItem it = (JobItem) jobsBox.getSelectedItem();
@@ -435,7 +455,7 @@ public final class MoApplicantsPage extends JPanel {
         }
         
         sb.append("\n=== Application Status ===\n\n");
-        sb.append("Status: ").append(app != null ? app.status().name() : "Unknown").append("\n");
+        sb.append("Status: ").append(appStatus).append("\n");
         
         // Create a larger dialog for details
         javax.swing.JTextArea textArea = new javax.swing.JTextArea(sb.toString());
@@ -443,7 +463,7 @@ public final class MoApplicantsPage extends JPanel {
         textArea.setRows(20);
         textArea.setColumns(50);
         JScrollPane scrollPane = new JScrollPane(textArea);
-        JOptionPane.showMessageDialog(this, scrollPane, "Applicant Details", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, scrollPane, I18n.t("mo.applicants.details.title"), JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**

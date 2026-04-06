@@ -16,6 +16,7 @@ import javax.swing.JFileChooser;
 
 import ebu6304.model.Applicant;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class TaResumePage extends JPanel {
     private final DataService data;
@@ -30,18 +31,18 @@ public final class TaResumePage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createTitledBorder("Resume"));
+        form.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.resume.title")));
 
         cvField.setEditable(false);
 
-        JButton browse = new JButton("Re-upload");
-        JButton open = new JButton("Open CV");
+        JButton browse = new JButton(I18n.t("ta.resume.reupload"));
+        JButton open = new JButton(I18n.t("ta.resume.opencv"));
 
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6, 6, 6, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
 
-        c.gridx = 0; c.gridy = 0; form.add(new JLabel("Current CV path"), c);
+        c.gridx = 0; c.gridy = 0; form.add(new JLabel(I18n.t("ta.resume.currentcv")), c);
         c.gridx = 1; c.gridy = 0; form.add(cvField, c);
 
         JPanel btns = new JPanel();
@@ -70,7 +71,7 @@ public final class TaResumePage extends JPanel {
         if (f == null) return;
         String path = f.getAbsolutePath();
         if (!isSupported(path, data.getConfig().cvFormats())) {
-            JOptionPane.showMessageDialog(this, "Unsupported CV format. Allowed: " + data.getConfig().cvFormats());
+            JOptionPane.showMessageDialog(this, I18n.t("ta.profile.unsupported.cv") + data.getConfig().cvFormats());
             return;
         }
 
@@ -81,13 +82,13 @@ public final class TaResumePage extends JPanel {
         try {
             storedCvPath = data.storeCv(a.id(), path);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Unable to save CV into project data folder");
+            JOptionPane.showMessageDialog(this, I18n.t("ta.profile.cv.savefailed"));
             return;
         }
 
         Applicant updated = a.withProfile(a.name(), a.email(), a.skills(), storedCvPath);
         data.upsertApplicant(updated);
-        JOptionPane.showMessageDialog(this, "Upload success");
+        JOptionPane.showMessageDialog(this, I18n.t("msg.upload.success"));
         load();
     }
 
@@ -99,7 +100,7 @@ public final class TaResumePage extends JPanel {
         try {
             java.awt.Desktop.getDesktop().open(new File(path));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Unable to open file");
+            JOptionPane.showMessageDialog(this, I18n.t("ta.resume.openfailed"));
         }
     }
 
