@@ -81,7 +81,7 @@ public final class AdminUserManagementPage extends JPanel {
         actions.add(refresh);
         actions.add(enable);
         actions.add(disable);
-        actions.add(addMo);
+        //actions.add(addMo);
         actions.add(delete);
         top.add(actions, BorderLayout.EAST);
 
@@ -89,7 +89,7 @@ public final class AdminUserManagementPage extends JPanel {
         roleFilter.addActionListener(e -> refresh());
         enable.addActionListener(e -> setUserEnabled(true));
         disable.addActionListener(e -> setUserEnabled(false));
-        addMo.addActionListener(e -> addMoUser());
+        //addMo.addActionListener(e -> addMoUser());
         delete.addActionListener(e -> delete());
 
         add(top, BorderLayout.NORTH);
