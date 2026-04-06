@@ -16,6 +16,7 @@ import javax.swing.table.DefaultTableModel;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class MoResultsPage extends JPanel {
     private final DataService data;
@@ -31,7 +32,7 @@ public final class MoResultsPage extends JPanel {
         this.account = account;
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
-        model = new DefaultTableModel(new Object[] { "Application ID", "TA Account", "Status" }, 0) {
+        model = new DefaultTableModel(new Object[] { I18n.t("mo.results.col.appid"), I18n.t("mo.results.col.taaccount"), I18n.t("mo.results.col.status") }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -40,16 +41,16 @@ public final class MoResultsPage extends JPanel {
         table = new JTable(model);
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("Results"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("mo.results.title")));
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        left.add(new JLabel("Job:"));
+        left.add(new JLabel(I18n.t("common.job")));
         left.add(jobsBox);
         top.add(left, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton refresh = new JButton("Refresh");
-        JButton send = new JButton("Send notice (placeholder)" );
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton send = new JButton(I18n.t("mo.results.send"));
         actions.add(refresh);
         actions.add(send);
         top.add(actions, BorderLayout.EAST);

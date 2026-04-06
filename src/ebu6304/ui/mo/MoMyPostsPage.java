@@ -13,6 +13,7 @@ import javax.swing.table.DefaultTableModel;
 
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class MoMyPostsPage extends JPanel {
     private final DataService data;
@@ -27,7 +28,7 @@ public final class MoMyPostsPage extends JPanel {
         this.account = account;
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
-        model = new DefaultTableModel(new Object[] { "Job ID", "Title", "Hours/week", "Required skills" }, 0) {
+        model = new DefaultTableModel(new Object[] { I18n.t("mo.myposts.col.id"), I18n.t("mo.myposts.col.title"), I18n.t("mo.myposts.col.hours"), I18n.t("mo.myposts.col.skills") }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -36,12 +37,12 @@ public final class MoMyPostsPage extends JPanel {
         table = new JTable(model);
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("My Posts"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("mo.myposts.title")));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton refresh = new JButton("Refresh");
+        JButton refresh = new JButton(I18n.t("common.refresh"));
         actions.add(refresh);
-        top.add(new JLabel("Showing jobs posted by you"), BorderLayout.WEST);
+        top.add(new JLabel(I18n.t("mo.myposts.hint")), BorderLayout.WEST);
         top.add(actions, BorderLayout.EAST);
 
         refresh.addActionListener(e -> refresh());

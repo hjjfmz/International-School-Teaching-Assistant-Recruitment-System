@@ -48,8 +48,8 @@ public final class AppLayout extends JPanel {
     private final JLabel roleLabel = new JLabel(" ");
     private final JLabel accountLabel = new JLabel(" ");
     private final JButton logoutBtn = new JButton(I18n.t("common.logout"));
-    private final BadgeIconButton notifBtn = new BadgeIconButton("\uD83D\uDD14");
-    private final BadgeIconButton settingsBtn = new BadgeIconButton("\u2699");
+    private final BadgeIconButton notifBtn = new BadgeIconButton(IconFactory.bell(32, new Color(90, 98, 110)));
+    private final BadgeIconButton settingsBtn = new BadgeIconButton(IconFactory.gear(32, new Color(90, 98, 110)));
     private final JButton avatarBtn = new JButton("");
 
     private int unreadNotifications = 0;
@@ -59,6 +59,7 @@ public final class AppLayout extends JPanel {
 
     private Runnable onNotificationsOpened;
     private Supplier<String> notificationsTextSupplier;
+    private Runnable onLanguageChange;
 
     private final StatusBar statusBar = new StatusBar();
 
@@ -76,9 +77,10 @@ public final class AppLayout extends JPanel {
     private static final Color APP_BG = new Color(245, 247, 250);
     private static final Color CARD_BG = Color.WHITE;
 
-    public AppLayout(Role role, String[] navItems, LogoutHandler logout, NavHandler nav) {
+    public AppLayout(Role role, String[] navItems, LogoutHandler logout, NavHandler nav, Runnable onLanguageChange) {
         super(new BorderLayout());
 
+        this.onLanguageChange = onLanguageChange;
         applyTheme(role);
         setBackground(APP_BG);
 
@@ -149,13 +151,15 @@ public final class AppLayout extends JPanel {
         navTitle.setForeground(Color.WHITE);
         navTitle.setFont(navTitle.getFont().deriveFont(Font.BOLD, 18f));
         navTitle.setBorder(BorderFactory.createEmptyBorder(0, 10, 12, 10));
+        navTitle.setAlignmentX(0f);
         navPanel.add(navTitle);
 
         if (navItems != null) {
             for (int i = 0; i < navItems.length; i++) {
                 String key = navItems[i];
                 if (key == null) continue;
-                NavItemButton b = new NavItemButton(key, iconFor(key, role));
+                ImageIcon navIcon = iconFor(key, role);
+                NavItemButton b = new NavItemButton(key, navIcon);
                 b.setForeground(Color.WHITE);
                 b.setFocusPainted(false);
                 b.setBorderPainted(false);
@@ -163,6 +167,8 @@ public final class AppLayout extends JPanel {
                 b.setHorizontalAlignment(SwingConstants.LEFT);
                 b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                 b.setMargin(new Insets(12, 14, 12, 14));
+                b.setAlignmentX(0f);
+                b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
                 b.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseEntered(MouseEvent e) {
@@ -259,7 +265,7 @@ public final class AppLayout extends JPanel {
         avatarBtn.setIcon(loadAvatarIcon());
 
         JPopupMenu menu = new JPopupMenu();
-        JMenuItem profileItem = new JMenuItem("Profile");
+        JMenuItem profileItem = new JMenuItem(I18n.t("layout.profile"));
         profileItem.addActionListener(e -> openProfile());
         JMenuItem logoutItem = new JMenuItem(I18n.t("common.logout"));
         logoutItem.addActionListener(e -> logoutBtn.doClick());
@@ -295,19 +301,37 @@ public final class AppLayout extends JPanel {
         }
     }
 
-    private static String iconFor(String key, Role role) {
+    private static ImageIcon iconFor(String key, Role role) {
+        Color fg = Color.WHITE;
+        int sz = 32;
         String k = key == null ? "" : key.toLowerCase();
-        if (k.contains("home")) return "\u2302";
-        if (k.contains("profile") || k.contains("user")) return "\uD83D\uDC64";
-        if (k.contains("resume")) return "\uD83D\uDCC4";
-        if (k.contains("job")) return "\u2692";
-        if (k.contains("application")) return "\u2709";
-        if (k.contains("result")) return "\u2714";
-        if (k.contains("config") || k.contains("system")) return "\u2699";
-        if (k.contains("export")) return "\u21E9";
-        if (k.contains("log")) return "\u2630";
-        if (role == Role.ADMIN) return "\uD83D\uDEE1";
-        return "\u2022";
+        if (k.contains("home")) return IconFactory.home(sz, fg);
+        if (k.contains("profile") || k.contains("user")) return IconFactory.user(sz, fg);
+        if (k.contains("resume")) return IconFactory.document(sz, fg);
+        if (k.contains("job")) return IconFactory.hammer(sz, fg);
+        if (k.contains("application")) return IconFactory.envelope(sz, fg);
+        if (k.contains("result")) return IconFactory.check(sz, fg);
+        if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
+        if (k.contains("export")) return IconFactory.download(sz, fg);
+        if (k.contains("log")) return IconFactory.menu(sz, fg);
+        if (role == Role.ADMIN) return IconFactory.shield(sz, fg);
+        return IconFactory.bullet(sz, fg);
+    }
+
+    private static ImageIcon iconForColor(String key, Role role, Color fg) {
+        int sz = 32;
+        String k = key == null ? "" : key.toLowerCase();
+        if (k.contains("home")) return IconFactory.home(sz, fg);
+        if (k.contains("profile") || k.contains("user")) return IconFactory.user(sz, fg);
+        if (k.contains("resume")) return IconFactory.document(sz, fg);
+        if (k.contains("job")) return IconFactory.hammer(sz, fg);
+        if (k.contains("application")) return IconFactory.envelope(sz, fg);
+        if (k.contains("result")) return IconFactory.check(sz, fg);
+        if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
+        if (k.contains("export")) return IconFactory.download(sz, fg);
+        if (k.contains("log")) return IconFactory.menu(sz, fg);
+        if (role == Role.ADMIN) return IconFactory.shield(sz, fg);
+        return IconFactory.bullet(sz, fg);
     }
 
     public void setUser(Role role, String account) {
@@ -341,43 +365,47 @@ public final class AppLayout extends JPanel {
         unreadNotifications = Math.max(0, unreadCount);
         notifBtn.setBadgeVisible(unreadNotifications > 0);
         if (unreadNotifications > 0) {
-            notifBtn.setToolTipText("Notifications (" + unreadNotifications + " unread)");
+            notifBtn.setToolTipText(I18n.t("layout.notifications.unread", unreadNotifications));
         } else {
-            notifBtn.setToolTipText("Notifications");
+            notifBtn.setToolTipText(I18n.t("layout.notifications"));
         }
     }
 
     private void openProfile() {
-        statusBar.setLeftText("Profile");
+        statusBar.setLeftText(I18n.t("layout.profile"));
         String r = currentRole == null ? "" : I18n.t(currentRole.displayKey());
         String a = currentAccount == null ? "" : currentAccount;
         JOptionPane.showMessageDialog(this,
-                "Profile\n\nRole: " + r + "\nAccount: " + a,
-                "Profile",
+                I18n.t("layout.profile") + "\n\nRole: " + r + "\nAccount: " + a,
+                I18n.t("layout.profile"),
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void openSettings() {
-        statusBar.setLeftText("Settings");
+        statusBar.setLeftText(I18n.t("layout.settings"));
         JPanel p = new JPanel(new BorderLayout(10, 10));
         p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         JPanel row = new JPanel(new BorderLayout(10, 10));
-        row.add(new JLabel("Language"), BorderLayout.WEST);
+        row.add(new JLabel(I18n.t("layout.language")), BorderLayout.WEST);
         JComboBox<I18n.Lang> langBox = new JComboBox<I18n.Lang>(I18n.Lang.values());
         langBox.setSelectedItem(I18n.lang());
         row.add(langBox, BorderLayout.CENTER);
 
         p.add(row, BorderLayout.NORTH);
 
-        int res = JOptionPane.showConfirmDialog(this, p, "Settings", JOptionPane.OK_CANCEL_OPTION,
+        int res = JOptionPane.showConfirmDialog(this, p, I18n.t("layout.settings"), JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE);
         if (res != JOptionPane.OK_OPTION) return;
 
         I18n.Lang selected = (I18n.Lang) langBox.getSelectedItem();
         if (selected != null && selected != I18n.lang()) {
             I18n.setLang(selected);
-            refreshI18nTexts();
+            if (onLanguageChange != null) {
+                onLanguageChange.run();
+            } else {
+                refreshI18nTexts();
+            }
         }
     }
 
@@ -394,7 +422,7 @@ public final class AppLayout extends JPanel {
     }
 
     private void openNotifications() {
-        statusBar.setLeftText("Notifications");
+        statusBar.setLeftText(I18n.t("layout.notifications"));
 
         String text = "";
         if (notificationsTextSupplier != null) {
@@ -407,8 +435,8 @@ public final class AppLayout extends JPanel {
 
         if (text.trim().isEmpty()) {
             text = unreadNotifications > 0
-                    ? ("You have " + unreadNotifications + " unread notification(s).")
-                    : "No new notifications.";
+                    ? I18n.t("layout.notifications.hasunread", unreadNotifications)
+                    : I18n.t("layout.notifications.none");
         }
 
         JTextArea area = new JTextArea(text);
@@ -420,21 +448,21 @@ public final class AppLayout extends JPanel {
         JScrollPane sp = new JScrollPane(area);
         sp.setPreferredSize(new Dimension(760, 420));
 
-        JOptionPane.showMessageDialog(this, sp, "Notifications", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, sp, I18n.t("layout.notifications"), JOptionPane.INFORMATION_MESSAGE);
         if (unreadNotifications > 0) setUnreadNotifications(0);
         if (onNotificationsOpened != null) onNotificationsOpened.run();
     }
 
     private final class NavItemButton extends JButton {
         private final String key;
-        private final String icon;
+        private final ImageIcon icon;
         private boolean selected;
         private boolean hover;
 
-        private NavItemButton(String key, String icon) {
+        private NavItemButton(String key, ImageIcon icon) {
             super(key);
             this.key = key;
-            this.icon = icon == null ? "" : icon;
+            this.icon = icon;
             setFont(getFont().deriveFont(14f));
         }
 
@@ -476,16 +504,15 @@ public final class AppLayout extends JPanel {
                 setForeground(Color.WHITE);
             }
 
-            if (!icon.isEmpty()) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                try {
-                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                    g2.setFont(getFont().deriveFont(Font.PLAIN, 14f));
-                    g2.setColor(getForeground());
-                    g2.drawString(icon, 14, (getHeight() / 2) + 5);
-                } finally {
-                    g2.dispose();
+            if (icon != null) {
+                ImageIcon toDraw = icon;
+                if (selected) {
+                    toDraw = iconForColor(key, currentRole,
+                            new Color(accent.getRed(), accent.getGreen(), accent.getBlue()));
                 }
+                int ix = 14;
+                int iy = (getHeight() - toDraw.getIconHeight()) / 2;
+                toDraw.paintIcon(this, g, ix, iy);
                 Insets m = getMargin();
                 if (m == null || m.left < 34) {
                     setMargin(new Insets(12, 40, 12, 14));
@@ -526,8 +553,9 @@ public final class AppLayout extends JPanel {
     private static final class BadgeIconButton extends JButton {
         private boolean badgeVisible;
 
-        private BadgeIconButton(String text) {
-            super(text);
+        private BadgeIconButton(ImageIcon icon) {
+            super();
+            setIcon(icon);
         }
 
         public void setBadgeVisible(boolean visible) {

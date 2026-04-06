@@ -2,6 +2,7 @@ package ebu6304.ui.ta;
 
 import ebu6304.model.Applicant;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
@@ -63,7 +64,7 @@ public final class TaProfilePage extends JPanel {
     private final JTextField e_skillsField = new JTextField(20);
     private final JTextField e_cvField     = new JTextField(20);
     private final JTextArea  e_descArea    = new JTextArea(4, 20);
-    private final JButton    e_deleteBtn   = new JButton("Delete Profile");
+    private final JButton    e_deleteBtn   = new JButton(I18n.t("ta.profile.delete"));
 
     public TaProfilePage(DataService data, String account) {
         super(new BorderLayout());
@@ -72,7 +73,7 @@ public final class TaProfilePage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         listModel = new DefaultTableModel(
-                new Object[]{"Account (ID)", "Name", "Email", "Skills", "CV Path"}, 0) {
+                new Object[]{I18n.t("ta.profile.col.account"), I18n.t("ta.profile.col.name"), I18n.t("ta.profile.col.email"), I18n.t("ta.profile.col.skills"), I18n.t("ta.profile.col.cv")}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         listTable = new JTable(listModel);
@@ -98,13 +99,13 @@ public final class TaProfilePage extends JPanel {
     // ------------------------------------------------------------------ hub --
     private JPanel buildHubCard() {
         JPanel p = new JPanel(new GridBagLayout());
-        p.setBorder(BorderFactory.createTitledBorder("My Profile"));
+        p.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.profile.title")));
 
-        JLabel hint = new JLabel("What would you like to do?", SwingConstants.CENTER);
+        JLabel hint = new JLabel(I18n.t("ta.profile.hint"), SwingConstants.CENTER);
         hint.setFont(hint.getFont().deriveFont(Font.PLAIN, 14f));
 
-        JButton createBtn = new JButton("Create a Profile");
-        JButton manageBtn = new JButton("Manage My Profile");
+        JButton createBtn = new JButton(I18n.t("ta.profile.create"));
+        JButton manageBtn = new JButton(I18n.t("ta.profile.manage"));
         createBtn.setPreferredSize(new Dimension(200, 40));
         manageBtn.setPreferredSize(new Dimension(200, 40));
 
@@ -113,8 +114,8 @@ public final class TaProfilePage extends JPanel {
             Applicant a = data.getApplicant(account).orElse(null);
             if (a == null || (a.email().isEmpty() && a.skills().isEmpty() && a.description().isEmpty())) {
                 JOptionPane.showMessageDialog(this,
-                        "No profile found. Please create a profile first.",
-                        "No Profile", JOptionPane.INFORMATION_MESSAGE);
+                        I18n.t("ta.profile.noprofile"),
+                        I18n.t("ta.profile.noprofile.title"), JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
             showList();
@@ -131,15 +132,15 @@ public final class TaProfilePage extends JPanel {
     // ----------------------------------------------------------------- list --
     private JPanel buildListCard() {
         JPanel p = new JPanel(new BorderLayout(8, 8));
-        p.setBorder(BorderFactory.createTitledBorder("My Profile"));
+        p.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.profile.title")));
 
         JPanel top = new JPanel(new BorderLayout());
-        top.add(new JLabel("Select your profile to view or edit"), BorderLayout.WEST);
+        top.add(new JLabel(I18n.t("ta.profile.selecthint")), BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton back   = new JButton("< Back");
-        JButton edit   = new JButton("Edit");
-        JButton delete = new JButton("Delete");
+        JButton back   = new JButton(I18n.t("common.back"));
+        JButton edit   = new JButton(I18n.t("common.edit"));
+        JButton delete = new JButton(I18n.t("common.delete"));
         delete.setForeground(Color.RED);
         actions.add(back);
         actions.add(delete);
@@ -149,14 +150,14 @@ public final class TaProfilePage extends JPanel {
         back.addActionListener(e -> showHub());
         edit.addActionListener(e -> {
             if (listTable.getSelectedRow() < 0) {
-                JOptionPane.showMessageDialog(this, "Please select a profile row first.");
+                JOptionPane.showMessageDialog(this, I18n.t("msg.select.profile"));
                 return;
             }
             showEdit();
         });
         delete.addActionListener(e -> {
             if (listTable.getSelectedRow() < 0) {
-                JOptionPane.showMessageDialog(this, "Please select a profile row first.");
+                JOptionPane.showMessageDialog(this, I18n.t("msg.select.profile"));
                 return;
             }
             deleteProfile();
@@ -170,7 +171,7 @@ public final class TaProfilePage extends JPanel {
     // --------------------------------------------------------------- create --
     private JPanel buildCreateCard() {
         JPanel p = new JPanel(new BorderLayout(8, 8));
-        p.setBorder(BorderFactory.createTitledBorder("Create a Profile"));
+        p.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.profile.create.title")));
 
         c_idField.setEditable(false);
         c_nameField.setEditable(false);
@@ -178,15 +179,15 @@ public final class TaProfilePage extends JPanel {
         c_descArea.setLineWrap(true);
         c_descArea.setWrapStyleWord(true);
 
-        JButton browseCv = new JButton("Browse...");
+        JButton browseCv = new JButton(I18n.t("common.browse"));
         browseCv.addActionListener(e -> browseAndSetCv(c_cvField));
 
         JPanel form = buildForm(c_idField, c_nameField, c_emailField, c_skillsField,
                                 c_cvField, browseCv, c_descArea);
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton back = new JButton("< Back");
-        JButton save = new JButton("Save Profile");
+        JButton back = new JButton(I18n.t("common.back"));
+        JButton save = new JButton(I18n.t("ta.profile.save"));
         back.addActionListener(e -> showHub());
         save.addActionListener(e -> saveCreate());
         btns.add(back);
@@ -200,7 +201,7 @@ public final class TaProfilePage extends JPanel {
     // ----------------------------------------------------------------- edit --
     private JPanel buildEditCard() {
         JPanel p = new JPanel(new BorderLayout(8, 8));
-        p.setBorder(BorderFactory.createTitledBorder("Edit Profile"));
+        p.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.profile.edit.title")));
 
         e_idField.setEditable(false);
         e_nameField.setEditable(false);
@@ -211,15 +212,15 @@ public final class TaProfilePage extends JPanel {
         e_deleteBtn.setForeground(Color.RED);
         e_deleteBtn.addActionListener(e2 -> deleteProfile());
 
-        JButton browseCv = new JButton("Browse...");
+        JButton browseCv = new JButton(I18n.t("common.browse"));
         browseCv.addActionListener(e -> browseAndSetCv(e_cvField));
 
         JPanel form = buildForm(e_idField, e_nameField, e_emailField, e_skillsField,
                                 e_cvField, browseCv, e_descArea);
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton back = new JButton("< Back");
-        JButton save = new JButton("Save Changes");
+        JButton back = new JButton(I18n.t("common.back"));
+        JButton save = new JButton(I18n.t("ta.profile.savechanges"));
         back.addActionListener(e -> showList());
         save.addActionListener(e -> saveEdit());
         btns.add(back);
@@ -241,27 +242,27 @@ public final class TaProfilePage extends JPanel {
         c.insets = new Insets(6, 6, 6, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
 
-        c.gridx = 0; c.gridy = 0; form.add(new JLabel("Account (Student ID)"), c);
+        c.gridx = 0; c.gridy = 0; form.add(new JLabel(I18n.t("ta.profile.label.account")), c);
         c.gridx = 1; form.add(idF, c);
 
-        c.gridx = 0; c.gridy = 1; form.add(new JLabel("Name"), c);
+        c.gridx = 0; c.gridy = 1; form.add(new JLabel(I18n.t("ta.profile.label.name")), c);
         c.gridx = 1; form.add(nameF, c);
 
-        c.gridx = 0; c.gridy = 2; form.add(new JLabel("Email *"), c);
+        c.gridx = 0; c.gridy = 2; form.add(new JLabel(I18n.t("ta.profile.label.email")), c);
         c.gridx = 1; form.add(emailF, c);
 
-        c.gridx = 0; c.gridy = 3; form.add(new JLabel("Skills"), c);
+        c.gridx = 0; c.gridy = 3; form.add(new JLabel(I18n.t("ta.profile.label.skills")), c);
         c.gridx = 1; form.add(skillsF, c);
 
         // CV row: text field + browse button side by side
         JPanel cvRow = new JPanel(new BorderLayout(4, 0));
         cvRow.add(cvF, BorderLayout.CENTER);
         cvRow.add(browseCvBtn, BorderLayout.EAST);
-        c.gridx = 0; c.gridy = 4; form.add(new JLabel("CV / Resume Path"), c);
+        c.gridx = 0; c.gridy = 4; form.add(new JLabel(I18n.t("ta.profile.label.cv")), c);
         c.gridx = 1; form.add(cvRow, c);
 
         c.gridx = 0; c.gridy = 5; c.anchor = GridBagConstraints.NORTHWEST;
-        form.add(new JLabel("Description"), c);
+        form.add(new JLabel(I18n.t("ta.profile.label.desc")), c);
         c.gridx = 1; c.anchor = GridBagConstraints.CENTER;
         form.add(new JScrollPane(descA), c);
 
@@ -320,7 +321,7 @@ public final class TaProfilePage extends JPanel {
         String path = f.getAbsolutePath();
         if (!isSupported(path, data.getConfig().cvFormats())) {
             JOptionPane.showMessageDialog(this,
-                    "Unsupported CV format. Allowed: " + data.getConfig().cvFormats());
+                    I18n.t("ta.profile.unsupported.cv") + data.getConfig().cvFormats());
             return;
         }
         // Store file into project cv folder
@@ -330,7 +331,7 @@ public final class TaProfilePage extends JPanel {
             String stored = data.storeCv(a.id(), path);
             target.setText(stored);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Unable to save CV into project data folder");
+            JOptionPane.showMessageDialog(this, I18n.t("ta.profile.cv.savefailed"));
         }
     }
 
@@ -341,14 +342,14 @@ public final class TaProfilePage extends JPanel {
         String desc   = c_descArea.getText().trim();
 
         if (email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Email is required", "Validation", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("msg.email.required"), "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         Applicant a = data.getApplicant(account).orElse(null);
         if (a == null) return;
         data.upsertApplicant(a.withProfile(a.name(), email, skills, cv, desc));
-        JOptionPane.showMessageDialog(this, "Profile created successfully.");
+        JOptionPane.showMessageDialog(this, I18n.t("ta.profile.created"));
         showHub();
     }
 
@@ -359,27 +360,27 @@ public final class TaProfilePage extends JPanel {
         String desc   = e_descArea.getText().trim();
 
         if (email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Email is required", "Validation", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18n.t("msg.email.required"), "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         Applicant a = data.getApplicant(account).orElse(null);
         if (a == null) return;
         data.upsertApplicant(a.withProfile(a.name(), email, skills, cv, desc));
-        JOptionPane.showMessageDialog(this, "Profile updated successfully.");
+        JOptionPane.showMessageDialog(this, I18n.t("ta.profile.updated"));
         showList();
     }
 
     private void deleteProfile() {
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete your profile information?\n(Email, skills, CV and description will be cleared.)",
-                "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                I18n.t("ta.profile.confirm.delete"),
+                I18n.t("ta.profile.confirm.delete.title"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm != JOptionPane.YES_OPTION) return;
 
         Applicant a = data.getApplicant(account).orElse(null);
         if (a == null) return;
         data.upsertApplicant(a.withProfile(a.name(), "", "", "", ""));
-        JOptionPane.showMessageDialog(this, "Profile information deleted.");
+        JOptionPane.showMessageDialog(this, I18n.t("ta.profile.deleted"));
         showHub();
     }
 
