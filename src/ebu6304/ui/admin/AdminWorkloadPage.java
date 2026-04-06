@@ -32,6 +32,7 @@ import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
 import ebu6304.storage.OperationLog;
+import ebu6304.ui.I18n;
 
 public final class AdminWorkloadPage extends JPanel {
     private final DataService data;
@@ -51,7 +52,7 @@ public final class AdminWorkloadPage extends JPanel {
         this.actor = actor == null ? "" : actor;
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
-        model = new DefaultTableModel(new Object[] { "Key", "Name/Title", "Accepted", "Total hours" }, 0) {
+        model = new DefaultTableModel(new Object[] { I18n.t("admin.workload.col.key"), I18n.t("admin.workload.col.name"), I18n.t("admin.workload.col.accepted"), I18n.t("admin.workload.col.hours") }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -60,23 +61,23 @@ public final class AdminWorkloadPage extends JPanel {
         table = new JTable(model);
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("TA Workload"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.workload.title")));
 
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filters.add(new JLabel("View:"));
+        filters.add(new JLabel(I18n.t("admin.workload.view")));
         filters.add(view);
-        filters.add(new JLabel("From (yyyy-MM-dd):"));
+        filters.add(new JLabel(I18n.t("admin.workload.from")));
         filters.add(from);
-        filters.add(new JLabel("To (yyyy-MM-dd):"));
+        filters.add(new JLabel(I18n.t("admin.workload.to")));
         filters.add(to);
-        filters.add(new JLabel("Category:"));
+        filters.add(new JLabel(I18n.t("admin.workload.category")));
         filters.add(category);
         top.add(filters, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton refresh = new JButton("Refresh");
-        JButton export = new JButton("Export CSV");
-        JButton ai = new JButton("AI Balancing (placeholder)");
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton export = new JButton(I18n.t("common.exportcsv"));
+        JButton ai = new JButton(I18n.t("admin.workload.ai"));
         actions.add(refresh);
         actions.add(export);
         actions.add(ai);
@@ -84,7 +85,7 @@ public final class AdminWorkloadPage extends JPanel {
 
         refresh.addActionListener(e -> refresh());
         export.addActionListener(e -> exportCsv());
-        ai.addActionListener(e -> JOptionPane.showMessageDialog(this, "Placeholder: AI workload balancing/ratings will be added later."));
+        ai.addActionListener(e -> JOptionPane.showMessageDialog(this, I18n.t("admin.workload.ai.msg")));
 
         view.addActionListener(e -> refresh());
         from.addActionListener(e -> refresh());
@@ -155,7 +156,7 @@ public final class AdminWorkloadPage extends JPanel {
 
     private void exportCsv() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Export Workload CSV");
+        chooser.setDialogTitle(I18n.t("admin.workload.export.title"));
         int res = chooser.showSaveDialog(this);
         if (res != JFileChooser.APPROVE_OPTION) return;
 
@@ -174,7 +175,7 @@ public final class AdminWorkloadPage extends JPanel {
             Files.write(chooser.getSelectedFile().toPath(), lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             OperationLog.append(data.tempOperationFile(), "INFO", "actor=" + actor + " action=exportWorkloadCsv file=" + chooser.getSelectedFile().getAbsolutePath());
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Export failed");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.export.failed"));
         }
     }
 

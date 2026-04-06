@@ -47,7 +47,7 @@ public final class ForgotPasswordPanel extends JPanel {
         c.insets = new Insets(6, 6, 6, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
 
-        c.gridx = 0; c.gridy = 0; form.add(new JLabel("Role"), c);
+        c.gridx = 0; c.gridy = 0; form.add(new JLabel(I18n.t("forgot.role")), c);
         c.gridx = 1; c.gridy = 0; form.add(roleBox, c);
 
         c.gridx = 0; c.gridy = 1; form.add(new JLabel(I18n.t("login.account")), c);
@@ -75,34 +75,34 @@ public final class ForgotPasswordPanel extends JPanel {
             String np2 = new String(newPass2Field.getPassword());
 
             if (account.isEmpty() || np.isEmpty() || np2.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Account and new password are required");
+                JOptionPane.showMessageDialog(this, I18n.t("msg.account.required"));
                 return;
             }
             if (!np.equals(np2)) {
-                JOptionPane.showMessageDialog(this, "Passwords do not match");
+                JOptionPane.showMessageDialog(this, I18n.t("msg.password.mismatch"));
                 return;
             }
 
             if (role == Role.TA) {
                 Applicant a = data.getApplicant(account).orElse(null);
                 if (a == null) {
-                    JOptionPane.showMessageDialog(this, "Account not found");
+                    JOptionPane.showMessageDialog(this, I18n.t("msg.account.notfound"));
                     return;
                 }
                 if (verify.isEmpty() || !verify.equalsIgnoreCase(a.email())) {
-                    JOptionPane.showMessageDialog(this, "Verification information mismatch");
+                    JOptionPane.showMessageDialog(this, I18n.t("msg.verify.mismatch"));
                     return;
                 }
             }
 
             boolean ok = data.resetPassword(role.authRole(), account, np);
             if (!ok) {
-                JOptionPane.showMessageDialog(this, "Account not found or role mismatch");
+                JOptionPane.showMessageDialog(this, I18n.t("msg.role.mismatch"));
                 return;
             }
 
             OperationLog.append(data.tempOperationFile(), "INFO", "Password reset for role=" + role.authRole() + ", account=" + account);
-            JOptionPane.showMessageDialog(this, "Password reset successful");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.reset.success"));
         });
 
         backBtn.addActionListener(e -> {

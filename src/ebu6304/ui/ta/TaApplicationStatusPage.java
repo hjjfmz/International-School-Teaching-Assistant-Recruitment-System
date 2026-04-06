@@ -20,6 +20,7 @@ import javax.swing.table.JTableHeader;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class TaApplicationStatusPage extends JPanel {
     private final DataService data;
@@ -36,7 +37,7 @@ public final class TaApplicationStatusPage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         model = new DefaultTableModel(new Object[] {
-                "Application ID", "Job ID", "Job Title", "Status", "Comment"
+                I18n.t("ta.status.col.appid"), I18n.t("ta.status.col.jobid"), I18n.t("ta.status.col.jobtitle"), I18n.t("ta.status.col.status"), I18n.t("ta.status.col.comment")
         }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -48,20 +49,20 @@ public final class TaApplicationStatusPage extends JPanel {
         table.setDefaultRenderer(Object.class, new ZebraRenderer());
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("Application Status"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.status.title")));
         top.setOpaque(false);
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
         left.setOpaque(false);
-        left.add(new JLabel("Filter:"));
+        left.add(new JLabel(I18n.t("common.filter")));
         styleCombo(filter);
         left.add(filter);
         top.add(left, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         actions.setOpaque(false);
-        JButton backBtn = new JButton("< Back");
-        JButton refresh = new JButton("Refresh");
+        JButton backBtn = new JButton(I18n.t("common.back"));
+        JButton refresh = new JButton(I18n.t("common.refresh"));
         styleActionButton(backBtn);
         styleActionButton(refresh);
         actions.add(backBtn);

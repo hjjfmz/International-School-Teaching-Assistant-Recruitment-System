@@ -17,6 +17,9 @@ public final class MainFrame extends JFrame {
     private final JPanel container = new JPanel(cards);
     private final StatusBar statusBar = new StatusBar();
 
+    private Role currentRole;
+    private String currentAccount;
+
     public MainFrame(DataService data) {
         super(I18n.t("app.title"));
         this.data = data;
@@ -58,9 +61,20 @@ public final class MainFrame extends JFrame {
     }
 
     private void showWorkbench(Role role, String account) {
-        WorkbenchPanel wb = new WorkbenchPanel(data, role, account, () -> show("login"));
+        this.currentRole = role;
+        this.currentAccount = account;
+        WorkbenchPanel wb = new WorkbenchPanel(data, role, account,
+                () -> show("login"),
+                () -> rebuildWorkbench());
         container.add(wb, "workbench");
         show("workbench");
+    }
+
+    private void rebuildWorkbench() {
+        if (currentRole == null || currentAccount == null) return;
+        setTitle(I18n.t("app.title"));
+        statusBar.setLeftText(I18n.t("status.ready"));
+        showWorkbench(currentRole, currentAccount);
     }
 
     private void show(String key) {

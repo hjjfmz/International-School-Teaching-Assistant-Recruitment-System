@@ -35,36 +35,36 @@ public final class WorkbenchPanel extends JPanel {
     private int lastReadLineCount;
     private int lastSeenLineCount;
 
-    public WorkbenchPanel(DataService data, Role role, String account, Runnable logout) {
+    public WorkbenchPanel(DataService data, Role role, String account, Runnable logout, Runnable onLanguageChange) {
         super(new BorderLayout());
 
         String[] nav;
         if (role == Role.TA) {
             nav = new String[] {
-                "TA Home",
-                "Profile",
-                "Resume",
-                "Job Search",
-                "My Applications",
-                "Application Status"
+                I18n.t("nav.ta.home"),
+                I18n.t("nav.ta.profile"),
+                I18n.t("nav.ta.resume"),
+                I18n.t("nav.ta.jobs"),
+                I18n.t("nav.ta.myapps"),
+                I18n.t("nav.ta.status")
             };
         } else if (role == Role.MO) {
             nav = new String[] {
-                "MO Home",
-                "Post Job",
-                "Applicants",
-                "Results",
-                "My Posts"
+                I18n.t("nav.mo.home"),
+                I18n.t("nav.mo.post"),
+                I18n.t("nav.mo.applicants"),
+                I18n.t("nav.mo.results"),
+                I18n.t("nav.mo.myposts")
             };
         } else {
             nav = new String[] {
-                "Admin Home",
-                "User Management",
-                "TA Workload",
-                "Job Data",
-                "System Config",
-                "Data Export",
-                "Operation Logs"
+                I18n.t("nav.admin.home"),
+                I18n.t("nav.admin.users"),
+                I18n.t("nav.admin.workload"),
+                I18n.t("nav.admin.jobdata"),
+                I18n.t("nav.admin.config"),
+                I18n.t("nav.admin.export"),
+                I18n.t("nav.admin.logs")
             };
         }
 
@@ -74,7 +74,7 @@ public final class WorkbenchPanel extends JPanel {
         }, key -> {
             if (key == null) return;
             holder[0].showContent(key);
-        });
+        }, onLanguageChange);
         layout = holder[0];
 
         layout.setUser(role, account);
@@ -84,18 +84,18 @@ public final class WorkbenchPanel extends JPanel {
             TaHomePage home = new TaHomePage(data, account, k -> layout.showContent(k));
             TaProfilePage profile = new TaProfilePage(data, account);
             TaResumePage resume = new TaResumePage(data, account);
-            TaJobsPage jobs = new TaJobsPage(data, account, () -> { layout.showContent("TA Home"); layout.setNavSelectedIndex(0); });
+            TaJobsPage jobs = new TaJobsPage(data, account, () -> { layout.showContent(I18n.t("nav.ta.home")); layout.setNavSelectedIndex(0); });
             TaMyApplicationsPage myApps = new TaMyApplicationsPage(data, account);
-            TaApplicationStatusPage status = new TaApplicationStatusPage(data, account, () -> { layout.showContent("TA Home"); layout.setNavSelectedIndex(0); });
+            TaApplicationStatusPage status = new TaApplicationStatusPage(data, account, () -> { layout.showContent(I18n.t("nav.ta.home")); layout.setNavSelectedIndex(0); });
 
-            layout.addContent("TA Home", home);
-            layout.addContent("Profile", profile);
-            layout.addContent("Resume", resume);
-            layout.addContent("Job Search", jobs);
-            layout.addContent("My Applications", myApps);
-            layout.addContent("Application Status", status);
+            layout.addContent(I18n.t("nav.ta.home"), home);
+            layout.addContent(I18n.t("nav.ta.profile"), profile);
+            layout.addContent(I18n.t("nav.ta.resume"), resume);
+            layout.addContent(I18n.t("nav.ta.jobs"), jobs);
+            layout.addContent(I18n.t("nav.ta.myapps"), myApps);
+            layout.addContent(I18n.t("nav.ta.status"), status);
 
-            layout.showContent("TA Home");
+            layout.showContent(I18n.t("nav.ta.home"));
             layout.setNavSelectedIndex(0);
         } else if (role == Role.MO) {
             MoHomePage home = new MoHomePage(data, account, k -> layout.showContent(k));
@@ -104,13 +104,13 @@ public final class WorkbenchPanel extends JPanel {
             MoResultsPage results = new MoResultsPage(data, account);
             MoMyPostsPage myPosts = new MoMyPostsPage(data, account);
 
-            layout.addContent("MO Home", home);
-            layout.addContent("Post Job", post);
-            layout.addContent("Applicants", applicants);
-            layout.addContent("Results", results);
-            layout.addContent("My Posts", myPosts);
+            layout.addContent(I18n.t("nav.mo.home"), home);
+            layout.addContent(I18n.t("nav.mo.post"), post);
+            layout.addContent(I18n.t("nav.mo.applicants"), applicants);
+            layout.addContent(I18n.t("nav.mo.results"), results);
+            layout.addContent(I18n.t("nav.mo.myposts"), myPosts);
 
-            layout.showContent("MO Home");
+            layout.showContent(I18n.t("nav.mo.home"));
             layout.setNavSelectedIndex(0);
         } else {
             AdminHomePage home = new AdminHomePage(data, k -> layout.showContent(k));
@@ -121,15 +121,15 @@ public final class WorkbenchPanel extends JPanel {
             AdminExportPage export = new AdminExportPage(data, account);
             AdminLogPage logs = new AdminLogPage(data);
 
-            layout.addContent("Admin Home", home);
-            layout.addContent("User Management", users);
-            layout.addContent("TA Workload", workload);
-            layout.addContent("Job Data", jobs);
-            layout.addContent("System Config", config);
-            layout.addContent("Data Export", export);
-            layout.addContent("Operation Logs", logs);
+            layout.addContent(I18n.t("nav.admin.home"), home);
+            layout.addContent(I18n.t("nav.admin.users"), users);
+            layout.addContent(I18n.t("nav.admin.workload"), workload);
+            layout.addContent(I18n.t("nav.admin.jobdata"), jobs);
+            layout.addContent(I18n.t("nav.admin.config"), config);
+            layout.addContent(I18n.t("nav.admin.export"), export);
+            layout.addContent(I18n.t("nav.admin.logs"), logs);
 
-            layout.showContent("Admin Home");
+            layout.showContent(I18n.t("nav.admin.home"));
             layout.setNavSelectedIndex(0);
         }
 
@@ -189,9 +189,9 @@ public final class WorkbenchPanel extends JPanel {
 
     private static String buildNotificationsText(Path p, int tailLines) {
         try {
-            if (p == null || !Files.exists(p)) return "No notifications.";
+            if (p == null || !Files.exists(p)) return I18n.t("layout.notifications.empty");
             List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
-            if (lines == null || lines.isEmpty()) return "No notifications.";
+            if (lines == null || lines.isEmpty()) return I18n.t("layout.notifications.empty");
 
             int start = Math.max(0, lines.size() - Math.max(1, tailLines));
             StringBuilder sb = new StringBuilder();
@@ -200,7 +200,7 @@ public final class WorkbenchPanel extends JPanel {
             }
             return sb.toString();
         } catch (Exception ex) {
-            return "Unable to load notifications.";
+            return I18n.t("layout.notifications.empty");
         }
     }
 }

@@ -23,6 +23,7 @@ import javax.swing.table.JTableHeader;
 
 import ebu6304.storage.AuthStore;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class AdminUserManagementPage extends JPanel {
     private final DataService data;
@@ -40,7 +41,7 @@ public final class AdminUserManagementPage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         model = new DefaultTableModel(new Object[] {
-                "Role", "Account", "Name", "Status"
+                I18n.t("admin.users.col.role"), I18n.t("admin.users.col.account"), I18n.t("admin.users.col.name"), I18n.t("admin.users.col.status")
         }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -53,23 +54,23 @@ public final class AdminUserManagementPage extends JPanel {
         table.setDefaultRenderer(Object.class, new ZebraRenderer());
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("User Management"));
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.users.title")));
         top.setOpaque(false);
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
         left.setOpaque(false);
-        left.add(new JLabel("Role filter:"));
+        left.add(new JLabel(I18n.t("admin.users.rolefilter")));
         styleCombo(roleFilter);
         left.add(roleFilter);
         top.add(left, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         actions.setOpaque(false);
-        JButton refresh = new JButton("Refresh");
-        JButton enable = new JButton("Enable");
-        JButton disable = new JButton("Disable");
-        JButton addMo = new JButton("Add MO Account");
-        JButton delete = new JButton("Delete");
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton enable = new JButton(I18n.t("common.enable"));
+        JButton disable = new JButton(I18n.t("common.disable"));
+        JButton addMo = new JButton(I18n.t("admin.users.addmo"));
+        JButton delete = new JButton(I18n.t("common.delete"));
 
         styleActionButton(refresh);
         styleActionButton(enable);
@@ -162,25 +163,25 @@ public final class AdminUserManagementPage extends JPanel {
         for (AuthStore.User u : users) {
             if ("Admin".equalsIgnoreCase(u.role())) continue;
             if (!"All".equals(filter) && !filter.equalsIgnoreCase(u.role())) continue;
-            model.addRow(new Object[] { u.role(), u.account(), u.name(), u.enabled() ? "Enabled" : "Disabled" });
+            model.addRow(new Object[] { u.role(), u.account(), u.name(), u.enabled() ? I18n.t("admin.users.enabled") : I18n.t("admin.users.disabled") });
         }
     }
 
     private void setUserEnabled(boolean enabled) {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a user");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.user"));
             return;
         }
         String role = String.valueOf(model.getValueAt(r, 0));
         String account = String.valueOf(model.getValueAt(r, 1));
         if ("MO".equalsIgnoreCase(role) == false && "TA".equalsIgnoreCase(role) == false) {
-            JOptionPane.showMessageDialog(this, "Only TA/MO users are supported");
+            JOptionPane.showMessageDialog(this, I18n.t("admin.users.only.tamo"));
             return;
         }
         boolean ok = data.setUserEnabled(actor, role, account, enabled);
         if (!ok) {
-            JOptionPane.showMessageDialog(this, "Operation failed");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.operation.failed"));
             return;
         }
         refresh();
@@ -191,48 +192,48 @@ public final class AdminUserManagementPage extends JPanel {
         JTextField pass = new JTextField(16);
         JTextField name = new JTextField(16);
         JPanel p = new JPanel(new java.awt.GridLayout(0, 1, 6, 6));
-        p.add(new JLabel("Staff ID (Account)*"));
+        p.add(new JLabel(I18n.t("admin.users.staffid")));
         p.add(acc);
-        p.add(new JLabel("Password*"));
+        p.add(new JLabel(I18n.t("admin.users.password")));
         p.add(pass);
-        p.add(new JLabel("Name (optional)"));
+        p.add(new JLabel(I18n.t("admin.users.name")));
         p.add(name);
 
-        int res = JOptionPane.showConfirmDialog(this, p, "Add MO Account", JOptionPane.OK_CANCEL_OPTION);
+        int res = JOptionPane.showConfirmDialog(this, p, I18n.t("admin.users.addmo.title"), JOptionPane.OK_CANCEL_OPTION);
         if (res != JOptionPane.OK_OPTION) return;
 
         String a = acc.getText().trim();
         String pw = pass.getText().trim();
         String nm = name.getText().trim();
         if (a.isEmpty() || pw.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Account and password are required");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.account.password.required"));
             return;
         }
 
         data.upsertUser("MO", a, pw, nm);
         data.setUserEnabled("MO", a, true);
         refresh();
-        JOptionPane.showMessageDialog(this, "Created");
+        JOptionPane.showMessageDialog(this, I18n.t("msg.created"));
     }
 
     private void delete() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a user");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.user"));
             return;
         }
         String role = String.valueOf(model.getValueAt(r, 0));
         String account = String.valueOf(model.getValueAt(r, 1));
 
-        int ok = JOptionPane.showConfirmDialog(this, "This cannot be undone. Delete this account?", "Confirm", JOptionPane.YES_NO_OPTION);
+        int ok = JOptionPane.showConfirmDialog(this, I18n.t("admin.users.confirm.delete"), I18n.t("common.confirm"), JOptionPane.YES_NO_OPTION);
         if (ok != JOptionPane.YES_OPTION) return;
 
         boolean deleted = data.delete(actor, account);
         if (!deleted) {
-            JOptionPane.showMessageDialog(this, "Delete failed");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.delete.failed"));
             return;
         }
         refresh();
-        JOptionPane.showMessageDialog(this, "Deleted");
+        JOptionPane.showMessageDialog(this, I18n.t("msg.deleted"));
     }
 }

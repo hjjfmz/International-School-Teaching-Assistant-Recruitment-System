@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 
 public final class AdminConfigPage extends JPanel {
     private final DataService data;
@@ -32,29 +33,29 @@ public final class AdminConfigPage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createTitledBorder("System Config"));
+        form.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.config.title")));
 
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6, 6, 6, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
 
-        c.gridx = 0; c.gridy = 0; form.add(new JLabel("Data path (effective next startup):"), c);
+        c.gridx = 0; c.gridy = 0; form.add(new JLabel(I18n.t("admin.config.datapath")), c);
         c.gridx = 1; c.gridy = 0; form.add(dataPath, c);
-        JButton browse = new JButton("Browse");
+        JButton browse = new JButton(I18n.t("common.browse"));
         c.gridx = 2; c.gridy = 0; form.add(browse, c);
 
-        c.gridx = 0; c.gridy = 1; form.add(new JLabel("Password min length (TA register):"), c);
+        c.gridx = 0; c.gridy = 1; form.add(new JLabel(I18n.t("admin.config.pwdlen")), c);
         c.gridx = 1; c.gridy = 1; form.add(passwordMinLength, c);
 
-        c.gridx = 0; c.gridy = 2; form.add(new JLabel("CV formats (comma-separated):"), c);
+        c.gridx = 0; c.gridy = 2; form.add(new JLabel(I18n.t("admin.config.cvformats")), c);
         c.gridx = 1; c.gridy = 2; form.add(cvFormats, c);
 
-        c.gridx = 0; c.gridy = 3; form.add(new JLabel("Default language (EN):"), c);
+        c.gridx = 0; c.gridy = 3; form.add(new JLabel(I18n.t("admin.config.lang")), c);
         c.gridx = 1; c.gridy = 3; form.add(defaultLang, c);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton reload = new JButton("Reload");
-        JButton save = new JButton("Save");
+        JButton reload = new JButton(I18n.t("common.reload"));
+        JButton save = new JButton(I18n.t("common.save"));
         actions.add(reload);
         actions.add(save);
 
@@ -96,7 +97,7 @@ public final class AdminConfigPage extends JPanel {
         try {
             if (!pmlRaw.isEmpty()) pml = Integer.parseInt(pmlRaw);
         } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(this, "Password min length must be a number");
+            JOptionPane.showMessageDialog(this, I18n.t("admin.config.pwdlen.nan"));
             return;
         }
         if (pml <= 0) pml = 6;
@@ -105,10 +106,10 @@ public final class AdminConfigPage extends JPanel {
 
         boolean ok = data.updateConfig(actor, new DataService.Config(p, pml, formats, lang));
         if (!ok) {
-            JOptionPane.showMessageDialog(this, "Save failed");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.save.failed"));
             return;
         }
-        JOptionPane.showMessageDialog(this, "Saved. Data path changes take effect on next startup.");
+        JOptionPane.showMessageDialog(this, I18n.t("admin.config.saved"));
         load();
     }
 }

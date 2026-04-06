@@ -2,6 +2,7 @@ package ebu6304.ui.ta;
 
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.util.List;
@@ -29,7 +30,7 @@ public final class TaJobsPage extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         model = new DefaultTableModel(new Object[] {
-                "Job ID", "Title", "Required skills", "Hours/week", "Posted by"
+                I18n.t("ta.jobs.col.id"), I18n.t("ta.jobs.col.title"), I18n.t("ta.jobs.col.skills"), I18n.t("ta.jobs.col.hours"), I18n.t("ta.jobs.col.postedby")
         }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -40,14 +41,14 @@ public final class TaJobsPage extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder("Job Search"));
-        top.add(new JLabel("Select a job and use the buttons on the right"), BorderLayout.WEST);
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.jobs.title")));
+        top.add(new JLabel(I18n.t("ta.jobs.hint")), BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton backBtn = new JButton("< Back");
-        JButton refresh = new JButton("Refresh");
-        JButton details = new JButton("Details");
-        JButton apply = new JButton("Apply");
+        JButton backBtn = new JButton(I18n.t("common.back"));
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        JButton details = new JButton(I18n.t("common.details"));
+        JButton apply = new JButton(I18n.t("common.apply"));
         actions.add(backBtn);
         actions.add(refresh);
         actions.add(details);
@@ -79,10 +80,11 @@ public final class TaJobsPage extends JPanel {
     private void showDetails() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a job");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.job"));
             return;
         }
-        String jobId = String.valueOf(model.getValueAt(r, 0));
+        int modelRow = table.convertRowIndexToModel(r);
+        String jobId = String.valueOf(model.getValueAt(modelRow, 0));
         Job j = data.getJob(jobId).orElse(null);
         if (j == null) return;
         String msg = "Title: " + j.title() + "\n" +
@@ -96,20 +98,21 @@ public final class TaJobsPage extends JPanel {
     private void applySelected() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a job");
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.job"));
             return;
         }
-        String jobId = String.valueOf(model.getValueAt(r, 0));
+        int modelRow = table.convertRowIndexToModel(r);
+        String jobId = String.valueOf(model.getValueAt(modelRow, 0));
 
         if (data.findApplication(account, jobId).isPresent()) {
-            JOptionPane.showMessageDialog(this, "You have already applied for this job");
+            JOptionPane.showMessageDialog(this, I18n.t("ta.jobs.already.applied"));
             return;
         }
 
-        int ok = JOptionPane.showConfirmDialog(this, "Apply for the selected job?", "Confirm", JOptionPane.YES_NO_OPTION);
+        int ok = JOptionPane.showConfirmDialog(this, I18n.t("ta.jobs.confirm.apply"), I18n.t("common.confirm"), JOptionPane.YES_NO_OPTION);
         if (ok != JOptionPane.YES_OPTION) return;
 
         data.submitApplication(account, jobId);
-        JOptionPane.showMessageDialog(this, "Application submitted");
+        JOptionPane.showMessageDialog(this, I18n.t("ta.jobs.applied"));
     }
 }
