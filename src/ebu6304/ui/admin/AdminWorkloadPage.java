@@ -70,8 +70,6 @@ public final class AdminWorkloadPage extends JPanel {
         filters.add(from);
         filters.add(new JLabel(I18n.t("admin.workload.to")));
         filters.add(to);
-        filters.add(new JLabel(I18n.t("admin.workload.category")));
-        filters.add(category);
         top.add(filters, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
