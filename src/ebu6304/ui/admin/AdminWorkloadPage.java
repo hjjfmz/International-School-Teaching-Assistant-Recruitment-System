@@ -2,7 +2,6 @@ package ebu6304.ui.admin;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import javax.swing.BoxLayout;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -42,6 +41,7 @@ public final class AdminWorkloadPage extends JPanel {
     private final JComboBox<String> view = new JComboBox<String>(new String[] { "By TA", "By Job" });
     private final JTextField from = new JTextField(10);
     private final JTextField to = new JTextField(10);
+    private final JTextField category = new JTextField(10);
 
     private final DefaultTableModel model;
     private final JTable table;
@@ -70,6 +70,8 @@ public final class AdminWorkloadPage extends JPanel {
         filters.add(from);
         filters.add(new JLabel(I18n.t("admin.workload.to")));
         filters.add(to);
+        filters.add(new JLabel(I18n.t("admin.workload.category")));
+        filters.add(category);
         top.add(filters, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -79,7 +81,7 @@ public final class AdminWorkloadPage extends JPanel {
         actions.add(refresh);
         actions.add(export);
         actions.add(ai);
-        top.add(actions, BorderLayout.SOUTH);
+        top.add(actions, BorderLayout.EAST);
 
         refresh.addActionListener(e -> refresh());
         export.addActionListener(e -> exportCsv());
@@ -88,6 +90,7 @@ public final class AdminWorkloadPage extends JPanel {
         view.addActionListener(e -> refresh());
         from.addActionListener(e -> refresh());
         to.addActionListener(e -> refresh());
+        category.addActionListener(e -> refresh());
 
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
@@ -101,16 +104,17 @@ public final class AdminWorkloadPage extends JPanel {
 
         long fromMs = parseDateStart(from.getText().trim());
         long toMs = parseDateEnd(to.getText().trim());
+        String catFilter = category.getText().trim().toLowerCase();
 
         String v = String.valueOf(view.getSelectedItem());
         if ("By Job".equalsIgnoreCase(v)) {
-            refreshByJob(fromMs, toMs);
+            refreshByJob(fromMs, toMs, catFilter);
         } else {
-            refreshByTa(fromMs, toMs);
+            refreshByTa(fromMs, toMs, catFilter);
         }
     }
 
-    private void refreshByTa(long fromMs, long toMs) {
+    private void refreshByTa(long fromMs, long toMs, String catFilter) {
         List<Applicant> tas = data.listApplicants();
         for (Applicant ta : tas) {
             int accepted = 0;
@@ -120,6 +124,7 @@ public final class AdminWorkloadPage extends JPanel {
                 if (!within(a.createdAt(), fromMs, toMs)) continue;
                 Job j = data.getJob(a.jobId()).orElse(null);
                 if (j == null) continue;
+                if (!catFilter.isEmpty() && !j.category().toLowerCase().contains(catFilter)) continue;
                 accepted++;
                 hours += j.hoursPerWeek();
             }
@@ -127,7 +132,7 @@ public final class AdminWorkloadPage extends JPanel {
         }
     }
 
-    private void refreshByJob(long fromMs, long toMs) {
+    private void refreshByJob(long fromMs, long toMs, String catFilter) {
         List<Job> jobs = data.listJobs();
         Collections.sort(jobs, new Comparator<Job>() {
             @Override
@@ -137,6 +142,7 @@ public final class AdminWorkloadPage extends JPanel {
         });
 
         for (Job j : jobs) {
+            if (!catFilter.isEmpty() && !j.category().toLowerCase().contains(catFilter)) continue;
             int accepted = 0;
             for (Application a : data.listApplicationsForJob(j.id())) {
                 if (a.status() != Application.Status.ACCEPTED) continue;
