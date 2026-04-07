@@ -122,7 +122,7 @@ public final class LoginPanel extends JPanel {
     }
 
     private void loadBackground() {
-        String base = System.getProperty("user.dir");
+        String base = ebu6304.App.projectRoot().getAbsolutePath();
         String[] candidates = { "images/login-bg.jpg", "images/login-bg.png", "images/bg.png" };
         for (String c : candidates) {
             try {
@@ -158,7 +158,7 @@ public final class LoginPanel extends JPanel {
 
         JLabel logoLabel = new JLabel();
         try {
-            File logoFile = new File(System.getProperty("user.dir"), "images/logo-full.png");
+            File logoFile = new File(ebu6304.App.projectRoot(), "images/logo-full.png");
             if (logoFile.isFile()) {
                 BufferedImage img = ImageIO.read(logoFile);
                 if (img != null) {

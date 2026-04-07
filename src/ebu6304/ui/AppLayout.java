@@ -94,7 +94,7 @@ public final class AppLayout extends JPanel {
         left.setOpaque(false);
         JLabel appIcon = new JLabel("");
         try {
-            java.io.File f = new java.io.File(System.getProperty("user.dir"), "1.jpg");
+            java.io.File f = new java.io.File(ebu6304.App.projectRoot(), "1.jpg");
             if (f.isFile()) {
                 java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
                 if (img != null) {
@@ -280,7 +280,7 @@ public final class AppLayout extends JPanel {
 
     private static ImageIcon loadAvatarIcon() {
         try {
-            java.io.File f = new java.io.File(System.getProperty("user.dir"), "1.jpg");
+            java.io.File f = new java.io.File(ebu6304.App.projectRoot(), "1.jpg");
             if (!f.isFile()) return null;
             BufferedImage img = javax.imageio.ImageIO.read(f);
             if (img == null) return null;

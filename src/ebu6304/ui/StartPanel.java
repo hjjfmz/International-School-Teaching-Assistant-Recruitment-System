@@ -38,7 +38,7 @@ public final class StartPanel extends JPanel {
         JLabel imageLabel = new JLabel("", SwingConstants.CENTER);
         BufferedImage[] original = new BufferedImage[1];
         try {
-            File imgFile = new File(System.getProperty("user.dir"), "1.jpg");
+            File imgFile = new File(ebu6304.App.projectRoot(), "1.jpg");
             if (imgFile.isFile()) {
                 original[0] = ImageIO.read(imgFile);
             }

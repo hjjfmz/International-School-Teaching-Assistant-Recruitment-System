@@ -135,7 +135,8 @@ public final class DataService {
     }
 
     private static Path loadBootstrapDataDir() {
-        Path base = Paths.get("data");
+        java.io.File projRoot = ebu6304.App.projectRoot();
+        Path base = projRoot != null ? projRoot.toPath().resolve("data") : Paths.get("data");
         Path xml = base.resolve("admin_system.xml");
         if (!Files.exists(xml)) return base;
         try {
