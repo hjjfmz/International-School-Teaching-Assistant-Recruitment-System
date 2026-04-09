@@ -16,7 +16,6 @@ import javax.swing.JTextField;
 
 import ebu6304.model.Applicant;
 import ebu6304.storage.DataService;
-import ebu6304.storage.OperationLog;
 
 public final class ForgotPasswordPanel extends JPanel {
     public interface BackHandler {
@@ -101,7 +100,6 @@ public final class ForgotPasswordPanel extends JPanel {
                 return;
             }
 
-            OperationLog.append(data.tempOperationFile(), "INFO", "Password reset for role=" + role.authRole() + ", account=" + account);
             JOptionPane.showMessageDialog(this, I18n.t("msg.reset.success"));
         });
 

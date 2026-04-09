@@ -2,6 +2,7 @@ package ebu6304.ui;
 
 import ebu6304.model.Applicant;
 import ebu6304.storage.DataService;
+import ebu6304.storage.OperationLog;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -460,6 +461,8 @@ public final class LoginPanel extends JPanel {
 
             Applicant a = data.upsertApplicantByAccount(account, name, email, skills, storedCvPath);
             data.upsertUser(Role.TA.authRole(), a.id(), pass, a.name());
+            OperationLog.append(data.tempOperationFile(), "INFO",
+                    "actor=" + a.id() + " action=registerTa role=TA account=" + a.id());
             JOptionPane.showMessageDialog(this, I18n.t("msg.register.success"));
             if (showLogin != null) showLogin.run();
         });

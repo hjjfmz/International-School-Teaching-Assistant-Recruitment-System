@@ -23,6 +23,7 @@ import javax.swing.table.JTableHeader;
 
 import ebu6304.storage.AuthStore;
 import ebu6304.storage.DataService;
+import ebu6304.storage.OperationLog;
 import ebu6304.ui.I18n;
 
 public final class AdminUserManagementPage extends JPanel {
@@ -212,6 +213,8 @@ public final class AdminUserManagementPage extends JPanel {
 
         data.upsertUser("MO", a, pw, nm);
         data.setUserEnabled("MO", a, true);
+        OperationLog.append(data.tempOperationFile(), "INFO",
+                "actor=" + actor + " action=createMoAccount role=MO account=" + a + " name=" + nm.replaceAll("\\s+", "_"));
         refresh();
         JOptionPane.showMessageDialog(this, I18n.t("msg.created"));
     }
