@@ -2,6 +2,7 @@ package ebu6304.ui.mo;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.HierarchyEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -62,15 +63,36 @@ public final class MoResultsPage extends JPanel {
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
 
-        reloadJobs();
-        refresh();
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                refreshView();
+            }
+        });
+
+        refreshView();
     }
 
     public void reloadJobs() {
+        String selectedId = selectedJobId();
         jobsBox.removeAllItems();
+        JobItem preferred = null;
+        JobItem fallback = null;
         for (Job j : data.listJobs()) {
             if (!account.equals(j.postedBy())) continue;
-            jobsBox.addItem(new JobItem(j.id(), j.title()));
+            JobItem item = new JobItem(j.id(), j.title());
+            jobsBox.addItem(item);
+
+            if (selectedId != null && selectedId.equals(j.id())) {
+                preferred = item;
+            } else if (fallback == null && hasProcessedResults(j.id())) {
+                fallback = item;
+            }
+        }
+
+        if (preferred != null) {
+            jobsBox.setSelectedItem(preferred);
+        } else if (fallback != null) {
+            jobsBox.setSelectedItem(fallback);
         }
     }
 
@@ -82,6 +104,26 @@ public final class MoResultsPage extends JPanel {
             if (a.status() == Application.Status.SUBMITTED) continue;
             model.addRow(new Object[] { a.id(), a.applicantId(), a.status().name() });
         }
+    }
+
+    public void refreshView() {
+        reloadJobs();
+        refresh();
+    }
+
+    private String selectedJobId() {
+        JobItem selected = (JobItem) jobsBox.getSelectedItem();
+        return selected == null ? null : selected.id;
+    }
+
+    private boolean hasProcessedResults(String jobId) {
+        if (jobId == null) return false;
+        for (Application a : data.listApplicationsForJob(jobId)) {
+            if (a.status() != Application.Status.SUBMITTED) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final class JobItem {

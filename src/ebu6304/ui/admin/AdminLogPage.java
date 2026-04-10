@@ -2,9 +2,11 @@ package ebu6304.ui.admin;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.HierarchyEvent;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 
@@ -72,12 +74,18 @@ public final class AdminLogPage extends JPanel {
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(area), BorderLayout.CENTER);
 
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                refresh();
+            }
+        });
+
         refresh();
     }
 
     public void refresh() {
         try {
-            List<String> lines = Files.readAllLines(data.dataDir().resolve("temp_operation.txt"), StandardCharsets.UTF_8);
+            List<String> lines = Files.readAllLines(logFile(), StandardCharsets.UTF_8);
             StringBuilder sb = new StringBuilder();
 
             String actorFilter = actor.getText().trim();
@@ -106,7 +114,7 @@ public final class AdminLogPage extends JPanel {
             }
             area.setText(sb.toString());
         } catch (IOException e) {
-            area.setText("" );
+            area.setText("");
         }
     }
 
@@ -127,10 +135,14 @@ public final class AdminLogPage extends JPanel {
         int ok = javax.swing.JOptionPane.showConfirmDialog(this, I18n.t("admin.logs.confirm.clear"), I18n.t("common.confirm"), javax.swing.JOptionPane.YES_NO_OPTION);
         if (ok != javax.swing.JOptionPane.YES_OPTION) return;
         try {
-            Files.write(data.dataDir().resolve("temp_operation.txt"), new byte[0], StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+            Files.write(logFile(), new byte[0], StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
         } catch (IOException e) {
         }
         refresh();
+    }
+
+    private Path logFile() {
+        return data.tempOperationFile();
     }
 
     private static boolean containsKeyValue(String msg, String key, String expected) {

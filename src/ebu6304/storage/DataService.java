@@ -242,12 +242,25 @@ public final class DataService {
     }
 
     public synchronized boolean delete(String actor, String account) {
+        String deletedRole = "";
+        for (AuthStore.User user : AuthStore.listUsers(adminSystemFile)) {
+            if (account != null && account.equals(user.account())) {
+                deletedRole = user.role();
+                break;
+            }
+        }
         boolean deleted = AuthStore.deleteUser(adminSystemFile, account);
-        boolean deletedTa = deleteApplicantByAccount(account);
+        boolean deletedApplicant = deleteApplicantByAccount(account);
         int removedApps = removeApplicationsForApplicant(account);
         if (removedApps > 0) persistApplications();
-        boolean ok = deleted || deletedTa || removedApps > 0;
-        OperationLog.append(tempOperationFile, "INFO", "actor=" + (actor == null ? "" : actor) + " action=deleteTaAccount account=" + (account == null ? "" : account) + " deletedUser=" + deleted + " deletedTa=" + deletedTa + " removedApps=" + removedApps);
+        boolean ok = deleted || deletedApplicant || removedApps > 0;
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=" + safeLogValue(actor) +
+                " action=deleteUser account=" + safeLogValue(account) +
+                " role=" + safeLogValue(deletedRole) +
+                " deletedUser=" + deleted +
+                " deletedApplicant=" + deletedApplicant +
+                " removedApplications=" + removedApps);
         return ok;
     }
 
@@ -255,6 +268,10 @@ public final class DataService {
         Optional<AuthStore.User> u = AuthStore.findUser(adminSystemFile, role, account);
         if (!u.isPresent()) return false;
         upsertUser(role, account, newPassword, u.get().name());
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=" + safeLogValue(account) +
+                " action=resetPassword role=" + safeLogValue(role) +
+                " account=" + safeLogValue(account));
         return true;
     }
 
@@ -355,10 +372,20 @@ public final class DataService {
     }
 
     public synchronized Job createJob(String title, String description, String requiredSkills, int hoursPerWeek, String postedBy) {
+        return createJob(postedBy, title, description, requiredSkills, hoursPerWeek, postedBy);
+    }
+
+    public synchronized Job createJob(String actor, String title, String description, String requiredSkills, int hoursPerWeek, String postedBy) {
         String id = UUID.randomUUID().toString();
         Job j = new Job(id, title, description, requiredSkills, hoursPerWeek, postedBy);
         jobs.put(id, j);
         persistJobs();
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=" + safeLogValue(actor) +
+                " action=createJob jobId=" + id +
+                " postedBy=" + safeLogValue(postedBy) +
+                " title=" + safeLogValue(title) +
+                " hoursPerWeek=" + hoursPerWeek);
         return j;
     }
 
@@ -425,17 +452,37 @@ public final class DataService {
         Application a = new Application(id, applicantId, jobId, Application.Status.SUBMITTED, System.currentTimeMillis());
         applications.put(id, a);
         persistApplications();
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=" + safeLogValue(applicantId) +
+                " action=submitApplication applicationId=" + id +
+                " applicantId=" + safeLogValue(applicantId) +
+                " jobId=" + safeLogValue(jobId));
         return a;
     }
 
     public synchronized void setApplicationStatus(String applicationId, Application.Status status) {
+        setApplicationStatus("", applicationId, status);
+    }
+
+    public synchronized void setApplicationStatus(String actor, String applicationId, Application.Status status) {
         Application a = applications.get(applicationId);
-        if (a == null) return;
+        if (a == null || status == null) return;
         applications.put(applicationId, a.withStatus(status));
         persistApplications();
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=" + safeLogValue(actor) +
+                " action=setApplicationStatus applicationId=" + safeLogValue(applicationId) +
+                " applicantId=" + safeLogValue(a.applicantId()) +
+                " jobId=" + safeLogValue(a.jobId()) +
+                " fromStatus=" + a.status().name() +
+                " toStatus=" + status.name());
     }
 
     public synchronized boolean withdrawApplication(String applicantId, String jobId) {
+        return withdrawApplication(applicantId, jobId, applicantId);
+    }
+
+    public synchronized boolean withdrawApplication(String applicantId, String jobId, String actor) {
         if (applicantId == null || jobId == null) return false;
         Application target = null;
         for (Application a : applications.values()) {
@@ -448,6 +495,11 @@ public final class DataService {
         if (target.status() != Application.Status.SUBMITTED) return false;
         applications.remove(target.id());
         persistApplications();
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=" + safeLogValue(actor) +
+                " action=withdrawApplication applicationId=" + safeLogValue(target.id()) +
+                " applicantId=" + safeLogValue(applicantId) +
+                " jobId=" + safeLogValue(jobId));
         return true;
     }
 
@@ -687,5 +739,10 @@ public final class DataService {
         } catch (NumberFormatException nfe) {
             return 0L;
         }
+    }
+
+    private static String safeLogValue(String value) {
+        if (value == null) return "";
+        return value.trim().replaceAll("\\s+", "_");
     }
 }

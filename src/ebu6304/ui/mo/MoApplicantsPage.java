@@ -345,7 +345,7 @@ public final class MoApplicantsPage extends JPanel {
         int modelRow = table.convertRowIndexToModel(r);
         String appId = String.valueOf(model.getValueAt(modelRow, 0));
         
-        data.setApplicationStatus(appId, st);
+        data.setApplicationStatus(account, appId, st);
         JOptionPane.showMessageDialog(this, I18n.t("msg.status.updated", st.name()));
         refresh();
     }
@@ -371,7 +371,7 @@ public final class MoApplicantsPage extends JPanel {
         for (int r : selectedRows) {
             int modelRow = table.convertRowIndexToModel(r);
             String appId = String.valueOf(model.getValueAt(modelRow, 0));
-            data.setApplicationStatus(appId, st);
+            data.setApplicationStatus(account, appId, st);
             success++;
         }
         

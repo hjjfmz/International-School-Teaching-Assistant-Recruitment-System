@@ -245,6 +245,16 @@ public final class AppLayout extends JPanel {
         navPanel.repaint();
     }
 
+    private void selectNavByKey(String key) {
+        if (key == null) return;
+        for (NavItemButton b : navButtons) {
+            if (key.equals(b.key)) {
+                selectNav(b);
+                return;
+            }
+        }
+    }
+
     private static void styleTopIconButton(JButton b) {
         b.setFocusPainted(false);
         b.setBorderPainted(false);
@@ -358,6 +368,7 @@ public final class AppLayout extends JPanel {
 
     public void showContent(String key) {
         if (key == null) return;
+        selectNavByKey(key);
         contentLayout.show(content, key);
     }
 
