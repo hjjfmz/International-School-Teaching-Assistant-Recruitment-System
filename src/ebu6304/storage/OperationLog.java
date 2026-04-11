@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public final class OperationLog {
     private OperationLog() {}
 
-    public static void append(Path logFile, String level, String message) {
+    public static synchronized void append(Path logFile, String level, String message) {
         if (logFile == null) return;
         if (level == null) level = "INFO";
         if (message == null) message = "";

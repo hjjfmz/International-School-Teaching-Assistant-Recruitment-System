@@ -66,6 +66,9 @@ public final class DataService {
     private final Map<String, Job> jobs = new HashMap<String, Job>();
     private final Map<String, Application> applications = new HashMap<String, Application>();
 
+    private static final Object APPLICANT_IO_LOCK = new Object();
+    private static final Object JOB_IO_LOCK = new Object();
+
     public DataService() {
         this(loadBootstrapDataDir());
     }
@@ -674,68 +677,72 @@ public final class DataService {
     }
 
     private void persistApplicants() {
-        List<String> lines = new ArrayList<String>();
-        lines.add("id,name,email,skills,cvPath,description");
-        for (Applicant a : applicants.values()) {
-            lines.add(Csv.join(a.id(), a.name(), a.email(), a.skills(), a.cvPath(), a.description()));
-        }
-        if (lines.size() > 1) {
-            List<String> dataLines = new ArrayList<String>(lines.subList(1, lines.size()));
-            Collections.sort(dataLines);
-            List<String> out = new ArrayList<String>();
-            out.add(lines.get(0));
-            out.addAll(dataLines);
-            writeAllLines(taInfoFile, out, StandardCharsets.UTF_8);
-        } else {
-            writeAllLines(taInfoFile, lines, StandardCharsets.UTF_8);
+        synchronized (APPLICANT_IO_LOCK) {
+            List<String> lines = new ArrayList<String>();
+            lines.add("id,name,email,skills,cvPath,description");
+            for (Applicant a : applicants.values()) {
+                lines.add(Csv.join(a.id(), a.name(), a.email(), a.skills(), a.cvPath(), a.description()));
+            }
+            if (lines.size() > 1) {
+                List<String> dataLines = new ArrayList<String>(lines.subList(1, lines.size()));
+                Collections.sort(dataLines);
+                List<String> out = new ArrayList<String>();
+                out.add(lines.get(0));
+                out.addAll(dataLines);
+                writeAllLines(taInfoFile, out, StandardCharsets.UTF_8);
+            } else {
+                writeAllLines(taInfoFile, lines, StandardCharsets.UTF_8);
+            }
         }
     }
 
     private void persistJobs() {
-        Map<String, Object> root = new LinkedHashMap<String, Object>();
-        List<Object> jobsArr = new LinkedList<Object>();
+        synchronized (JOB_IO_LOCK) {
+            Map<String, Object> root = new LinkedHashMap<String, Object>();
+            List<Object> jobsArr = new LinkedList<Object>();
 
-        List<Job> jobList = new ArrayList<Job>(jobs.values());
-        Collections.sort(jobList, new Comparator<Job>() {
-            @Override
-            public int compare(Job o1, Job o2) {
-                return String.CASE_INSENSITIVE_ORDER.compare(o1.title(), o2.title());
+            List<Job> jobList = new ArrayList<Job>(jobs.values());
+            Collections.sort(jobList, new Comparator<Job>() {
+                @Override
+                public int compare(Job o1, Job o2) {
+                    return String.CASE_INSENSITIVE_ORDER.compare(o1.title(), o2.title());
+                }
+            });
+
+            for (Job j : jobList) {
+                Map<String, Object> jm = new LinkedHashMap<String, Object>();
+                jm.put("id", j.id());
+                jm.put("title", j.title());
+                jm.put("description", j.description());
+                jm.put("requiredSkills", j.requiredSkills());
+                jm.put("hoursPerWeek", Integer.valueOf(j.hoursPerWeek()));
+                jm.put("postedBy", j.postedBy());
+                jm.put("status", j.status().name());
+                jm.put("category", j.category());
+
+                List<Object> appsArr = new LinkedList<Object>();
+                for (Application a : applications.values()) {
+                    if (!j.id().equals(a.jobId())) continue;
+                    Map<String, Object> am = new LinkedHashMap<String, Object>();
+                    am.put("id", a.id());
+                    am.put("applicantId", a.applicantId());
+                    am.put("jobId", a.jobId());
+                    am.put("status", a.status().name());
+                    am.put("createdAt", Long.valueOf(a.createdAt()));
+                    appsArr.add(am);
+                }
+                jm.put("applications", appsArr);
+                jobsArr.add(jm);
             }
-        });
 
-        for (Job j : jobList) {
-            Map<String, Object> jm = new LinkedHashMap<String, Object>();
-            jm.put("id", j.id());
-            jm.put("title", j.title());
-            jm.put("description", j.description());
-            jm.put("requiredSkills", j.requiredSkills());
-            jm.put("hoursPerWeek", Integer.valueOf(j.hoursPerWeek()));
-            jm.put("postedBy", j.postedBy());
-            jm.put("status", j.status().name());
-            jm.put("category", j.category());
-
-            List<Object> appsArr = new LinkedList<Object>();
-            for (Application a : applications.values()) {
-                if (!j.id().equals(a.jobId())) continue;
-                Map<String, Object> am = new LinkedHashMap<String, Object>();
-                am.put("id", a.id());
-                am.put("applicantId", a.applicantId());
-                am.put("jobId", a.jobId());
-                am.put("status", a.status().name());
-                am.put("createdAt", Long.valueOf(a.createdAt()));
-                appsArr.add(am);
+            root.put("jobs", jobsArr);
+            String json = MiniJson.stringify(root);
+            try {
+                Files.write(moJobsFile, json.getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING,
+                        StandardOpenOption.CREATE);
+            } catch (IOException e) {
+                OperationLog.append(tempOperationFile, "ERROR", "Write mo_jobs.json failed: " + e.getMessage());
             }
-            jm.put("applications", appsArr);
-            jobsArr.add(jm);
-        }
-
-        root.put("jobs", jobsArr);
-        String json = MiniJson.stringify(root);
-        try {
-            Files.write(moJobsFile, json.getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            OperationLog.append(tempOperationFile, "ERROR", "Write mo_jobs.json failed: " + e.getMessage());
         }
     }
 

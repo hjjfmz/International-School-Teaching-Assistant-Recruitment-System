@@ -115,7 +115,7 @@ public final class AuthStore {
         return Optional.empty();
     }
 
-    public static void upsertUser(Path adminSystemXml, User user) {
+    public static synchronized void upsertUser(Path adminSystemXml, User user) {
         if (user == null) return;
         Document doc = read(adminSystemXml);
         Element root = doc.getDocumentElement();
@@ -157,7 +157,7 @@ public final class AuthStore {
         }
     }
 
-    public static boolean setEnabled(Path adminSystemXml, String role, String account, boolean enabled) {
+    public static synchronized boolean setEnabled(Path adminSystemXml, String role, String account, boolean enabled) {
         if (role == null) role = "";
         if (account == null) account = "";
         Document doc = read(adminSystemXml);
@@ -184,7 +184,7 @@ public final class AuthStore {
         return false;
     }
 
-    public static int migratePlaintextPasswords(Path adminSystemXml) {
+    public static synchronized int migratePlaintextPasswords(Path adminSystemXml) {
         Document doc = read(adminSystemXml);
         Element root = doc.getDocumentElement();
         if (root == null) return 0;
@@ -272,7 +272,7 @@ public final class AuthStore {
         return r == 0;
     }
 
-    public static boolean deleteUser(Path adminSystemXml, String account) {
+    public static synchronized boolean deleteUser(Path adminSystemXml, String account) {
         if (account == null) account = "";
         Document doc = read(adminSystemXml);
         Element root = doc.getDocumentElement();

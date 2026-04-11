@@ -21,7 +21,7 @@ import org.w3c.dom.Element;
 public final class XmlStore {
     private XmlStore() {}
 
-    public static void ensureAdminSystemXmlExists(Path xmlFile) throws IOException {
+    public static synchronized void ensureAdminSystemXmlExists(Path xmlFile) throws IOException {
         if (Files.exists(xmlFile)) return;
         try {
             DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
@@ -53,7 +53,7 @@ public final class XmlStore {
         }
     }
 
-    public static void write(Path xmlFile, Document doc) throws Exception {
+    public static synchronized void write(Path xmlFile, Document doc) throws Exception {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer t = tf.newTransformer();
         t.setOutputProperty(OutputKeys.INDENT, "yes");
