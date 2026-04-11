@@ -87,30 +87,14 @@ public final class AuthStore {
 
     public static boolean authenticate(Path adminSystemXml, String role, String account, String password) {
         Optional<User> u = findUser(adminSystemXml, role, account);
-        if (!u.isPresent()) return false;
-        if (!u.get().enabled()) return false;
-        String p = password == null ? "" : password;
-        String stored = u.get().password();
-        if (stored != null && stored.startsWith(HASH_PREFIX)) {
-            return verifyPbkdf2(stored, p);
-        }
-        return p.equals(stored);
+        return u.isPresent() && canAuthenticate(u.get(), password);
     }
 
     public static Optional<String> authenticateAndGetRole(Path adminSystemXml, String account, String password) {
         if (account == null) account = "";
-        String p = password == null ? "" : password;
         for (User u : listUsers(adminSystemXml)) {
             if (!account.equals(u.account())) continue;
-            if (!u.enabled()) continue;
-            String stored = u.password();
-            boolean ok;
-            if (stored != null && stored.startsWith(HASH_PREFIX)) {
-                ok = verifyPbkdf2(stored, p);
-            } else {
-                ok = p.equals(stored);
-            }
-            if (ok) return Optional.of(u.role());
+            if (canAuthenticate(u, password)) return Optional.of(u.role());
         }
         return Optional.empty();
     }
@@ -126,18 +110,7 @@ public final class AuthStore {
             root.appendChild(usersEl);
         }
 
-        Element found = null;
-        NodeList kids = usersEl.getChildNodes();
-        for (int i = 0; i < kids.getLength(); i++) {
-            Node n = kids.item(i);
-            if (!(n instanceof Element)) continue;
-            Element e = (Element) n;
-            if (!"user".equals(e.getTagName())) continue;
-            if (user.role().equalsIgnoreCase(e.getAttribute("role")) && user.account().equals(e.getAttribute("account"))) {
-                found = e;
-                break;
-            }
-        }
+        Element found = findUserElement(usersEl, user.role(), user.account());
 
         if (found == null) {
             found = doc.createElement("user");
@@ -151,10 +124,7 @@ public final class AuthStore {
         found.setAttribute("name", user.name());
         found.setAttribute("enabled", user.enabled() ? "true" : "false");
 
-        try {
-            XmlStore.write(adminSystemXml, doc);
-        } catch (Exception e) {
-        }
+        writeQuietly(adminSystemXml, doc);
     }
 
     public static synchronized boolean setEnabled(Path adminSystemXml, String role, String account, boolean enabled) {
@@ -166,22 +136,11 @@ public final class AuthStore {
         Element usersEl = firstChildElement(root, "users");
         if (usersEl == null) return false;
 
-        NodeList kids = usersEl.getChildNodes();
-        for (int i = 0; i < kids.getLength(); i++) {
-            Node n = kids.item(i);
-            if (!(n instanceof Element)) continue;
-            Element e = (Element) n;
-            if (!"user".equals(e.getTagName())) continue;
-            if (role.equalsIgnoreCase(e.getAttribute("role")) && account.equals(e.getAttribute("account"))) {
-                e.setAttribute("enabled", enabled ? "true" : "false");
-                try {
-                    XmlStore.write(adminSystemXml, doc);
-                } catch (Exception ex) {
-                }
-                return true;
-            }
-        }
-        return false;
+        Element userEl = findUserElement(usersEl, role, account);
+        if (userEl == null) return false;
+        userEl.setAttribute("enabled", enabled ? "true" : "false");
+        writeQuietly(adminSystemXml, doc);
+        return true;
     }
 
     public static synchronized int migratePlaintextPasswords(Path adminSystemXml) {
@@ -210,12 +169,19 @@ public final class AuthStore {
         }
 
         if (changed > 0) {
-            try {
-                XmlStore.write(adminSystemXml, doc);
-            } catch (Exception e) {
-            }
+            writeQuietly(adminSystemXml, doc);
         }
         return changed;
+    }
+
+    private static boolean canAuthenticate(User user, String password) {
+        if (user == null || !user.enabled()) return false;
+        String input = password == null ? "" : password;
+        String stored = user.password();
+        if (stored != null && stored.startsWith(HASH_PREFIX)) {
+            return verifyPbkdf2(stored, input);
+        }
+        return input.equals(stored);
     }
 
     private static String hashPbkdf2(String password) {
@@ -280,22 +246,33 @@ public final class AuthStore {
         Element usersEl = firstChildElement(root, "users");
         if (usersEl == null) return false;
 
+        Element userEl = findUserElement(usersEl, null, account);
+        if (userEl == null) return false;
+        usersEl.removeChild(userEl);
+        writeQuietly(adminSystemXml, doc);
+        return true;
+    }
+
+    private static void writeQuietly(Path adminSystemXml, Document doc) {
+        try {
+            XmlStore.write(adminSystemXml, doc);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static Element findUserElement(Element usersEl, String role, String account) {
+        if (usersEl == null || account == null) return null;
         NodeList kids = usersEl.getChildNodes();
         for (int i = 0; i < kids.getLength(); i++) {
             Node n = kids.item(i);
             if (!(n instanceof Element)) continue;
             Element e = (Element) n;
             if (!"user".equals(e.getTagName())) continue;
-            if (account.equals(e.getAttribute("account"))) {
-                usersEl.removeChild(e);
-                try {
-                    XmlStore.write(adminSystemXml, doc);
-                } catch (Exception ex) {
-                }
-                return true;
-            }
+            if (!account.equals(e.getAttribute("account"))) continue;
+            if (role != null && !role.isEmpty() && !role.equalsIgnoreCase(e.getAttribute("role"))) continue;
+            return e;
         }
-        return false;
+        return null;
     }
 
     private static Document read(Path p) {
