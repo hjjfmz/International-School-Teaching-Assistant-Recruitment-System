@@ -457,8 +457,8 @@ public final class I18n {
         zh.put("mo.results.send", "\u53D1\u9001\u901A\u77E5\uFF08\u5360\u4F4D\uFF09");
         en.put("mo.results.col.appid", "Application ID");
         zh.put("mo.results.col.appid", "\u7533\u8BF7 ID");
-        en.put("mo.results.col.taaccount", "TA Account");
-        zh.put("mo.results.col.taaccount", "TA \u8D26\u53F7");
+        en.put("mo.results.col.taaccount", "TA Name");
+        zh.put("mo.results.col.taaccount", "TA \u59D3\u540D");
         en.put("mo.results.col.status", "Status");
         zh.put("mo.results.col.status", "\u72B6\u6001");
 
@@ -529,6 +529,8 @@ public final class I18n {
         zh.put("admin.config.lang", "\u9ED8\u8BA4\u8BED\u8A00 (EN)\uFF1A");
         en.put("admin.config.pwdlen.nan", "Password min length must be a number");
         zh.put("admin.config.pwdlen.nan", "\u5BC6\u7801\u6700\u5C0F\u957F\u5EA6\u5FC5\u987B\u4E3A\u6570\u5B57");
+        en.put("admin.config.datapath.hint", "Leave blank to use the default ./data directory");
+        zh.put("admin.config.datapath.hint", "\u7559\u7a7a\u5219\u4f7f\u7528\u9ed8\u8ba4 ./data \u76ee\u5f55");
         en.put("admin.config.saved", "Saved. Data path changes take effect on next startup.");
         zh.put("admin.config.saved", "\u5DF2\u4FDD\u5B58\u3002\u6570\u636E\u8DEF\u5F84\u66F4\u6539\u5C06\u5728\u4E0B\u6B21\u542F\u52A8\u65F6\u751F\u6548\u3002");
 

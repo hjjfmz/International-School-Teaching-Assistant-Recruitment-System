@@ -1,5 +1,8 @@
-id,name,email,skills,cvPath
-2023213331,Alice,alice@example.com,Java;SQL,
-2023213332,Bob,bob@example.com,Python;Data,
-2023213371,hjj,hjj1904211461@bupt.edu.cn,,e:\1\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213371.pdf
-hjj,Junjie He,hjj1904211461@bupt.edu.cn,,C:\Users\HUAWEI\Desktop\科研论文\简历——何俊杰.pdf
+id,name,email,skills,cvPath,description
+1f0b1f6b-86e2-4f6e-9d0d-3c3d3a1d0e6a,Demo User C,c@example.com,SQL,,
+2023213331,Alice,alice@example.com,Java;SQL,,
+2023213332,Bob,bob@example.com,Python;Data,,
+2023213371,He Junjie,1904211461@qq.com,,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213371.docx,
+2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7,Demo User A,a@example.com,Python,,
+7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1,Demo User B,b@example.com,Java,,
+9a2de5a0-0d7a-4bcb-9e8a-2f2ab2b6a2d5,Demo User D,d@example.com,C++,,

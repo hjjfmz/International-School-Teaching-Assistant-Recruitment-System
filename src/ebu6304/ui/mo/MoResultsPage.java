@@ -14,6 +14,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
+import ebu6304.model.Applicant;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
@@ -78,8 +79,11 @@ public final class MoResultsPage extends JPanel {
         JobItem preferred = null;
         JobItem fallback = null;
         for (Job j : data.listJobs()) {
-            if (!account.equals(j.postedBy())) continue;
-            JobItem item = new JobItem(j.id(), j.title());
+            // 显示当前 MO 发布的 job，以及 postedBy 为通用占位符的历史 job
+            boolean isOwn = account.equals(j.postedBy());
+            boolean isLegacy = "MO".equalsIgnoreCase(j.postedBy()) || "Admin".equalsIgnoreCase(j.postedBy());
+            if (!isOwn && !isLegacy) continue;
+            JobItem item = new JobItem(j.id(), j.title(), isLegacy && !isOwn);
             jobsBox.addItem(item);
 
             if (selectedId != null && selectedId.equals(j.id())) {
@@ -101,8 +105,10 @@ public final class MoResultsPage extends JPanel {
         JobItem it = (JobItem) jobsBox.getSelectedItem();
         if (it == null) return;
         for (Application a : data.listApplicationsForJob(it.id)) {
-            if (a.status() == Application.Status.SUBMITTED) continue;
-            model.addRow(new Object[] { a.id(), a.applicantId(), a.status().name() });
+            // 显示全部状态，包含 SUBMITTED
+            Applicant ta = data.getApplicant(a.applicantId()).orElse(null);
+            String displayName = (ta != null) ? ta.name() : a.applicantId();
+            model.addRow(new Object[] { a.id(), displayName, a.status().name() });
         }
     }
 
@@ -129,15 +135,17 @@ public final class MoResultsPage extends JPanel {
     private static final class JobItem {
         private final String id;
         private final String title;
+        private final boolean legacy;
 
-        private JobItem(String id, String title) {
+        private JobItem(String id, String title, boolean legacy) {
             this.id = id;
             this.title = title;
+            this.legacy = legacy;
         }
 
         @Override
         public String toString() {
-            return title;
+            return legacy ? "[Legacy] " + title : title;
         }
     }
 }

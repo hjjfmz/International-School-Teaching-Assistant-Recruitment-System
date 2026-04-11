@@ -14,8 +14,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,8 +25,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 import javax.swing.JComboBox;
 import javax.swing.JScrollPane;
@@ -50,7 +46,6 @@ public final class AppLayout extends JPanel {
     private final JButton logoutBtn = new JButton(I18n.t("common.logout"));
     private final BadgeIconButton notifBtn = new BadgeIconButton(IconFactory.bell(32, new Color(90, 98, 110)));
     private final BadgeIconButton settingsBtn = new BadgeIconButton(IconFactory.gear(32, new Color(90, 98, 110)));
-    private final JButton avatarBtn = new JButton("");
 
     private int unreadNotifications = 0;
 
@@ -117,7 +112,6 @@ public final class AppLayout extends JPanel {
         accountLabel.setFont(accountLabel.getFont().deriveFont(Font.PLAIN, 12f));
         styleTopIconButton(notifBtn);
         styleTopIconButton(settingsBtn);
-        buildAvatarButton();
 
         right.add(roleLabel);
         right.add(Box.createHorizontalStrut(6));
@@ -125,7 +119,6 @@ public final class AppLayout extends JPanel {
         right.add(Box.createHorizontalStrut(10));
         right.add(notifBtn);
         right.add(settingsBtn);
-        right.add(avatarBtn);
         top.add(right, BorderLayout.EAST);
 
         logoutBtn.addActionListener(e -> {
@@ -265,52 +258,6 @@ public final class AppLayout extends JPanel {
         b.setFont(b.getFont().deriveFont(Font.PLAIN, 16f));
     }
 
-    private void buildAvatarButton() {
-        avatarBtn.setPreferredSize(new Dimension(34, 34));
-        avatarBtn.setFocusPainted(false);
-        avatarBtn.setBorderPainted(false);
-        avatarBtn.setContentAreaFilled(false);
-        avatarBtn.setOpaque(false);
-        avatarBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        avatarBtn.setIcon(loadAvatarIcon());
-
-        JPopupMenu menu = new JPopupMenu();
-        JMenuItem profileItem = new JMenuItem(I18n.t("layout.profile"));
-        profileItem.addActionListener(e -> openProfile());
-        JMenuItem logoutItem = new JMenuItem(I18n.t("common.logout"));
-        logoutItem.addActionListener(e -> logoutBtn.doClick());
-        menu.add(profileItem);
-        menu.addSeparator();
-        menu.add(logoutItem);
-
-        avatarBtn.addActionListener(e -> {
-            menu.show(avatarBtn, 0, avatarBtn.getHeight());
-        });
-    }
-
-    private static ImageIcon loadAvatarIcon() {
-        try {
-            java.io.File f = new java.io.File(ebu6304.App.projectRoot(), "1.jpg");
-            if (!f.isFile()) return null;
-            BufferedImage img = javax.imageio.ImageIO.read(f);
-            if (img == null) return null;
-
-            BufferedImage out = new BufferedImage(28, 28, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = out.createGraphics();
-            try {
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setClip(new Ellipse2D.Double(0, 0, 28, 28));
-                java.awt.Image scaled = img.getScaledInstance(28, 28, java.awt.Image.SCALE_SMOOTH);
-                g2.drawImage(scaled, 0, 0, null);
-            } finally {
-                g2.dispose();
-            }
-            return new ImageIcon(out);
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
     private static ImageIcon iconFor(String key, Role role) {
         Color fg = Color.WHITE;
         int sz = 32;
@@ -382,32 +329,35 @@ public final class AppLayout extends JPanel {
         }
     }
 
-    private void openProfile() {
-        statusBar.setLeftText(I18n.t("layout.profile"));
-        String r = currentRole == null ? "" : I18n.t(currentRole.displayKey());
-        String a = currentAccount == null ? "" : currentAccount;
-        JOptionPane.showMessageDialog(this,
-                I18n.t("layout.profile") + "\n\nRole: " + r + "\nAccount: " + a,
-                I18n.t("layout.profile"),
-                JOptionPane.INFORMATION_MESSAGE);
-    }
-
     private void openSettings() {
         statusBar.setLeftText(I18n.t("layout.settings"));
         JPanel p = new JPanel(new BorderLayout(10, 10));
         p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
+        // 账号信息区
+        String r = currentRole == null ? "" : I18n.t(currentRole.displayKey());
+        String a = currentAccount == null ? "" : currentAccount;
+        JLabel profileLabel = new JLabel("<html><b>" + r + "</b>&nbsp;&nbsp;" + a + "</html>");
+        profileLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+        p.add(profileLabel, BorderLayout.NORTH);
+
+        // 语言切换区
         JPanel row = new JPanel(new BorderLayout(10, 10));
         row.add(new JLabel(I18n.t("layout.language")), BorderLayout.WEST);
         JComboBox<I18n.Lang> langBox = new JComboBox<I18n.Lang>(I18n.Lang.values());
         langBox.setSelectedItem(I18n.lang());
         row.add(langBox, BorderLayout.CENTER);
+        p.add(row, BorderLayout.CENTER);
 
-        p.add(row, BorderLayout.NORTH);
+        String[] options = { I18n.t("common.save"), I18n.t("common.logout"), I18n.t("common.cancel") };
+        int res = JOptionPane.showOptionDialog(this, p, I18n.t("layout.settings"),
+                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 
-        int res = JOptionPane.showConfirmDialog(this, p, I18n.t("layout.settings"), JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
-        if (res != JOptionPane.OK_OPTION) return;
+        if (res == 1) { // 退出登录
+            logoutBtn.doClick();
+            return;
+        }
+        if (res != 0) return; // 取消
 
         I18n.Lang selected = (I18n.Lang) langBox.getSelectedItem();
         if (selected != null && selected != I18n.lang()) {

@@ -262,8 +262,11 @@ public final class MoApplicantsPage extends JPanel {
     public void reloadJobs() {
         jobsBox.removeAllItems();
         for (Job j : data.listJobs()) {
-            if (!account.equals(j.postedBy())) continue;
-            jobsBox.addItem(new JobItem(j.id(), j.title()));
+            boolean isOwn = account.equals(j.postedBy());
+            boolean isLegacy = "MO".equalsIgnoreCase(j.postedBy()) || "Admin".equalsIgnoreCase(j.postedBy());
+            if (!isOwn && !isLegacy) continue;
+            String label = (isLegacy && !isOwn) ? "[Legacy] " + j.title() : j.title();
+            jobsBox.addItem(new JobItem(j.id(), label));
         }
     }
 

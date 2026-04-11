@@ -20,6 +20,8 @@ public final class MainFrame extends JFrame {
     private Role currentRole;
     private String currentAccount;
 
+    private LoginPanel loginPanel;
+
     public MainFrame(DataService data) {
         super(I18n.t("app.title"));
         this.data = data;
@@ -51,6 +53,7 @@ public final class MainFrame extends JFrame {
                 show("forgot");
             }
         });
+        this.loginPanel = login;
 
         ForgotPasswordPanel forgot = new ForgotPasswordPanel(data, () -> show("login"));
 
@@ -78,6 +81,9 @@ public final class MainFrame extends JFrame {
     }
 
     private void show(String key) {
+        if ("login".equals(key) && loginPanel != null) {
+            loginPanel.clearCredentials();
+        }
         cards.show(container, key);
     }
 }

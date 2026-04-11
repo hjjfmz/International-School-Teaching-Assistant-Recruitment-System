@@ -42,6 +42,9 @@ public final class LoginPanel extends JPanel {
 
     private final DataService data;
 
+    private PlaceholderTextField accountField;
+    private PlaceholderPasswordField passField;
+
     private static final Color PRIMARY = new Color(0, 51, 153);
     private static final Color HEADER_BG = new Color(0, 51, 153, 200);
     private static final Color CARD_BG = new Color(255, 255, 255, 240);
@@ -205,6 +208,12 @@ public final class LoginPanel extends JPanel {
         return footer;
     }
 
+    /** 登出时调用，清除输入框中的账号和密码。 */
+    public void clearCredentials() {
+        if (accountField != null) accountField.setText("");
+        if (passField != null) passField.setText("");
+    }
+
     /* ── Login tab ───────────────────────────────────────── */
 
     private JPanel buildLoginTab(LoginHandler handler, Runnable showRegister) {
@@ -233,6 +242,8 @@ public final class LoginPanel extends JPanel {
 
         PlaceholderTextField accountField = new PlaceholderTextField(20, I18n.t("login.placeholder.account"));
         styleInput(accountField);
+        // keep reference for clearCredentials()
+        this.accountField = accountField;
         JPanel accRow = inputWithPlaceholder(accountField, I18n.t("login.account"));
         accRow.setAlignmentX(0f);
         p.add(accRow);
@@ -241,6 +252,8 @@ public final class LoginPanel extends JPanel {
 
         PlaceholderPasswordField passField = new PlaceholderPasswordField(20, I18n.t("login.placeholder.password"));
         styleInput(passField);
+        // keep reference for clearCredentials()
+        this.passField = passField;
         JPanel passRow = inputWithPlaceholder(passField, I18n.t("login.password"));
         passRow.setAlignmentX(0f);
         p.add(passRow);

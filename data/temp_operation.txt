@@ -8,3 +8,12 @@
 2026-03-19T14:46:37.351751	INFO	actor=admin action=deleteTaAccount account=testdelete deletedUser=true deletedTa=false removedApps=0
 2026-03-22T18:42:34.126055200	INFO	actor=admin action=setUserEnabled role=TA account=2023213330 enabled=false ok=true
 2026-03-22T18:42:35.990770800	INFO	actor=admin action=setUserEnabled role=TA account=2023213330 enabled=true ok=true
+2026-04-07T16:21:17.521418200	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=EN
+2026-04-07T16:21:22.890213200	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=EN
+2026-04-07T16:22:51.367100100	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=EN
+2026-04-11T00:40:00.658602	INFO	actor=MO10001 action=createJob jobId=271700a5-4091-4cd6-a6ee-ffd3d5a3c9f4 postedBy=MO10001 title=Lab_Assistant_for_“Digital_Electronics_Lab” hoursPerWeek=6
+2026-04-11T01:27:42.250409200	INFO	actor=2023213371 action=submitApplication applicationId=8a68445d-553c-44cb-9247-ce8f4a535add applicantId=2023213371 jobId=271700a5-4091-4cd6-a6ee-ffd3d5a3c9f4
+2026-04-11T01:29:54.665075400	INFO	actor=MO10001 action=setApplicationStatus applicationId=8a68445d-553c-44cb-9247-ce8f4a535add applicantId=2023213371 jobId=271700a5-4091-4cd6-a6ee-ffd3d5a3c9f4 fromStatus=SUBMITTED toStatus=ACCEPTED
+2026-04-11T01:35:58.662934400	INFO	actor=2023213371 action=submitApplication applicationId=af801ba2-1191-431b-8485-8ea3535f0602 applicantId=2023213371 jobId=942e3bf4-2f6e-4ac1-b6e1-a4abf99215b2
+2026-04-11T01:44:49.244414400	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=ZH
+2026-04-11T14:15:02.154581100	INFO	actor=2023213371 action=registerTa role=TA account=2023213371

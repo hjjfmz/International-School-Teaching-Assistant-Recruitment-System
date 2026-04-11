@@ -57,6 +57,8 @@ public final class DataService {
     private final Path moJobsFile;
     private final Path adminSystemFile;
     private final Path tempOperationFile;
+    private final Path legacyJobsTsvFile;
+    private final Path legacyApplicationsTsvFile;
 
     private Config config = new Config("", 6, "pdf,doc,docx", "EN");
 
@@ -74,6 +76,8 @@ public final class DataService {
         this.moJobsFile = dataDir.resolve("mo_jobs.json");
         this.adminSystemFile = dataDir.resolve("admin_system.xml");
         this.tempOperationFile = dataDir.resolve("temp_operation.txt");
+        this.legacyJobsTsvFile = dataDir.resolve("jobs.tsv");
+        this.legacyApplicationsTsvFile = dataDir.resolve("applications.tsv");
     }
 
     public void init() {
@@ -526,6 +530,59 @@ public final class DataService {
         applications.clear();
         loadApplicants();
         loadJobs();
+        loadLegacyJobsFromTsv();
+        loadLegacyAppsFromTsv();
+    }
+
+    /** 从 jobs.tsv 加载历史职位（跳过已在 mo_jobs.json 中的条目） */
+    private void loadLegacyJobsFromTsv() {
+        if (!Files.exists(legacyJobsTsvFile)) return;
+        try {
+            List<String> lines = Files.readAllLines(legacyJobsTsvFile, StandardCharsets.UTF_8);
+            for (String line : lines) {
+                if (line == null || line.trim().isEmpty()) continue;
+                String[] p = line.split("\t", -1);
+                if (p.length < 6) continue;
+                String id = p[0].trim();
+                String title = p[1].trim();
+                String desc = p[2].trim();
+                String skills = p[3].trim();
+                int hours = 0;
+                try { hours = Integer.parseInt(p[4].trim()); } catch (NumberFormatException ignored) {}
+                String postedBy = p[5].trim();
+                if (id.isEmpty() || title.isEmpty()) continue;
+                if (!jobs.containsKey(id)) {
+                    jobs.put(id, new Job(id, title, desc, skills, hours, postedBy));
+                }
+            }
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "WARN", "Read jobs.tsv failed: " + e.getMessage());
+        }
+    }
+
+    /** 从 applications.tsv 加载历史申请（跳过已在内存中的条目） */
+    private void loadLegacyAppsFromTsv() {
+        if (!Files.exists(legacyApplicationsTsvFile)) return;
+        try {
+            List<String> lines = Files.readAllLines(legacyApplicationsTsvFile, StandardCharsets.UTF_8);
+            for (String line : lines) {
+                if (line == null || line.trim().isEmpty()) continue;
+                String[] p = line.split("\t", -1);
+                if (p.length < 4) continue;
+                String id = p[0].trim();
+                String applicantId = p[1].trim();
+                String jobId = p[2].trim();
+                String statusRaw = p[3].trim();
+                if (id.isEmpty() || applicantId.isEmpty() || jobId.isEmpty()) continue;
+                if (applications.containsKey(id)) continue;
+                Application.Status st;
+                try { st = Application.Status.valueOf(statusRaw); }
+                catch (IllegalArgumentException e) { st = Application.Status.SUBMITTED; }
+                applications.put(id, new Application(id, applicantId, jobId, st, 0L));
+            }
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "WARN", "Read applications.tsv failed: " + e.getMessage());
+        }
     }
 
     private void loadApplicants() {
