@@ -35,7 +35,6 @@ public final class MainFrame extends JFrame {
         getContentPane().add(statusBar, BorderLayout.SOUTH);
 
         statusBar.setLeftText(I18n.t("status.ready"));
-        statusBar.setRightText(data.dataDir().toAbsolutePath().toString());
 
         pack();
         setLocationRelativeTo(null);
@@ -47,18 +46,10 @@ public final class MainFrame extends JFrame {
             public void onLogin(Role role, String account) {
                 showWorkbench(role, account);
             }
-
-            @Override
-            public void onForgotPassword() {
-                show("forgot");
-            }
         });
         this.loginPanel = login;
 
-        ForgotPasswordPanel forgot = new ForgotPasswordPanel(data, () -> show("login"));
-
         container.add(login, "login");
-        container.add(forgot, "forgot");
 
         show("login");
     }

@@ -12,12 +12,13 @@ public final class Application {
     private final String jobId;
     private final Status status;
     private final long createdAt;
+    private final int aiScore;
 
     public Application(String id, String applicantId, String jobId, Status status) {
-        this(id, applicantId, jobId, status, System.currentTimeMillis());
+        this(id, applicantId, jobId, status, System.currentTimeMillis(), -1);
     }
 
-    public Application(String id, String applicantId, String jobId, Status status, long createdAt) {
+    public Application(String id, String applicantId, String jobId, Status status, long createdAt, int aiScore) {
         if (id == null) throw new IllegalArgumentException("id");
         if (applicantId == null) throw new IllegalArgumentException("applicantId");
         if (jobId == null) throw new IllegalArgumentException("jobId");
@@ -27,6 +28,7 @@ public final class Application {
         this.jobId = jobId;
         this.status = status;
         this.createdAt = createdAt;
+        this.aiScore = aiScore;
     }
 
     public String id() { return id; }
@@ -34,8 +36,13 @@ public final class Application {
     public String jobId() { return jobId; }
     public Status status() { return status; }
     public long createdAt() { return createdAt; }
+    public int aiScore() { return aiScore; }
 
     public Application withStatus(Status newStatus) {
-        return new Application(id, applicantId, jobId, newStatus, createdAt);
+        return new Application(id, applicantId, jobId, newStatus, createdAt, aiScore);
+    }
+
+    public Application withAiScore(int score) {
+        return new Application(id, applicantId, jobId, status, createdAt, score);
     }
 }

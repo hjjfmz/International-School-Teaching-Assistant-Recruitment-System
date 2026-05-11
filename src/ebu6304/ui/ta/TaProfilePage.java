@@ -174,7 +174,7 @@ public final class TaProfilePage extends JPanel {
         p.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.profile.create.title")));
 
         c_idField.setEditable(false);
-        c_nameField.setEditable(false);
+        c_nameField.setEditable(true);
         c_cvField.setEditable(false);
         c_descArea.setLineWrap(true);
         c_descArea.setWrapStyleWord(true);
@@ -204,7 +204,7 @@ public final class TaProfilePage extends JPanel {
         p.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.profile.edit.title")));
 
         e_idField.setEditable(false);
-        e_nameField.setEditable(false);
+        e_nameField.setEditable(true);
         e_cvField.setEditable(false);
         e_descArea.setLineWrap(true);
         e_descArea.setWrapStyleWord(true);
@@ -324,11 +324,9 @@ public final class TaProfilePage extends JPanel {
                     I18n.t("ta.profile.unsupported.cv") + data.getConfig().cvFormats());
             return;
         }
-        // Store file into project cv folder
-        Applicant a = data.getApplicant(account).orElse(null);
-        if (a == null) return;
         try {
-            String stored = data.storeCv(a.id(), path);
+            // Use account as ID even if applicant record doesn't exist yet
+            String stored = data.storeCv(account, path);
             target.setText(stored);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, I18n.t("ta.profile.cv.savefailed"));
@@ -336,37 +334,53 @@ public final class TaProfilePage extends JPanel {
     }
 
     private void saveCreate() {
+        String name   = c_nameField.getText().trim();
         String email  = c_emailField.getText().trim();
         String skills = c_skillsField.getText().trim();
         String cv     = c_cvField.getText().trim();
         String desc   = c_descArea.getText().trim();
 
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, I18n.t("msg.name.required"), "Validation", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         if (email.isEmpty()) {
             JOptionPane.showMessageDialog(this, I18n.t("msg.email.required"), "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        Applicant a = data.getApplicant(account).orElse(null);
-        if (a == null) return;
-        data.upsertApplicant(a.withProfile(a.name(), email, skills, cv, desc));
+        data.upsertApplicantByAccount(account, name, email, skills, cv);
+        Applicant saved = data.getApplicant(account).orElse(null);
+        if (saved != null && !desc.isEmpty()) {
+            data.upsertApplicant(saved.withProfile(name, email, skills, cv, desc));
+        }
+
         JOptionPane.showMessageDialog(this, I18n.t("ta.profile.created"));
         showHub();
     }
 
     private void saveEdit() {
+        String name   = e_nameField.getText().trim();
         String email  = e_emailField.getText().trim();
         String skills = e_skillsField.getText().trim();
         String cv     = e_cvField.getText().trim();
         String desc   = e_descArea.getText().trim();
 
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, I18n.t("msg.name.required"), "Validation", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         if (email.isEmpty()) {
             JOptionPane.showMessageDialog(this, I18n.t("msg.email.required"), "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        Applicant a = data.getApplicant(account).orElse(null);
-        if (a == null) return;
-        data.upsertApplicant(a.withProfile(a.name(), email, skills, cv, desc));
+        data.upsertApplicantByAccount(account, name, email, skills, cv);
+        Applicant saved = data.getApplicant(account).orElse(null);
+        if (saved != null) {
+            data.upsertApplicant(saved.withProfile(name, email, skills, cv, desc));
+        }
+
         JOptionPane.showMessageDialog(this, I18n.t("ta.profile.updated"));
         showList();
     }

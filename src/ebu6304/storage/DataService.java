@@ -456,7 +456,7 @@ public final class DataService {
         if (existing.isPresent()) return existing.get();
 
         String id = UUID.randomUUID().toString();
-        Application a = new Application(id, applicantId, jobId, Application.Status.SUBMITTED, System.currentTimeMillis());
+        Application a = new Application(id, applicantId, jobId, Application.Status.SUBMITTED, System.currentTimeMillis(), -1);
         applications.put(id, a);
         persistApplications();
         OperationLog.append(tempOperationFile, "INFO",
@@ -483,6 +483,13 @@ public final class DataService {
                 " jobId=" + safeLogValue(a.jobId()) +
                 " fromStatus=" + a.status().name() +
                 " toStatus=" + status.name());
+    }
+
+    public synchronized void updateApplicationAiScore(String applicationId, int score) {
+        Application a = applications.get(applicationId);
+        if (a == null) return;
+        applications.put(applicationId, a.withAiScore(score));
+        persistApplications();
     }
 
     public synchronized boolean withdrawApplication(String applicantId, String jobId) {
@@ -581,7 +588,7 @@ public final class DataService {
                 Application.Status st;
                 try { st = Application.Status.valueOf(statusRaw); }
                 catch (IllegalArgumentException e) { st = Application.Status.SUBMITTED; }
-                applications.put(id, new Application(id, applicantId, jobId, st, 0L));
+                applications.put(id, new Application(id, applicantId, jobId, st, 0L, -1));
             }
         } catch (IOException e) {
             OperationLog.append(tempOperationFile, "WARN", "Read applications.tsv failed: " + e.getMessage());
@@ -662,6 +669,7 @@ public final class DataService {
                 String jobId = asString(am.get("jobId"));
                 String appStatusRaw = asString(am.get("status"));
                 long createdAt = asLong(am.get("createdAt"));
+                int aiScore = asInt(am.get("aiScore")); // New field
                 if (jobId.isEmpty()) jobId = id;
                 Application.Status appSt;
                 try {
@@ -671,7 +679,8 @@ public final class DataService {
                 }
                 if (appId.isEmpty() || applicantId.isEmpty() || jobId.isEmpty()) continue;
                 if (createdAt <= 0) createdAt = System.currentTimeMillis();
-                applications.put(appId, new Application(appId, applicantId, jobId, appSt, createdAt));
+                if (aiScore == 0 && am.get("aiScore") == null) aiScore = -1; // Default for old data
+                applications.put(appId, new Application(appId, applicantId, jobId, appSt, createdAt, aiScore));
             }
         }
     }
@@ -729,6 +738,7 @@ public final class DataService {
                     am.put("jobId", a.jobId());
                     am.put("status", a.status().name());
                     am.put("createdAt", Long.valueOf(a.createdAt()));
+                    am.put("aiScore", Integer.valueOf(a.aiScore()));
                     appsArr.add(am);
                 }
                 jm.put("applications", appsArr);
