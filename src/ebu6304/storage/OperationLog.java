@@ -16,8 +16,16 @@ public final class OperationLog {
         if (message == null) message = "";
         String line = LocalDateTime.now() + "\t" + level + "\t" + message + System.lineSeparator();
         try {
-            Files.write(logFile, line.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
-        } catch (IOException ignored) {
+            if (Files.exists(logFile) && Files.isDirectory(logFile)) {
+                System.err.println("[OperationLog] Log path is a directory, cannot append: " + logFile);
+                return;
+            }
+            Path parent = logFile.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Files.write(logFile, line.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException ex) {
+            System.err.println("[OperationLog] Failed to append log to: " + logFile);
+            ex.printStackTrace(System.err);
         }
     }
 }

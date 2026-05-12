@@ -15,3 +15,7 @@ Thumbs.db
 
 # Log files
 *.log
+
+# Secrets / local config
+deepseek.properties
+deepseek.properties.local

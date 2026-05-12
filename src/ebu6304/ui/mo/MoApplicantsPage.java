@@ -7,7 +7,9 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -17,16 +19,19 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JEditorPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
+import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.table.JTableHeader;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
 
+import ebu6304.ai.DeepSeekClient;
 import ebu6304.model.Applicant;
 import ebu6304.model.Application;
 import ebu6304.model.Job;
@@ -56,6 +61,8 @@ public final class MoApplicantsPage extends JPanel {
     private final DefaultTableModel model;
     private final JTable table;
     private TableRowSorter<DefaultTableModel> sorter;
+
+    private final java.util.Map<String, String> aiReasons = new java.util.HashMap<String, String>();
 
     public MoApplicantsPage(DataService data, String account) {
         super(new BorderLayout(10, 10));
@@ -125,17 +132,20 @@ public final class MoApplicantsPage extends JPanel {
         JButton accept = new JButton(I18n.t("common.accept"));
         JButton reject = new JButton(I18n.t("common.reject"));
         JButton details = new JButton(I18n.t("mo.applicants.viewdetails"));
+        JButton aiRecommend = new JButton("AI Recommend");
 
 
         styleActionButton(refresh);
         styleActionButton(details);
         styleActionButton(openCv);
+        styleActionButton(aiRecommend);
         stylePrimaryButton(accept, new Color(0, 191, 165));
         styleDangerButton(reject);
         
         actions.add(refresh);
         actions.add(details);
         actions.add(openCv);
+        actions.add(aiRecommend);
         actions.add(accept);
         actions.add(reject);
 
@@ -159,6 +169,7 @@ public final class MoApplicantsPage extends JPanel {
         } });
         openCv.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { openCv(); } });
         details.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { showDetails(); } });
+        aiRecommend.addActionListener(new ActionListener() { public void actionPerformed(ActionEvent e) { aiRecommend(); } });
 
         add(top, BorderLayout.NORTH);
 
@@ -222,11 +233,25 @@ public final class MoApplicantsPage extends JPanel {
         b.setForeground(new Color(220, 38, 38));
     }
 
-    private static final class MatchPercentRenderer extends DefaultTableCellRenderer {
+    private final class MatchPercentRenderer extends DefaultTableCellRenderer {
         @Override
         public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                 boolean hasFocus, int row, int column) {
             java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            try {
+                int modelRow = table.convertRowIndexToModel(row);
+                String taAccount = String.valueOf(model.getValueAt(modelRow, 1));
+                String reason = aiReasons.get(taAccount);
+                if (reason != null && !reason.trim().isEmpty()) {
+                    setToolTipText(reason);
+                } else {
+                    setToolTipText(null);
+                }
+            } catch (RuntimeException ex) {
+                setToolTipText(null);
+            }
+
             if (!isSelected && value instanceof Integer) {
                 int pct = ((Integer) value).intValue();
                 if (pct >= 70) c.setForeground(new Color(22, 163, 74));
@@ -272,34 +297,162 @@ public final class MoApplicantsPage extends JPanel {
 
     public void refresh() {
         model.setRowCount(0);
+        aiReasons.clear();
         JobItem it = (JobItem) jobsBox.getSelectedItem();
         if (it == null) return;
 
-        Job selectedJob = data.getJob(it.id).orElse(null);
-        String requiredSkills = selectedJob != null ? selectedJob.requiredSkills() : "";
-
         List<Application> apps = data.listApplicationsForJob(it.id);
+        List<Application> needsScoring = new ArrayList<Application>();
+        
         for (Application a : apps) {
             Applicant ta = data.getApplicant(a.applicantId()).orElse(null);
             if (ta == null) continue;
             
-            // Calculate skill match percentage
-            int matchPercent = SkillMatcher.calculateMatchPercentage(requiredSkills, ta.skills());
-            
+            int displayScore = a.aiScore() >= 0 ? a.aiScore() : 0;
             model.addRow(new Object[] {
                     a.id(), 
                     a.applicantId(), 
                     ta.name(), 
                     ta.email(), 
                     ta.skills(), 
-                    Integer.valueOf(matchPercent),
+                    Integer.valueOf(displayScore),
                     a.status().name()
             });
+            
+            if (a.aiScore() < 0) {
+                needsScoring.add(a);
+            }
         }
         
-        // Sort by match percentage (descending) by default
-        sorter.setSortKeys(java.util.Collections.singletonList(new RowSorter.SortKey(5, javax.swing.SortOrder.DESCENDING)));
         applyFilter();
+        
+        // 如果有未评分的申请，启动“三次取均值”预打分逻辑
+        if (!needsScoring.isEmpty()) {
+            autoBatchScore(needsScoring);
+        }
+    }
+
+    private void autoBatchScore(List<Application> apps) {
+        JobItem it = (JobItem) jobsBox.getSelectedItem();
+        if (it == null) return;
+        final Job job = data.getJob(it.id).orElse(null);
+        if (job == null) return;
+
+        final DeepSeekClient client = new DeepSeekClient();
+        if (!client.isConfigured()) return;
+
+        SwingWorker<Void, Object[]> worker = new SwingWorker<Void, Object[]>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                for (Application app : apps) {
+                    Applicant ta = data.getApplicant(app.applicantId()).orElse(null);
+                    if (ta == null) continue;
+                    
+                    // 核心逻辑：调用三次取平均分
+                    int sum = 0;
+                    for (int i = 0; i < 3; i++) {
+                        Map<String, DeepSeekClient.AiScore> res = client.rankApplicantsForJob(job, java.util.Collections.singletonList(ta));
+                        DeepSeekClient.AiScore sc = res.get(ta.id());
+                        if (sc != null) sum += sc.score();
+                        // 稍微停顿避免频率限制
+                        Thread.sleep(500);
+                    }
+                    int avg = sum / 3;
+                    data.updateApplicationAiScore(app.id(), avg);
+                    publish(new Object[]{app.id(), avg});
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<Object[]> chunks) {
+                for (Object[] chunk : chunks) {
+                    String appId = (String) chunk[0];
+                    int score = (Integer) chunk[1];
+                    for (int i = 0; i < model.getRowCount(); i++) {
+                        if (appId.equals(model.getValueAt(i, 0))) {
+                            model.setValueAt(score, i, 5);
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void aiRecommend() {
+        int r = table.getSelectedRow();
+        if (r < 0) {
+            JOptionPane.showMessageDialog(this, I18n.t("msg.select.applicant"));
+            return;
+        }
+        int modelRow = table.convertRowIndexToModel(r);
+        String taAccount = String.valueOf(model.getValueAt(modelRow, 1));
+        
+        JobItem it = (JobItem) jobsBox.getSelectedItem();
+        if (it == null) return;
+        final Job job = data.getJob(it.id).orElse(null);
+        final Applicant ta = data.getApplicant(taAccount).orElse(null);
+        if (job == null || ta == null) return;
+
+        final DeepSeekClient client = new DeepSeekClient();
+        if (!client.isConfigured()) {
+            JOptionPane.showMessageDialog(this, "DeepSeek not configured.");
+            return;
+        }
+
+        setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
+        SwingWorker<Map<String, DeepSeekClient.AiScore>, Void> worker = new SwingWorker<Map<String, DeepSeekClient.AiScore>, Void>() {
+            @Override
+            protected Map<String, DeepSeekClient.AiScore> doInBackground() throws Exception {
+                return client.rankApplicantsForJob(job, java.util.Collections.singletonList(ta));
+            }
+
+            @Override
+            protected void done() {
+                setCursor(java.awt.Cursor.getDefaultCursor());
+                try {
+                    Map<String, DeepSeekClient.AiScore> res = get();
+                    DeepSeekClient.AiScore sc = res.get(ta.id());
+                    if (sc != null) {
+                        // 使用 JEditorPane 支持 HTML 渲染，让 Markdown 符号变美观
+                        JEditorPane area = new JEditorPane();
+                        area.setContentType("text/html");
+                        area.setEditable(false);
+                        
+                        String htmlContent = formatToHtml(sc.reason());
+                        area.setText(htmlContent);
+                        area.setCaretPosition(0);
+
+                        JScrollPane scrollPane = new JScrollPane(area);
+                        scrollPane.setPreferredSize(new java.awt.Dimension(650, 500));
+                        
+                        JOptionPane.showMessageDialog(MoApplicantsPage.this, scrollPane, 
+                            "AI Expert Analysis: " + ta.name(), JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(MoApplicantsPage.this, "AI Analysis failed: " + ex.getMessage());
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private String formatToHtml(String text) {
+        if (text == null) return "";
+        
+        // 1. 处理标题 ###
+        String html = text.replaceAll("### (.*?)\\n", "<h3 style='color:#1a73e8; margin-top:10px;'>$1</h3>");
+        
+        // 2. 处理加粗 **
+        html = html.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>");
+        
+        // 3. 处理换行
+        html = html.replace("\n", "<br>");
+        
+        // 4. 封装进 HTML 模板
+        return "<html><body style='font-family:Sans-Serif; font-size:12px; padding:10px;'>" + html + "</body></html>";
     }
 
     /**

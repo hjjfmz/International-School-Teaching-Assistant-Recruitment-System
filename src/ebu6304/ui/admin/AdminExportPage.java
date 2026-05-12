@@ -1,7 +1,16 @@
 package ebu6304.ui.admin;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -21,7 +32,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 
 import ebu6304.model.Applicant;
 import ebu6304.model.Application;
@@ -38,7 +48,15 @@ public final class AdminExportPage extends JPanel {
     private final JComboBox<String> type = new JComboBox<String>(new String[] { "TA Info", "Jobs", "Applications", "Results", "All" });
     private final JComboBox<String> format = new JComboBox<String>(new String[] { "CSV", "JSON", "XML" });
 
-    private final JTextArea preview = new JTextArea();
+    private final JPanel cardsList = new JPanel();
+    private final JButton prevBtn = new JButton("Prev");
+    private final JButton nextBtn = new JButton("Next");
+    private final JLabel pageLabel = new JLabel();
+    private final JComboBox<Integer> pageSizeBox = new JComboBox<Integer>(new Integer[] { 5, 10, 20, 50 });
+
+    private int page = 1;
+    private int totalPages = 1;
+    private int totalItems = 0;
 
     public AdminExportPage(DataService data, String actor) {
         super(new BorderLayout(10, 10));
@@ -63,16 +81,53 @@ public final class AdminExportPage extends JPanel {
 
         export.addActionListener(e -> export());
 
-        type.addActionListener(e -> refreshPreview());
-        format.addActionListener(e -> refreshPreview());
-
         add(top, BorderLayout.NORTH);
 
-        preview.setEditable(false);
+        cardsList.setOpaque(false);
+        cardsList.setLayout(new BoxLayout(cardsList, BoxLayout.Y_AXIS));
+
         JPanel center = new JPanel(new BorderLayout(6, 6));
         center.add(new JLabel(I18n.t("admin.export.preview")), BorderLayout.NORTH);
-        center.add(new JScrollPane(preview), BorderLayout.CENTER);
+        JScrollPane cardsSp = new JScrollPane(cardsList);
+        cardsSp.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JPanel pager = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        pager.add(new JLabel("Page size"));
+        pager.add(pageSizeBox);
+        pager.add(prevBtn);
+        pager.add(pageLabel);
+        pager.add(nextBtn);
+
+        center.add(cardsSp, BorderLayout.CENTER);
+        center.add(pager, BorderLayout.SOUTH);
         add(center, BorderLayout.CENTER);
+
+        pageSizeBox.setSelectedItem(Integer.valueOf(10));
+        pageSizeBox.addActionListener(e -> {
+            page = 1;
+            refreshCardsOnly();
+        });
+        prevBtn.addActionListener(e -> {
+            if (page > 1) {
+                page--;
+                refreshCardsOnly();
+            }
+        });
+        nextBtn.addActionListener(e -> {
+            if (page < totalPages) {
+                page++;
+                refreshCardsOnly();
+            }
+        });
+
+        type.addActionListener(e -> {
+            page = 1;
+            refreshPreview();
+        });
+        format.addActionListener(e -> {
+            page = 1;
+            refreshPreview();
+        });
 
         refreshPreview();
     }
@@ -105,28 +160,218 @@ public final class AdminExportPage extends JPanel {
 
     private void refreshPreview() {
         if (data == null) {
-            preview.setText("");
+            cardsList.removeAll();
+            cardsList.revalidate();
+            cardsList.repaint();
             return;
         }
         try {
             data.reload();
-            String t = String.valueOf(type.getSelectedItem());
-            String f = String.valueOf(format.getSelectedItem());
-            String text;
-            if ("All".equals(t)) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(previewFor("TA Info", f)).append("\n\n");
-                sb.append(previewFor("Jobs", f)).append("\n\n");
-                sb.append(previewFor("Applications", f)).append("\n\n");
-                sb.append(previewFor("Results", f));
-                text = sb.toString();
-            } else {
-                text = previewFor(t, f);
-            }
-            preview.setText(limitLines(text, 50));
-            preview.setCaretPosition(0);
+            refreshCardsOnly();
         } catch (RuntimeException ex) {
-            preview.setText("Preview failed");
+            cardsList.removeAll();
+            cardsList.add(new JLabel("Preview failed"));
+            cardsList.revalidate();
+            cardsList.repaint();
+        }
+    }
+
+    private void refreshCardsOnly() {
+        String t = String.valueOf(type.getSelectedItem());
+        List<CardItem> items = buildItems(t);
+        totalItems = items.size();
+
+        int pageSize = ((Integer) pageSizeBox.getSelectedItem()).intValue();
+        totalPages = Math.max(1, (int) Math.ceil((double) totalItems / (double) pageSize));
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+
+        int from = (page - 1) * pageSize;
+        int to = Math.min(totalItems, from + pageSize);
+
+        cardsList.removeAll();
+        cardsList.add(Box.createVerticalStrut(4));
+
+        if (totalItems == 0) {
+            JLabel empty = new JLabel("(No data)");
+            empty.setForeground(new Color(140, 140, 140));
+            empty.setAlignmentX(0f);
+            cardsList.add(empty);
+        } else {
+            for (int i = from; i < to; i++) {
+                CardItem it = items.get(i);
+                JPanel c = card(it.title, it.fields);
+                c.setAlignmentX(0f);
+                cardsList.add(c);
+                cardsList.add(Box.createVerticalStrut(10));
+            }
+        }
+
+        cardsList.add(Box.createVerticalGlue());
+        cardsList.revalidate();
+        cardsList.repaint();
+
+        pageLabel.setText("Page " + page + "/" + totalPages + " (" + totalItems + ")");
+        prevBtn.setEnabled(page > 1);
+        nextBtn.setEnabled(page < totalPages);
+    }
+
+    private List<CardItem> buildItems(String t) {
+        List<CardItem> out = new ArrayList<CardItem>();
+        if ("All".equals(t)) {
+            out.addAll(buildItems("TA Info"));
+            out.addAll(buildItems("Jobs"));
+            out.addAll(buildItems("Applications"));
+            out.addAll(buildItems("Results"));
+            return out;
+        }
+
+        if ("TA Info".equals(t)) {
+            for (Applicant a : data.listApplicants()) {
+                out.add(new CardItem("TA: " + safe(a.id()), new String[][] {
+                        { "Name", safe(a.name()) },
+                        { "Email", safe(a.email()) },
+                        { "Skills", safe(a.skills()) },
+                        { "CV", safe(a.cvPath()) },
+                }));
+            }
+            return out;
+        }
+        if ("Jobs".equals(t)) {
+            for (Job j : data.listJobs()) {
+                out.add(new CardItem("Job: " + safe(j.id()), new String[][] {
+                        { "Title", safe(j.title()) },
+                        { "PostedBy", safe(j.postedBy()) },
+                        { "Status", j.status() == null ? "" : j.status().name() },
+                        { "Category", safe(j.category()) },
+                        { "Hours/Week", String.valueOf(j.hoursPerWeek()) },
+                        { "Skills", safe(j.requiredSkills()) },
+                }));
+            }
+            return out;
+        }
+        if ("Applications".equals(t)) {
+            for (Job j : data.listJobs()) {
+                for (Application a : data.listApplicationsForJob(j.id())) {
+                    out.add(new CardItem("Application: " + safe(a.id()), new String[][] {
+                            { "Applicant", safe(a.applicantId()) },
+                            { "Job", safe(a.jobId()) },
+                            { "Status", a.status() == null ? "" : a.status().name() },
+                            { "CreatedAt", String.valueOf(a.createdAt()) },
+                    }));
+                }
+            }
+            return out;
+        }
+        if ("Results".equals(t)) {
+            for (Job j : data.listJobs()) {
+                for (Application a : data.listApplicationsForJob(j.id())) {
+                    if (a.status() != Application.Status.ACCEPTED) continue;
+                    out.add(new CardItem("Result: " + safe(a.id()), new String[][] {
+                            { "Applicant", safe(a.applicantId()) },
+                            { "Job", safe(a.jobId()) },
+                            { "Job Title", safe(j.title()) },
+                            { "PostedBy", safe(j.postedBy()) },
+                            { "Category", safe(j.category()) },
+                            { "CreatedAt", String.valueOf(a.createdAt()) },
+                    }));
+                }
+            }
+            return out;
+        }
+        return out;
+    }
+
+    private static String safe(String s) {
+        return s == null ? "" : s;
+    }
+
+    private static final class CardItem {
+        private final String title;
+        private final String[][] fields;
+
+        private CardItem(String title, String[][] fields) {
+            this.title = title;
+            this.fields = fields;
+        }
+    }
+
+    private static JPanel card(String title, String[][] fields) {
+        RoundedPanel card = new RoundedPanel(14);
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
+                BorderFactory.createEmptyBorder(12, 12, 12, 12)));
+        card.setLayout(new BorderLayout(0, 8));
+
+        JLabel h = new JLabel(title);
+        h.setFont(h.getFont().deriveFont(Font.BOLD, 13f));
+        h.setForeground(new Color(40, 40, 40));
+        card.add(h, BorderLayout.NORTH);
+
+        JPanel grid = new JPanel(new GridBagLayout());
+        grid.setOpaque(false);
+
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.gridx = 0;
+        gc.gridy = 0;
+        gc.anchor = GridBagConstraints.NORTHWEST;
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        gc.weightx = 1;
+        gc.insets = new Insets(2, 0, 2, 0);
+
+        for (String[] kv : fields) {
+            String k = kv[0];
+            String v = kv[1];
+
+            JPanel row = new JPanel(new BorderLayout(10, 0));
+            row.setOpaque(false);
+
+            JLabel key = new JLabel(k);
+            key.setForeground(new Color(120, 120, 120));
+            key.setFont(key.getFont().deriveFont(Font.PLAIN, 12f));
+            key.setPreferredSize(new Dimension(90, 16));
+
+            JLabel val = new JLabel("<html>" + escapeHtml(v) + "</html>");
+            val.setForeground(new Color(50, 50, 50));
+            val.setFont(val.getFont().deriveFont(Font.PLAIN, 12f));
+
+            row.add(key, BorderLayout.WEST);
+            row.add(val, BorderLayout.CENTER);
+
+            grid.add(row, gc);
+            gc.gridy++;
+        }
+
+        card.add(grid, BorderLayout.CENTER);
+        return card;
+    }
+
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    private static final class RoundedPanel extends JPanel {
+        private final int arc;
+
+        private RoundedPanel(int arc) {
+            super();
+            this.arc = arc;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
         }
     }
 
