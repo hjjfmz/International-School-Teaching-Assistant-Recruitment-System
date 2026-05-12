@@ -2,7 +2,7 @@ id,name,email,skills,cvPath,description
 1f0b1f6b-86e2-4f6e-9d0d-3c3d3a1d0e6a,Demo User C,c@example.com,SQL,,
 2023213330,张艺赢,2023213330@bupt.cn,java,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213330.pdf,Java 基础扎实，熟悉面向对象、数据库及 SpringBoot 基础，会基础代码调试，有耐心、善于沟通
 2023213331,Alice,2023213331@bupt.cn,python,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213331.pdf,Python基础扎实，熟悉面向对象、数据库，会基础代码调试，有耐心、善于沟通
-2023213332,Bob,bob@example.com,Python;Data,,
+2023213332,Bob,1,java，python,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213332.pdf,擅长ai应用方面，熟悉spring ai框架
 2023213371,He Junjie,1904211461@qq.com,,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213371.docx,
 2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7,Demo User A,a@example.com,Python,,
 7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1,Demo User B,b@example.com,Java,,

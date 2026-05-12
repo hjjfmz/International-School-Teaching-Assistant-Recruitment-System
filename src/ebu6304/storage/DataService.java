@@ -305,9 +305,28 @@ public final class DataService {
             Files.createDirectories(cvDir);
             Path dest = cvDir.resolve(safeId + (ext.isEmpty() ? "" : ("." + ext)));
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            resetApplicantAiScores(applicantId);
             return dest.toAbsolutePath().toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void resetApplicantAiScores(String applicantId) {
+        if (applicantId == null || applicantId.trim().isEmpty()) return;
+        boolean changed = false;
+        for (Map.Entry<String, Application> entry : applications.entrySet()) {
+            Application app = entry.getValue();
+            if (!applicantId.equals(app.applicantId())) continue;
+            if (app.aiScore() < 0) continue;
+            entry.setValue(app.withAiScore(-1));
+            changed = true;
+        }
+        if (changed) {
+            persistApplications();
+            OperationLog.append(tempOperationFile, "INFO",
+                    "actor=" + safeLogValue(applicantId) +
+                    " action=resetApplicantAiScores applicantId=" + safeLogValue(applicantId));
         }
     }
 

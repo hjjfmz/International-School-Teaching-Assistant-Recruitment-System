@@ -1,6 +1,9 @@
 package ebu6304.ai;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -78,7 +81,7 @@ public final class DeepSeekClient {
         if (!isConfigured()) throw new IOException("Missing DEEPSEEK_API_KEY");
 
         String prompt = buildPrompt(job, applicants);
-        String body = buildRequestBody(prompt);
+        String body = buildRequestBody(prompt, false);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/v1/chat/completions"))
@@ -95,6 +98,44 @@ public final class DeepSeekClient {
 
         String content = extractAssistantContent(resp.body());
         return parseScores(content);
+    }
+
+    public AiScore analyzeApplicantStream(Job job, Applicant applicant, ChunkListener listener) throws IOException, InterruptedException {
+        if (job == null) throw new IllegalArgumentException("job");
+        if (applicant == null) throw new IllegalArgumentException("applicant");
+        if (!isConfigured()) throw new IOException("Missing DEEPSEEK_API_KEY");
+
+        String prompt = buildStreamingPrompt(job, applicant);
+        String body = buildRequestBody(prompt, true);
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/v1/chat/completions"))
+                .timeout(Duration.ofSeconds(120))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<InputStream> resp = http.send(req, HttpResponse.BodyHandlers.ofInputStream());
+        if (resp.statusCode() < 200 || resp.statusCode() >= 300) {
+            String err = readAll(resp.body());
+            throw new IOException("DeepSeek HTTP " + resp.statusCode() + ": " + err);
+        }
+
+        StringBuilder full = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(resp.body(), StandardCharsets.UTF_8));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.isEmpty() || !line.startsWith("data:")) continue;
+            String data = line.substring(5).trim();
+            if (data.isEmpty() || "[DONE]".equals(data)) continue;
+            String delta = extractStreamDelta(data);
+            if (delta.isEmpty()) continue;
+            full.append(delta);
+            if (listener != null) listener.onChunk(delta);
+        }
+
+        return parseStreamingScore(full.toString());
     }
 
     private String buildPrompt(Job job, List<Applicant> applicants) {
@@ -165,7 +206,28 @@ public final class DeepSeekClient {
         return "";
     }
 
-    private static String buildRequestBody(String prompt) {
+    private String buildStreamingPrompt(Job job, Applicant applicant) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Please analyze this candidate for the TA position.\n");
+        sb.append("Write concise markdown sections in this order:\n");
+        sb.append("### Overall Fit\n");
+        sb.append("### Strengths\n");
+        sb.append("### Gaps\n");
+        sb.append("### Recommendation\n");
+        sb.append("At the very end, output one separate line exactly like [[SCORE:78]] using an integer 0-100.\n\n");
+        sb.append("Job Title: ").append(safe(job.title())).append("\n");
+        sb.append("Job Description: ").append(safe(job.description())).append("\n");
+        sb.append("Required Skills: ").append(safe(job.requiredSkills())).append("\n\n");
+        sb.append("Applicant ID: ").append(safe(applicant.id())).append("\n");
+        sb.append("Applicant Summary: ").append(safe(applicant.description())).append("\n");
+        sb.append("Applicant Skills: ").append(safe(applicant.skills())).append("\n");
+        sb.append("Resume Text:\n");
+        String fullResume = safeReadResumeText(applicant);
+        sb.append(fullResume.isEmpty() ? "(resume text unavailable)" : safe(trimToMax(fullResume, maxResumeChars))).append("\n");
+        return sb.toString();
+    }
+
+    private static String buildRequestBody(String prompt, boolean stream) {
         Map<String, Object> root = new LinkedHashMap<String, Object>();
         root.put("model", "deepseek-v4-flash");
 
@@ -182,7 +244,19 @@ public final class DeepSeekClient {
 
         root.put("messages", messages);
         root.put("temperature", Double.valueOf(0.2));
+        if (stream) root.put("stream", Boolean.TRUE);
         return MiniJson.stringify(root);
+    }
+
+    private static String readAll(InputStream in) throws IOException {
+        if (in == null) return "";
+        StringBuilder sb = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            sb.append(line).append('\n');
+        }
+        return sb.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -233,6 +307,49 @@ public final class DeepSeekClient {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static String extractStreamDelta(String eventJson) throws IOException {
+        try {
+            Object parsed = MiniJson.parse(eventJson);
+            if (!(parsed instanceof Map)) return "";
+            Map<String, Object> root = (Map<String, Object>) parsed;
+            Object choicesObj = root.get("choices");
+            if (!(choicesObj instanceof List)) return "";
+            List<Object> choices = (List<Object>) choicesObj;
+            if (choices.isEmpty()) return "";
+            Object first = choices.get(0);
+            if (!(first instanceof Map)) return "";
+            Map<String, Object> choice = (Map<String, Object>) first;
+            Object deltaObj = choice.get("delta");
+            if (!(deltaObj instanceof Map)) return "";
+            Map<String, Object> delta = (Map<String, Object>) deltaObj;
+            Object content = delta.get("content");
+            return content == null ? "" : String.valueOf(content);
+        } catch (RuntimeException ex) {
+            throw new IOException("Failed to parse DeepSeek stream chunk: " + ex.getMessage());
+        }
+    }
+
+    private static AiScore parseStreamingScore(String content) {
+        if (content == null) return new AiScore(0, "");
+        int score = 0;
+        String reason = content;
+        int start = content.lastIndexOf("[[SCORE:");
+        if (start >= 0) {
+            int end = content.indexOf("]]", start);
+            if (end > start) {
+                String raw = content.substring(start + 8, end).trim();
+                try {
+                    score = Integer.parseInt(raw);
+                } catch (RuntimeException ex) {
+                    score = 0;
+                }
+                reason = (content.substring(0, start) + content.substring(end + 2)).trim();
+            }
+        }
+        return new AiScore(score, reason);
+    }
+
     private static int toInt(Object v) {
         if (v == null) return 0;
         if (v instanceof Number) return ((Number) v).intValue();
@@ -265,5 +382,9 @@ public final class DeepSeekClient {
             if (v > 100) return 100;
             return v;
         }
+    }
+
+    public interface ChunkListener {
+        void onChunk(String text);
     }
 }

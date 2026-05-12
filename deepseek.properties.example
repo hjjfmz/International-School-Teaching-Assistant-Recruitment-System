@@ -1,0 +1,14 @@
+# DeepSeek config (DO NOT commit your real api_key file)
+# Copy to:
+#   Windows: %USERPROFILE%\.is-ta-rs\deepseek.properties
+#   macOS/Linux: ~/.is-ta-rs/deepseek.properties
+# Or set env var DEEPSEEK_CONFIG_PATH to point to your properties file.
+
+# Required
+api_key=your_deepseek_api_key
+
+# Optional (default: https://api.deepseek.com)
+base_url=https://api.deepseek.com
+
+# Optional: limit resume text length sent to LLM (default: 6000)
+max_resume_chars=6000

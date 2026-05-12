@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -24,6 +25,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
@@ -62,7 +64,8 @@ public final class MoApplicantsPage extends JPanel {
     private final JTable table;
     private TableRowSorter<DefaultTableModel> sorter;
 
-    private final java.util.Map<String, String> aiReasons = new java.util.HashMap<String, String>();
+    private final java.util.Map<String, Integer> sessionMatchScores = new java.util.HashMap<String, Integer>();
+    private final java.util.Map<String, String> sessionAiReasons = new java.util.HashMap<String, String>();
 
     public MoApplicantsPage(DataService data, String account) {
         super(new BorderLayout(10, 10));
@@ -81,8 +84,7 @@ public final class MoApplicantsPage extends JPanel {
             
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 5) return Integer.class; // Match percentage for sorting
-                return String.class;
+                return Object.class;
             }
         };
         
@@ -91,10 +93,20 @@ public final class MoApplicantsPage extends JPanel {
         table.setAutoCreateRowSorter(true);
         styleTable(table);
         table.setDefaultRenderer(Object.class, new ZebraRenderer());
-        table.setDefaultRenderer(Integer.class, new MatchPercentRenderer());
+        table.getColumnModel().getColumn(5).setCellRenderer(new MatchPercentRenderer());
 
-        // Custom sorter for proper numeric sorting on match percentage
         sorter = new TableRowSorter<DefaultTableModel>(model);
+        sorter.setComparator(5, new java.util.Comparator<Object>() {
+            @Override
+            public int compare(Object a, Object b) {
+                Integer ai = asScore(a);
+                Integer bi = asScore(b);
+                if (ai == null && bi == null) return 0;
+                if (ai == null) return 1;
+                if (bi == null) return -1;
+                return ai.compareTo(bi);
+            }
+        });
         table.setRowSorter(sorter);
 
         // Top panel with filters
@@ -241,8 +253,8 @@ public final class MoApplicantsPage extends JPanel {
 
             try {
                 int modelRow = table.convertRowIndexToModel(row);
-                String taAccount = String.valueOf(model.getValueAt(modelRow, 1));
-                String reason = aiReasons.get(taAccount);
+                String appId = String.valueOf(model.getValueAt(modelRow, 0));
+                String reason = sessionAiReasons.get(appId);
                 if (reason != null && !reason.trim().isEmpty()) {
                     setToolTipText(reason);
                 } else {
@@ -252,12 +264,15 @@ public final class MoApplicantsPage extends JPanel {
                 setToolTipText(null);
             }
 
-            if (!isSelected && value instanceof Integer) {
-                int pct = ((Integer) value).intValue();
+            Integer pctValue = asScore(value);
+            if (!isSelected && pctValue != null) {
+                int pct = pctValue.intValue();
                 if (pct >= 70) c.setForeground(new Color(22, 163, 74));
                 else if (pct >= 40) c.setForeground(new Color(202, 138, 4));
                 else c.setForeground(new Color(220, 38, 38));
                 setFont(getFont().deriveFont(Font.BOLD));
+            } else if (!isSelected && (value == null || String.valueOf(value).trim().isEmpty())) {
+                c.setForeground(new Color(148, 163, 184));
             } else if (!isSelected) {
                 c.setForeground(new Color(30, 41, 59));
             }
@@ -297,88 +312,30 @@ public final class MoApplicantsPage extends JPanel {
 
     public void refresh() {
         model.setRowCount(0);
-        aiReasons.clear();
         JobItem it = (JobItem) jobsBox.getSelectedItem();
         if (it == null) return;
 
         List<Application> apps = data.listApplicationsForJob(it.id);
-        List<Application> needsScoring = new ArrayList<Application>();
         
         for (Application a : apps) {
             Applicant ta = data.getApplicant(a.applicantId()).orElse(null);
             if (ta == null) continue;
             
-            int displayScore = a.aiScore() >= 0 ? a.aiScore() : 0;
+            Integer displayScore = sessionMatchScores.get(a.id());
             model.addRow(new Object[] {
                     a.id(), 
                     a.applicantId(), 
                     ta.name(), 
                     ta.email(), 
                     ta.skills(), 
-                    Integer.valueOf(displayScore),
+                    displayScore == null ? "" : displayScore,
                     a.status().name()
             });
-            
-            if (a.aiScore() < 0) {
-                needsScoring.add(a);
-            }
         }
         
         applyFilter();
         
         // 如果有未评分的申请，启动“三次取均值”预打分逻辑
-        if (!needsScoring.isEmpty()) {
-            autoBatchScore(needsScoring);
-        }
-    }
-
-    private void autoBatchScore(List<Application> apps) {
-        JobItem it = (JobItem) jobsBox.getSelectedItem();
-        if (it == null) return;
-        final Job job = data.getJob(it.id).orElse(null);
-        if (job == null) return;
-
-        final DeepSeekClient client = new DeepSeekClient();
-        if (!client.isConfigured()) return;
-
-        SwingWorker<Void, Object[]> worker = new SwingWorker<Void, Object[]>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                for (Application app : apps) {
-                    Applicant ta = data.getApplicant(app.applicantId()).orElse(null);
-                    if (ta == null) continue;
-                    
-                    // 核心逻辑：调用三次取平均分
-                    int sum = 0;
-                    for (int i = 0; i < 3; i++) {
-                        Map<String, DeepSeekClient.AiScore> res = client.rankApplicantsForJob(job, java.util.Collections.singletonList(ta));
-                        DeepSeekClient.AiScore sc = res.get(ta.id());
-                        if (sc != null) sum += sc.score();
-                        // 稍微停顿避免频率限制
-                        Thread.sleep(500);
-                    }
-                    int avg = sum / 3;
-                    data.updateApplicationAiScore(app.id(), avg);
-                    publish(new Object[]{app.id(), avg});
-                }
-                return null;
-            }
-
-            @Override
-            protected void process(List<Object[]> chunks) {
-                for (Object[] chunk : chunks) {
-                    String appId = (String) chunk[0];
-                    int score = (Integer) chunk[1];
-                    for (int i = 0; i < model.getRowCount(); i++) {
-                        if (appId.equals(model.getValueAt(i, 0))) {
-                            model.setValueAt(score, i, 5);
-                            break;
-                        }
-                    }
-                }
-            }
-        };
-        worker.execute();
     }
 
     private void aiRecommend() {
@@ -387,7 +344,8 @@ public final class MoApplicantsPage extends JPanel {
             JOptionPane.showMessageDialog(this, I18n.t("msg.select.applicant"));
             return;
         }
-        int modelRow = table.convertRowIndexToModel(r);
+        final int modelRow = table.convertRowIndexToModel(r);
+        final String appId = String.valueOf(model.getValueAt(modelRow, 0));
         String taAccount = String.valueOf(model.getValueAt(modelRow, 1));
         
         JobItem it = (JobItem) jobsBox.getSelectedItem();
@@ -396,17 +354,44 @@ public final class MoApplicantsPage extends JPanel {
         final Applicant ta = data.getApplicant(taAccount).orElse(null);
         if (job == null || ta == null) return;
 
+        String cachedReason = sessionAiReasons.get(appId);
+        Integer cachedScore = sessionMatchScores.get(appId);
+        if (cachedScore != null && cachedReason != null && !cachedReason.trim().isEmpty()) {
+            showAiAnalysisDialog(ta.name(), cachedReason);
+            return;
+        }
+
         final DeepSeekClient client = new DeepSeekClient();
         if (!client.isConfigured()) {
             JOptionPane.showMessageDialog(this, "DeepSeek not configured.");
             return;
         }
 
+        final StreamDialog streamDialog = showStreamingDialog(ta.name());
         setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
         SwingWorker<Map<String, DeepSeekClient.AiScore>, Void> worker = new SwingWorker<Map<String, DeepSeekClient.AiScore>, Void>() {
             @Override
             protected Map<String, DeepSeekClient.AiScore> doInBackground() throws Exception {
-                return client.rankApplicantsForJob(job, java.util.Collections.singletonList(ta));
+                DeepSeekClient.AiScore streamed = client.analyzeApplicantStream(job, ta, new DeepSeekClient.ChunkListener() {
+                    @Override
+                    public void onChunk(String text) {
+                        appendStreamText(streamDialog, text);
+                    }
+                });
+
+                int sum = streamed.score();
+                String finalReason = streamed.reason();
+
+                DeepSeekClient.AiScore second = scoreOnce(client, job, ta);
+                sum += second != null ? second.score() : streamed.score();
+
+                DeepSeekClient.AiScore third = scoreOnce(client, job, ta);
+                sum += third != null ? third.score() : streamed.score();
+
+                int avg = sum / 3;
+                sessionMatchScores.put(appId, Integer.valueOf(avg));
+                sessionAiReasons.put(appId, finalReason == null ? "" : finalReason);
+                return java.util.Collections.singletonMap(ta.id(), new DeepSeekClient.AiScore(avg, finalReason));
             }
 
             @Override
@@ -416,20 +401,8 @@ public final class MoApplicantsPage extends JPanel {
                     Map<String, DeepSeekClient.AiScore> res = get();
                     DeepSeekClient.AiScore sc = res.get(ta.id());
                     if (sc != null) {
-                        // 使用 JEditorPane 支持 HTML 渲染，让 Markdown 符号变美观
-                        JEditorPane area = new JEditorPane();
-                        area.setContentType("text/html");
-                        area.setEditable(false);
-                        
-                        String htmlContent = formatToHtml(sc.reason());
-                        area.setText(htmlContent);
-                        area.setCaretPosition(0);
-
-                        JScrollPane scrollPane = new JScrollPane(area);
-                        scrollPane.setPreferredSize(new java.awt.Dimension(650, 500));
-                        
-                        JOptionPane.showMessageDialog(MoApplicantsPage.this, scrollPane, 
-                            "AI Expert Analysis: " + ta.name(), JOptionPane.INFORMATION_MESSAGE);
+                        model.setValueAt(Integer.valueOf(sc.score()), modelRow, 5);
+                        streamDialog.setTitle("AI Expert Analysis: " + ta.name() + " (" + sc.score() + "%)");
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(MoApplicantsPage.this, "AI Analysis failed: " + ex.getMessage());
@@ -439,7 +412,95 @@ public final class MoApplicantsPage extends JPanel {
         worker.execute();
     }
 
+
+    private void showAiAnalysisDialog(String taName, String reason) {
+        JEditorPane area = new JEditorPane();
+        area.setContentType("text/html");
+        area.setEditable(false);
+        area.setText(formatToHtml(reason));
+        area.setCaretPosition(0);
+
+        JScrollPane scrollPane = new JScrollPane(area);
+        scrollPane.setPreferredSize(new java.awt.Dimension(650, 500));
+
+        JOptionPane.showMessageDialog(MoApplicantsPage.this, scrollPane,
+                "AI Expert Analysis: " + taName, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static DeepSeekClient.AiScore scoreOnce(DeepSeekClient client, Job job, Applicant ta) throws java.io.IOException, InterruptedException {
+        Map<String, DeepSeekClient.AiScore> res = client.rankApplicantsForJob(job, java.util.Collections.singletonList(ta));
+        return res.get(ta.id());
+    }
+
+    private StreamDialog showStreamingDialog(String taName) {
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "AI Expert Analysis: " + taName);
+        JEditorPane area = new JEditorPane();
+        area.setContentType("text/html");
+        area.setEditable(false);
+        area.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        area.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(area);
+        scrollPane.setPreferredSize(new java.awt.Dimension(680, 520));
+        dialog.getContentPane().add(scrollPane);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setModal(false);
+        dialog.setVisible(true);
+        return new StreamDialog(dialog, area);
+    }
+
+    private static void appendStreamText(StreamDialog dialog, String text) {
+        if (dialog == null || text == null || text.isEmpty()) return;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                dialog.rawText.append(text);
+                dialog.area.setText(formatToHtmlStatic(cleanAiDisplayText(dialog.rawText.toString())));
+                dialog.area.setCaretPosition(dialog.area.getDocument().getLength());
+            }
+        });
+    }
+
+    private static final class StreamDialog {
+        private final JDialog dialog;
+        private final JEditorPane area;
+        private final StringBuilder rawText;
+
+        private StreamDialog(JDialog dialog, JEditorPane area) {
+            this.dialog = dialog;
+            this.area = area;
+            this.rawText = new StringBuilder();
+        }
+
+        private void setTitle(String title) {
+            if (dialog == null) return;
+            dialog.setTitle(title);
+        }
+    }
+
+    private static String cleanAiDisplayText(String text) {
+        if (text == null) return "";
+        String cleaned = text.replace("\r\n", "\n");
+        cleaned = cleaned.replaceAll("\\[\\[SCORE:\\s*\\d+\\s*\\]\\]", "");
+        return cleaned.trim();
+    }
+
+    private static Integer asScore(Object value) {
+        if (value instanceof Integer) return (Integer) value;
+        if (value == null) return null;
+        String s = String.valueOf(value).trim();
+        if (s.isEmpty()) return null;
+        try {
+            return Integer.valueOf(Integer.parseInt(s));
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
     private String formatToHtml(String text) {
+        return formatToHtmlStatic(text);
+    }
+
+    private static String formatToHtmlStatic(String text) {
         if (text == null) return "";
         
         // 1. 处理标题 ###
@@ -498,7 +559,7 @@ public final class MoApplicantsPage extends JPanel {
         }
         
         // Convert view row index to model row index
-        int modelRow = table.convertRowIndexToModel(r);
+        final int modelRow = table.convertRowIndexToModel(r);
         String appId = String.valueOf(model.getValueAt(modelRow, 0));
         
         data.setApplicationStatus(account, appId, st);
@@ -525,7 +586,7 @@ public final class MoApplicantsPage extends JPanel {
         
         int success = 0;
         for (int r : selectedRows) {
-            int modelRow = table.convertRowIndexToModel(r);
+            final int modelRow = table.convertRowIndexToModel(r);
             String appId = String.valueOf(model.getValueAt(modelRow, 0));
             data.setApplicationStatus(account, appId, st);
             success++;
@@ -546,7 +607,7 @@ public final class MoApplicantsPage extends JPanel {
         }
         
         // Get the applicant ID
-        int modelRow = table.convertRowIndexToModel(r);
+        final int modelRow = table.convertRowIndexToModel(r);
         String taAccount = String.valueOf(model.getValueAt(modelRow, 1));
         
         Applicant ta = data.getApplicant(taAccount).orElse(null);
@@ -572,7 +633,7 @@ public final class MoApplicantsPage extends JPanel {
             return;
         }
         
-        int modelRow = table.convertRowIndexToModel(r);
+        final int modelRow = table.convertRowIndexToModel(r);
         String taAccount = String.valueOf(model.getValueAt(modelRow, 1));
         String appStatus = String.valueOf(model.getValueAt(modelRow, 6));
         
