@@ -12,11 +12,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -59,6 +61,7 @@ public final class DataService {
     private final Path tempOperationFile;
     private final Path legacyJobsTsvFile;
     private final Path legacyApplicationsTsvFile;
+    private final Path aiDatasetFile;
 
     private Config config = new Config("", 6, "pdf,doc,docx", "EN");
 
@@ -68,6 +71,10 @@ public final class DataService {
 
     private static final Object APPLICANT_IO_LOCK = new Object();
     private static final Object JOB_IO_LOCK = new Object();
+    private static final String JOB_ID_PREFIX = "JOB";
+    private static final int JOB_ID_START = 10001;
+    private static final String APPLICATION_ID_PREFIX = "APP";
+    private static final int APPLICATION_ID_START = 10001;
 
     public DataService() {
         this(loadBootstrapDataDir());
@@ -81,6 +88,7 @@ public final class DataService {
         this.tempOperationFile = dataDir.resolve("temp_operation.txt");
         this.legacyJobsTsvFile = dataDir.resolve("jobs.tsv");
         this.legacyApplicationsTsvFile = dataDir.resolve("applications.tsv");
+        this.aiDatasetFile = dataDir.resolve("ai_dataset.json");
     }
 
     public void init() {
@@ -89,7 +97,7 @@ public final class DataService {
 
             if (!Files.exists(taInfoFile)) {
                 Files.write(taInfoFile,
-                        ("id,name,email,skills,cvPath" + System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
+                        ("id,name,email,skills,cvPath,description" + System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
                         StandardOpenOption.CREATE);
             }
             if (!Files.exists(moJobsFile)) {
@@ -288,6 +296,7 @@ public final class DataService {
         Applicant a = new Applicant(account, name, email, skills, cvPath, desc);
         applicants.put(a.id(), a);
         persistApplicants();
+        resetApplicantAiScores(a.id());
         return a;
     }
 
@@ -305,9 +314,28 @@ public final class DataService {
             Files.createDirectories(cvDir);
             Path dest = cvDir.resolve(safeId + (ext.isEmpty() ? "" : ("." + ext)));
             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            resetApplicantAiScores(applicantId);
             return dest.toAbsolutePath().toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void resetApplicantAiScores(String applicantId) {
+        if (applicantId == null || applicantId.trim().isEmpty()) return;
+        boolean changed = false;
+        for (Map.Entry<String, Application> entry : applications.entrySet()) {
+            Application app = entry.getValue();
+            if (!applicantId.equals(app.applicantId())) continue;
+            if (app.aiScore() < 0) continue;
+            entry.setValue(app.withAiScore(-1));
+            changed = true;
+        }
+        if (changed) {
+            persistApplications();
+            OperationLog.append(tempOperationFile, "INFO",
+                    "actor=" + safeLogValue(applicantId) +
+                    " action=resetApplicantAiScores applicantId=" + safeLogValue(applicantId));
         }
     }
 
@@ -345,6 +373,7 @@ public final class DataService {
     public synchronized void upsertApplicant(Applicant applicant) {
         applicants.put(applicant.id(), applicant);
         persistApplicants();
+        resetApplicantAiScores(applicant.id());
     }
 
     private static String getFileExt(String path) {
@@ -383,7 +412,7 @@ public final class DataService {
     }
 
     public synchronized Job createJob(String actor, String title, String description, String requiredSkills, int hoursPerWeek, String postedBy) {
-        String id = UUID.randomUUID().toString();
+        String id = nextAvailableJobId();
         Job j = new Job(id, title, description, requiredSkills, hoursPerWeek, postedBy);
         jobs.put(id, j);
         persistJobs();
@@ -455,7 +484,7 @@ public final class DataService {
         Optional<Application> existing = findApplication(applicantId, jobId);
         if (existing.isPresent()) return existing.get();
 
-        String id = UUID.randomUUID().toString();
+        String id = nextAvailableApplicationId();
         Application a = new Application(id, applicantId, jobId, Application.Status.SUBMITTED, System.currentTimeMillis(), -1);
         applications.put(id, a);
         persistApplications();
@@ -488,6 +517,7 @@ public final class DataService {
     public synchronized void updateApplicationAiScore(String applicationId, int score) {
         Application a = applications.get(applicationId);
         if (a == null) return;
+        if (a.aiScore() == score) return;
         applications.put(applicationId, a.withAiScore(score));
         persistApplications();
     }
@@ -542,6 +572,8 @@ public final class DataService {
         loadJobs();
         loadLegacyJobsFromTsv();
         loadLegacyAppsFromTsv();
+        normalizeJobIdsIfNeeded();
+        normalizeApplicationIdsIfNeeded();
     }
 
     /** 从 jobs.tsv 加载历史职位（跳过已在 mo_jobs.json 中的条目） */
@@ -746,7 +778,7 @@ public final class DataService {
             }
 
             root.put("jobs", jobsArr);
-            String json = MiniJson.stringify(root);
+            String json = MiniJson.stringifyPretty(root) + System.lineSeparator();
             try {
                 Files.write(moJobsFile, json.getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING,
                         StandardOpenOption.CREATE);
@@ -758,6 +790,522 @@ public final class DataService {
 
     private void persistApplications() {
         persistJobs();
+    }
+
+    private void normalizeJobIdsIfNeeded() {
+        JobIdMigration migration = planJobIdMigration();
+        if (!migration.changed()) return;
+
+        jobs.clear();
+        jobs.putAll(migration.jobs());
+        remapApplications(migration.aliases());
+        persistJobs();
+        rewriteLegacyJobsTsv(migration.aliases());
+        rewriteLegacyApplicationsTsv(migration.aliases(), new LinkedHashMap<String, String>());
+        rewriteAiDatasetJobIds(migration.aliases());
+        rewriteOperationLogIds(migration.aliases(), new LinkedHashMap<String, String>());
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=system action=normalizeJobIds migrated=" + migration.aliases().size());
+    }
+
+    private JobIdMigration planJobIdMigration() {
+        List<Job> jobList = new ArrayList<Job>(jobs.values());
+        Collections.sort(jobList, new Comparator<Job>() {
+            @Override
+            public int compare(Job a, Job b) {
+                int byTitle = String.CASE_INSENSITIVE_ORDER.compare(a.title(), b.title());
+                if (byTitle != 0) return byTitle;
+                return String.CASE_INSENSITIVE_ORDER.compare(a.id(), b.id());
+            }
+        });
+
+        Map<String, List<Job>> grouped = new LinkedHashMap<String, List<Job>>();
+        for (Job job : jobList) {
+            String signature = jobSignature(job);
+            List<Job> sameJobs = grouped.get(signature);
+            if (sameJobs == null) {
+                sameJobs = new ArrayList<Job>();
+                grouped.put(signature, sameJobs);
+            }
+            sameJobs.add(job);
+        }
+
+        Set<String> reservedIds = new HashSet<String>();
+        for (List<Job> group : grouped.values()) {
+            String modernId = chooseModernJobId(group);
+            if (!modernId.isEmpty()) reservedIds.add(modernId);
+        }
+
+        int nextSeq = nextJobSequence(reservedIds);
+        Map<String, Job> normalizedJobs = new LinkedHashMap<String, Job>();
+        Map<String, String> aliases = new LinkedHashMap<String, String>();
+        for (List<Job> group : grouped.values()) {
+            String canonicalId = chooseModernJobId(group);
+            if (canonicalId.isEmpty()) canonicalId = formatJobId(nextSeq++);
+
+            Job preferred = choosePreferredJob(group);
+            normalizedJobs.put(canonicalId, copyJobWithId(preferred, canonicalId));
+            for (Job job : group) {
+                if (!canonicalId.equals(job.id())) aliases.put(job.id(), canonicalId);
+            }
+        }
+        return new JobIdMigration(normalizedJobs, aliases);
+    }
+
+    private void remapApplications(Map<String, String> aliases) {
+        if (aliases == null || aliases.isEmpty()) return;
+        Map<String, Application> remapped = new LinkedHashMap<String, Application>();
+        for (Application app : applications.values()) {
+            String newJobId = aliases.get(app.jobId());
+            if (newJobId != null && !newJobId.equals(app.jobId())) {
+                app = new Application(app.id(), app.applicantId(), newJobId, app.status(), app.createdAt(), app.aiScore());
+            }
+            remapped.put(app.id(), app);
+        }
+        applications.clear();
+        applications.putAll(remapped);
+    }
+
+    private void rewriteLegacyJobsTsv(Map<String, String> aliases) {
+        if (aliases == null || aliases.isEmpty() || !Files.exists(legacyJobsTsvFile)) return;
+        try {
+            List<String> lines = Files.readAllLines(legacyJobsTsvFile, StandardCharsets.UTF_8);
+            List<String> out = new ArrayList<String>();
+            Set<String> seenJobIds = new HashSet<String>();
+            for (String line : lines) {
+                if (line == null || line.trim().isEmpty()) continue;
+                String[] p = line.split("\t", -1);
+                if (p.length < 6) continue;
+                String targetId = aliases.containsKey(p[0].trim()) ? aliases.get(p[0].trim()) : p[0].trim();
+                Job job = jobs.get(targetId);
+                if (job == null || !seenJobIds.add(targetId)) continue;
+                out.add(joinTsv(job.id(), job.title(), job.description(), job.requiredSkills(),
+                        String.valueOf(job.hoursPerWeek()), job.postedBy()));
+            }
+            Files.write(legacyJobsTsvFile, out, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "WARN", "Rewrite jobs.tsv failed: " + e.getMessage());
+        }
+    }
+
+    private void normalizeApplicationIdsIfNeeded() {
+        ApplicationIdMigration migration = planApplicationIdMigration();
+        if (!migration.changed()) return;
+
+        applications.clear();
+        applications.putAll(migration.applications());
+        persistApplications();
+        rewriteLegacyApplicationsTsv(new LinkedHashMap<String, String>(), migration.aliases());
+        rewriteOperationLogIds(new LinkedHashMap<String, String>(), migration.aliases());
+        OperationLog.append(tempOperationFile, "INFO",
+                "actor=system action=normalizeApplicationIds migrated=" + migration.aliases().size());
+    }
+
+    private ApplicationIdMigration planApplicationIdMigration() {
+        List<Application> applicationList = new ArrayList<Application>(applications.values());
+        Collections.sort(applicationList, new Comparator<Application>() {
+            @Override
+            public int compare(Application a, Application b) {
+                int byTime = Long.compare(a.createdAt(), b.createdAt());
+                if (byTime != 0) return byTime;
+                int byApplicant = String.CASE_INSENSITIVE_ORDER.compare(a.applicantId(), b.applicantId());
+                if (byApplicant != 0) return byApplicant;
+                int byJob = String.CASE_INSENSITIVE_ORDER.compare(a.jobId(), b.jobId());
+                if (byJob != 0) return byJob;
+                return String.CASE_INSENSITIVE_ORDER.compare(a.id(), b.id());
+            }
+        });
+
+        Map<String, List<Application>> grouped = new LinkedHashMap<String, List<Application>>();
+        for (Application app : applicationList) {
+            String signature = applicationSignature(app);
+            List<Application> sameApps = grouped.get(signature);
+            if (sameApps == null) {
+                sameApps = new ArrayList<Application>();
+                grouped.put(signature, sameApps);
+            }
+            sameApps.add(app);
+        }
+
+        Set<String> reservedIds = new HashSet<String>();
+        for (List<Application> group : grouped.values()) {
+            String modernId = chooseModernApplicationId(group);
+            if (!modernId.isEmpty()) reservedIds.add(modernId);
+        }
+
+        int nextSeq = nextApplicationSequence(reservedIds);
+        Map<String, Application> normalizedApps = new LinkedHashMap<String, Application>();
+        Map<String, String> aliases = new LinkedHashMap<String, String>();
+        for (List<Application> group : grouped.values()) {
+            String canonicalId = chooseModernApplicationId(group);
+            if (canonicalId.isEmpty()) canonicalId = formatApplicationId(nextSeq++);
+
+            Application preferred = choosePreferredApplication(group);
+            normalizedApps.put(canonicalId, copyApplicationWithId(preferred, canonicalId));
+            for (Application app : group) {
+                if (!canonicalId.equals(app.id())) aliases.put(app.id(), canonicalId);
+            }
+        }
+        return new ApplicationIdMigration(normalizedApps, aliases);
+    }
+
+    private void rewriteLegacyApplicationsTsv(Map<String, String> jobAliases, Map<String, String> appAliases) {
+        boolean hasJobAliases = jobAliases != null && !jobAliases.isEmpty();
+        boolean hasAppAliases = appAliases != null && !appAliases.isEmpty();
+        if ((!hasJobAliases && !hasAppAliases) || !Files.exists(legacyApplicationsTsvFile)) return;
+        try {
+            List<String> lines = Files.readAllLines(legacyApplicationsTsvFile, StandardCharsets.UTF_8);
+            List<String> out = new ArrayList<String>();
+            Set<String> seenAppIds = new HashSet<String>();
+            for (String line : lines) {
+                if (line == null || line.trim().isEmpty()) continue;
+                String[] p = line.split("\t", -1);
+                if (p.length < 4) continue;
+                String appId = p[0].trim();
+                String targetAppId = hasAppAliases && appAliases.containsKey(appId) ? appAliases.get(appId) : appId;
+                if (targetAppId.isEmpty()) continue;
+                Application app = applications.get(targetAppId);
+                if (app == null) {
+                    String applicantId = p[1].trim();
+                    String jobId = p[2].trim();
+                    String statusRaw = p[3].trim();
+                    String targetJobId = hasJobAliases && jobAliases.containsKey(jobId) ? jobAliases.get(jobId) : jobId;
+                    Application.Status st;
+                    try {
+                        st = Application.Status.valueOf(statusRaw);
+                    } catch (IllegalArgumentException ex) {
+                        st = Application.Status.SUBMITTED;
+                    }
+                    app = new Application(targetAppId, applicantId, targetJobId, st, 0L, -1);
+                }
+                if (!seenAppIds.add(app.id())) continue;
+                out.add(joinTsv(app.id(), app.applicantId(), app.jobId(), app.status().name()));
+            }
+            Files.write(legacyApplicationsTsvFile, out, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "WARN", "Rewrite applications.tsv failed: " + e.getMessage());
+        }
+    }
+
+    private void rewriteAiDatasetJobIds(Map<String, String> aliases) {
+        if (aliases == null || aliases.isEmpty() || !Files.exists(aiDatasetFile)) return;
+        try {
+            Object rootObj = MiniJson.parse(new String(Files.readAllBytes(aiDatasetFile), StandardCharsets.UTF_8));
+            if (!(rootObj instanceof Map)) return;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> root = (Map<String, Object>) rootObj;
+            boolean changed = false;
+            changed |= remapAiDatasetJobProfiles(root, aliases);
+            changed |= remapAiDatasetNotes(root, aliases);
+            if (!changed) return;
+            Files.write(aiDatasetFile,
+                    (MiniJson.stringifyPretty(root) + System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        } catch (Exception e) {
+            OperationLog.append(tempOperationFile, "WARN", "Rewrite ai_dataset.json failed: " + e.getMessage());
+        }
+    }
+
+    private void rewriteOperationLogIds(Map<String, String> jobAliases, Map<String, String> appAliases) {
+        boolean hasJobAliases = jobAliases != null && !jobAliases.isEmpty();
+        boolean hasAppAliases = appAliases != null && !appAliases.isEmpty();
+        if ((!hasJobAliases && !hasAppAliases) || !Files.exists(tempOperationFile)) return;
+        try {
+            String raw = new String(Files.readAllBytes(tempOperationFile), StandardCharsets.UTF_8);
+            String updated = raw;
+            if (hasJobAliases) {
+                for (Map.Entry<String, String> entry : jobAliases.entrySet()) {
+                    updated = updated.replace(entry.getKey(), entry.getValue());
+                }
+            }
+            if (hasAppAliases) {
+                for (Map.Entry<String, String> entry : appAliases.entrySet()) {
+                    updated = updated.replace(entry.getKey(), entry.getValue());
+                }
+            }
+            if (safeEquals(raw, updated)) return;
+            Files.write(tempOperationFile, updated.getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            OperationLog.append(tempOperationFile, "WARN", "Rewrite temp_operation.txt failed: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean remapAiDatasetJobProfiles(Map<String, Object> root, Map<String, String> aliases) {
+        Object value = root.get("jobProfiles");
+        if (!(value instanceof List)) return false;
+        List<Object> items = (List<Object>) value;
+        Map<String, Map<String, Object>> dedup = new LinkedHashMap<String, Map<String, Object>>();
+        boolean changed = false;
+        for (Object item : items) {
+            if (!(item instanceof Map)) continue;
+            Map<String, Object> map = (Map<String, Object>) item;
+            String oldJobId = asString(map.get("jobId"));
+            String newJobId = aliases.containsKey(oldJobId) ? aliases.get(oldJobId) : oldJobId;
+            if (!safeEquals(oldJobId, newJobId)) {
+                map.put("jobId", newJobId);
+                changed = true;
+            }
+            Object profileObj = map.get("profile");
+            if (profileObj instanceof Map) {
+                Map<String, Object> profile = (Map<String, Object>) profileObj;
+                if (!safeEquals(asString(profile.get("jobId")), newJobId)) {
+                    profile.put("jobId", newJobId);
+                    changed = true;
+                }
+            }
+            Map<String, Object> existing = dedup.get(newJobId);
+            if (existing == null || asLong(map.get("updatedAt")) >= asLong(existing.get("updatedAt"))) {
+                dedup.put(newJobId, map);
+            }
+        }
+        if (items.size() != dedup.size()) changed = true;
+        root.put("jobProfiles", new ArrayList<Object>(dedup.values()));
+        return changed;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean remapAiDatasetNotes(Map<String, Object> root, Map<String, String> aliases) {
+        Object value = root.get("recommendationNotes");
+        if (!(value instanceof List)) return false;
+        List<Object> items = (List<Object>) value;
+        Map<String, Map<String, Object>> dedup = new LinkedHashMap<String, Map<String, Object>>();
+        boolean changed = false;
+        for (Object item : items) {
+            if (!(item instanceof Map)) continue;
+            Map<String, Object> map = (Map<String, Object>) item;
+            String candidateId = asString(map.get("candidateId"));
+            String oldJobId = asString(map.get("jobId"));
+            String newJobId = aliases.containsKey(oldJobId) ? aliases.get(oldJobId) : oldJobId;
+            if (!safeEquals(oldJobId, newJobId)) {
+                map.put("jobId", newJobId);
+                changed = true;
+            }
+            dedup.put(candidateId + "::" + newJobId, map);
+        }
+        if (items.size() != dedup.size()) changed = true;
+        root.put("recommendationNotes", new ArrayList<Object>(dedup.values()));
+        return changed;
+    }
+
+    private String nextAvailableJobId() {
+        Set<String> usedIds = new HashSet<String>(jobs.keySet());
+        return formatJobId(nextJobSequence(usedIds));
+    }
+
+    private String nextAvailableApplicationId() {
+        Set<String> usedIds = new HashSet<String>(applications.keySet());
+        return formatApplicationId(nextApplicationSequence(usedIds));
+    }
+
+    private static int nextJobSequence(Iterable<String> ids) {
+        int next = JOB_ID_START;
+        if (ids == null) return next;
+        for (String id : ids) {
+            int seq = parseJobIdSequence(id);
+            if (seq >= next) next = seq + 1;
+        }
+        return next;
+    }
+
+    private static int nextApplicationSequence(Iterable<String> ids) {
+        int next = APPLICATION_ID_START;
+        if (ids == null) return next;
+        for (String id : ids) {
+            int seq = parseApplicationIdSequence(id);
+            if (seq >= next) next = seq + 1;
+        }
+        return next;
+    }
+
+    private static String chooseModernJobId(List<Job> jobs) {
+        String best = "";
+        if (jobs == null) return best;
+        for (Job job : jobs) {
+            if (!isFriendlyJobId(job.id())) continue;
+            if (best.isEmpty() || parseJobIdSequence(job.id()) < parseJobIdSequence(best)) {
+                best = job.id();
+            }
+        }
+        return best;
+    }
+
+    private static Job choosePreferredJob(List<Job> jobs) {
+        Job best = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (Job job : jobs) {
+            int score = 0;
+            if (isFriendlyJobId(job.id())) score += 1000;
+            if (job.status() != Job.Status.OPEN) score += 100;
+            if (!job.category().trim().isEmpty()) score += 10;
+            if (!job.description().trim().isEmpty()) score += 1;
+            if (best == null || score > bestScore
+                    || (score == bestScore && String.CASE_INSENSITIVE_ORDER.compare(job.id(), best.id()) < 0)) {
+                best = job;
+                bestScore = score;
+            }
+        }
+        return best == null ? jobs.get(0) : best;
+    }
+
+    private static String chooseModernApplicationId(List<Application> applications) {
+        String best = "";
+        if (applications == null) return best;
+        for (Application app : applications) {
+            if (!isFriendlyApplicationId(app.id())) continue;
+            if (best.isEmpty() || parseApplicationIdSequence(app.id()) < parseApplicationIdSequence(best)) {
+                best = app.id();
+            }
+        }
+        return best;
+    }
+
+    private static Application choosePreferredApplication(List<Application> applications) {
+        Application best = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (Application app : applications) {
+            int score = 0;
+            if (isFriendlyApplicationId(app.id())) score += 1000;
+            if (app.createdAt() > 0L) score += 100;
+            if (app.aiScore() >= 0) score += 10;
+            if (app.status() != Application.Status.SUBMITTED) score += 1;
+            if (best == null || score > bestScore
+                    || (score == bestScore && String.CASE_INSENSITIVE_ORDER.compare(app.id(), best.id()) < 0)) {
+                best = app;
+                bestScore = score;
+            }
+        }
+        return best == null ? applications.get(0) : best;
+    }
+
+    private static Job copyJobWithId(Job job, String newId) {
+        return new Job(newId, job.title(), job.description(), job.requiredSkills(), job.hoursPerWeek(),
+                job.postedBy(), job.status(), job.category());
+    }
+
+    private static Application copyApplicationWithId(Application app, String newId) {
+        return new Application(newId, app.applicantId(), app.jobId(), app.status(), app.createdAt(), app.aiScore());
+    }
+
+    private static String formatJobId(int sequence) {
+        return JOB_ID_PREFIX + Math.max(sequence, JOB_ID_START);
+    }
+
+    private static String formatApplicationId(int sequence) {
+        return APPLICATION_ID_PREFIX + Math.max(sequence, APPLICATION_ID_START);
+    }
+
+    private static boolean isFriendlyJobId(String id) {
+        return parseJobIdSequence(id) > 0;
+    }
+
+    private static boolean isFriendlyApplicationId(String id) {
+        return parseApplicationIdSequence(id) > 0;
+    }
+
+    private static int parseJobIdSequence(String id) {
+        if (id == null) return -1;
+        String value = id.trim();
+        if (!value.startsWith(JOB_ID_PREFIX) || value.length() <= JOB_ID_PREFIX.length()) return -1;
+        String digits = value.substring(JOB_ID_PREFIX.length());
+        for (int i = 0; i < digits.length(); i++) {
+            if (!Character.isDigit(digits.charAt(i))) return -1;
+        }
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException ex) {
+            return -1;
+        }
+    }
+
+    private static int parseApplicationIdSequence(String id) {
+        if (id == null) return -1;
+        String value = id.trim();
+        if (!value.startsWith(APPLICATION_ID_PREFIX) || value.length() <= APPLICATION_ID_PREFIX.length()) return -1;
+        String digits = value.substring(APPLICATION_ID_PREFIX.length());
+        for (int i = 0; i < digits.length(); i++) {
+            if (!Character.isDigit(digits.charAt(i))) return -1;
+        }
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException ex) {
+            return -1;
+        }
+    }
+
+    private static String jobSignature(Job job) {
+        return normalizeKey(job.title()) + "\u001F"
+                + normalizeKey(job.description()) + "\u001F"
+                + normalizeKey(job.requiredSkills()) + "\u001F"
+                + job.hoursPerWeek() + "\u001F"
+                + normalizeKey(job.postedBy());
+    }
+
+    private static String applicationSignature(Application app) {
+        return normalizeKey(app.applicantId()) + "\u001F"
+                + normalizeKey(app.jobId()) + "\u001F"
+                + app.createdAt() + "\u001F"
+                + app.status().name();
+    }
+
+    private static String normalizeKey(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", " ").toLowerCase();
+    }
+
+    private static String joinTsv(String... values) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append('\t');
+            sb.append(values[i] == null ? "" : values[i].replace('\t', ' '));
+        }
+        return sb.toString();
+    }
+
+    private static final class JobIdMigration {
+        private final Map<String, Job> jobs;
+        private final Map<String, String> aliases;
+
+        private JobIdMigration(Map<String, Job> jobs, Map<String, String> aliases) {
+            this.jobs = jobs == null ? new LinkedHashMap<String, Job>() : new LinkedHashMap<String, Job>(jobs);
+            this.aliases = aliases == null ? new LinkedHashMap<String, String>() : new LinkedHashMap<String, String>(aliases);
+        }
+
+        private Map<String, Job> jobs() {
+            return new LinkedHashMap<String, Job>(jobs);
+        }
+
+        private Map<String, String> aliases() {
+            return new LinkedHashMap<String, String>(aliases);
+        }
+
+        private boolean changed() {
+            return !aliases.isEmpty();
+        }
+    }
+
+    private static final class ApplicationIdMigration {
+        private final Map<String, Application> applications;
+        private final Map<String, String> aliases;
+
+        private ApplicationIdMigration(Map<String, Application> applications, Map<String, String> aliases) {
+            this.applications = applications == null ? new LinkedHashMap<String, Application>() : new LinkedHashMap<String, Application>(applications);
+            this.aliases = aliases == null ? new LinkedHashMap<String, String>() : new LinkedHashMap<String, String>(aliases);
+        }
+
+        private Map<String, Application> applications() {
+            return new LinkedHashMap<String, Application>(applications);
+        }
+
+        private Map<String, String> aliases() {
+            return new LinkedHashMap<String, String>(aliases);
+        }
+
+        private boolean changed() {
+            return !aliases.isEmpty();
+        }
     }
 
     private int removeApplicationsForApplicant(String applicantId) {
@@ -813,6 +1361,10 @@ public final class DataService {
         } catch (NumberFormatException nfe) {
             return 0L;
         }
+    }
+
+    private static boolean safeEquals(String a, String b) {
+        return (a == null ? "" : a).equals(b == null ? "" : b);
     }
 
     private static String safeLogValue(String value) {

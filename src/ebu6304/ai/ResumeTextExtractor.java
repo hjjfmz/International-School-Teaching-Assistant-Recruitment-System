@@ -6,8 +6,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -17,18 +15,38 @@ public final class ResumeTextExtractor {
 
     public static String extract(Path file) throws IOException {
         if (file == null) return "";
-        if (!Files.exists(file)) return "";
-        if (Files.isDirectory(file)) return "";
+        Path candidate = resolveReadableResumeFile(file);
+        if (candidate == null) return "";
+
+        String name = candidate.getFileName() == null ? "" : candidate.getFileName().toString();
+        String ext = extLower(name);
+        if ("docx".equals(ext)) return extractDocx(candidate);
+        if ("pdf".equals(ext)) return extractPdfBestEffort(candidate);
+        if ("doc".equals(ext)) return extractDocBestEffort(candidate);
+
+        byte[] b = Files.readAllBytes(candidate);
+        return sanitizeText(new String(b, StandardCharsets.UTF_8));
+    }
+
+    private static Path resolveReadableResumeFile(Path file) throws IOException {
+        if (Files.exists(file) && !Files.isDirectory(file) && Files.size(file) > 0) {
+            return file;
+        }
 
         String name = file.getFileName() == null ? "" : file.getFileName().toString();
-        String ext = extLower(name);
-        if ("docx".equals(ext)) return extractDocx(file);
-        if ("pdf".equals(ext)) return extractPdfBestEffort(file);
-        if ("doc".equals(ext)) return extractDocBestEffort(file);
+        int dot = name.lastIndexOf('.');
+        String stem = dot < 0 ? name : name.substring(0, dot);
+        Path dir = file.getParent();
+        if (dir == null || stem.isEmpty() || !Files.isDirectory(dir)) return null;
 
-        // fallback: try plain text
-        byte[] b = Files.readAllBytes(file);
-        return sanitizeText(new String(b, StandardCharsets.UTF_8));
+        String[] exts = new String[] { "pdf", "docx", "doc" };
+        for (String ext : exts) {
+            Path alt = dir.resolve(stem + "." + ext);
+            if (Files.exists(alt) && !Files.isDirectory(alt) && Files.size(alt) > 0) {
+                return alt;
+            }
+        }
+        return null;
     }
 
     private static String extractDocx(Path file) throws IOException {
@@ -39,7 +57,6 @@ public final class ResumeTextExtractor {
             while ((e = zis.getNextEntry()) != null) {
                 String n = e.getName();
                 if (n == null) continue;
-                // main body + headers/footers (best effort)
                 if (!n.startsWith("word/")) continue;
                 if (!("word/document.xml".equals(n) || n.startsWith("word/header") || n.startsWith("word/footer"))) continue;
 
@@ -57,7 +74,6 @@ public final class ResumeTextExtractor {
     }
 
     private static String extractDocBestEffort(Path file) throws IOException {
-        // .doc is binary. We do a best-effort extraction by scanning for printable ASCII/Latin chunks.
         byte[] b = Files.readAllBytes(file);
         StringBuilder out = new StringBuilder();
         StringBuilder cur = new StringBuilder();
@@ -79,7 +95,6 @@ public final class ResumeTextExtractor {
         if (cur.length() == 0) return;
         String s = cur.toString();
         cur.setLength(0);
-        // ignore very short noise chunks
         if (s.trim().length() < 6) return;
         out.append(s).append("\n");
     }
@@ -87,29 +102,12 @@ public final class ResumeTextExtractor {
     private static String extractPdfBestEffort(Path file) throws IOException {
         String text = null;
         try {
-            // 尝试使用 PDFBox (方案 A)
-            Class<?> pdDocClass = Class.forName("org.apache.pdfbox.pdmodel.PDDocument");
-            Class<?> stripperClass = Class.forName("org.apache.pdfbox.text.PDFTextStripper");
-            
-            java.lang.reflect.Method loadMethod = pdDocClass.getMethod("load", java.io.File.class);
-            Object pdDoc = loadMethod.invoke(null, file.toFile());
-            
-            Object stripper = stripperClass.getDeclaredConstructor().newInstance();
-            java.lang.reflect.Method getTextMethod = stripperClass.getMethod("getText", pdDocClass);
-            text = (String) getTextMethod.invoke(stripper, pdDoc);
-            
-            java.lang.reflect.Method closeMethod = pdDocClass.getMethod("close");
-            closeMethod.invoke(pdDoc);
-            
+            text = extractPdfWithPdfBox(file);
         } catch (Throwable e) {
-            // 运行时如果找不到类，会抛出 NoClassDefFoundError (属于 Throwable)
             System.err.println("PDFBox execution failed (Check if JAR is in Build Path): " + e.getMessage());
         }
 
-        // 强力兜底逻辑
         if (text == null || text.trim().length() < 50) {
-            // 如果 PDFBox 拿到的内容太少（可能是扫描件或库未加载），
-            // 混合使用暴力字节扫描 + 特殊关键词提取
             byte[] b = Files.readAllBytes(file);
             String fallback = extractPrintableFallback(b);
             if (fallback.length() > (text == null ? 0 : text.length())) {
@@ -120,28 +118,34 @@ public final class ResumeTextExtractor {
         return text != null ? sanitizeText(text) : "";
     }
 
-    private static int findClosingParen(String s, int open) {
-        int depth = 0;
-        for (int i = open; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == '(' && (i == 0 || s.charAt(i-1) != '\\')) depth++;
-            else if (c == ')' && (i == 0 || s.charAt(i-1) != '\\')) {
-                depth--;
-                if (depth == 0) return i;
+    private static String extractPdfWithPdfBox(Path file) throws Exception {
+        Class<?> pdDocClass = Class.forName("org.apache.pdfbox.pdmodel.PDDocument");
+        Class<?> stripperClass = Class.forName("org.apache.pdfbox.text.PDFTextStripper");
+        Object pdDoc = null;
+        try {
+            pdDoc = loadPdfDocument(file, pdDocClass);
+            Object stripper = stripperClass.getDeclaredConstructor().newInstance();
+            java.lang.reflect.Method getTextMethod = stripperClass.getMethod("getText", pdDocClass);
+            return (String) getTextMethod.invoke(stripper, pdDoc);
+        } finally {
+            if (pdDoc != null) {
+                try {
+                    java.lang.reflect.Method closeMethod = pdDocClass.getMethod("close");
+                    closeMethod.invoke(pdDoc);
+                } catch (ReflectiveOperationException ignore) {}
             }
         }
-        return -1;
     }
 
-    private static boolean isInsideTjArray(String raw, int pos) {
-        // 查找该位置是否被 [] 包围且后面跟着 TJ
-        int start = raw.lastIndexOf('[', pos);
-        int end = raw.indexOf(']', pos);
-        if (start >= 0 && end > pos) {
-            String after = raw.substring(end + 1, Math.min(end + 10, raw.length()));
-            return after.contains("TJ");
+    private static Object loadPdfDocument(Path file, Class<?> pdDocClass) throws Exception {
+        try {
+            Class<?> loaderClass = Class.forName("org.apache.pdfbox.Loader");
+            java.lang.reflect.Method loadMethod = loaderClass.getMethod("loadPDF", java.io.File.class);
+            return loadMethod.invoke(null, file.toFile());
+        } catch (ClassNotFoundException | NoSuchMethodException ex) {
+            java.lang.reflect.Method legacyLoad = pdDocClass.getMethod("load", java.io.File.class);
+            return legacyLoad.invoke(null, file.toFile());
         }
-        return false;
     }
 
     private static String extractPrintableFallback(byte[] b) {
@@ -158,54 +162,14 @@ public final class ResumeTextExtractor {
                 cur.setLength(0);
             }
         }
-        return sanitizeText(sb.toString());
-    }
-
-    private static String unescapePdfString(String s) {
-        if (s == null || s.isEmpty()) return "";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == '\\' && i + 1 < s.length()) {
-                char n = s.charAt(++i);
-                switch (n) {
-                    case 'n': sb.append('\n'); break;
-                    case 'r': sb.append('\r'); break;
-                    case 't': sb.append('\t'); break;
-                    case 'b': sb.append('\b'); break;
-                    case 'f': sb.append('\f'); break;
-                    case '(' : sb.append('('); break;
-                    case ')' : sb.append(')'); break;
-                    case '\\': sb.append('\\'); break;
-                    default:
-                        // octal escapes: \ddd
-                        if (n >= '0' && n <= '7') {
-                            int j = i;
-                            int val = n - '0';
-                            int count = 1;
-                            while (count < 3 && j + 1 < s.length()) {
-                                char o = s.charAt(j + 1);
-                                if (o < '0' || o > '7') break;
-                                j++;
-                                val = (val * 8) + (o - '0');
-                                count++;
-                            }
-                            i = j;
-                            sb.append((char) val);
-                        } else {
-                            sb.append(n);
-                        }
-                }
-            } else {
-                sb.append(c);
-            }
+        if (cur.length() > 10) {
+            sb.append(cur).append("\n");
         }
-        return sb.toString();
+        return sanitizeText(sb.toString());
     }
 
     private static String xmlToText(String xml) {
         if (xml == null) return "";
-        // Keep paragraph-ish separators
         String s = xml;
         s = s.replace("</w:p>", "\n");
         s = s.replace("</w:tr>", "\n");

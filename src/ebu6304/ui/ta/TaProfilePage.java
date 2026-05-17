@@ -1,5 +1,6 @@
 package ebu6304.ui.ta;
 
+import ebu6304.ai.controller.AiIndexController;
 import ebu6304.model.Applicant;
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
@@ -41,6 +42,7 @@ public final class TaProfilePage extends JPanel {
 
     private final DataService data;
     private final String account;
+    private final AiIndexController aiIndexController;
 
     private final CardLayout cards = new CardLayout();
     private final JPanel deck = new JPanel(cards);
@@ -66,10 +68,11 @@ public final class TaProfilePage extends JPanel {
     private final JTextArea  e_descArea    = new JTextArea(4, 20);
     private final JButton    e_deleteBtn   = new JButton(I18n.t("ta.profile.delete"));
 
-    public TaProfilePage(DataService data, String account) {
+    public TaProfilePage(DataService data, String account, AiIndexController aiIndexController) {
         super(new BorderLayout());
         this.data = data;
         this.account = account;
+        this.aiIndexController = aiIndexController;
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         listModel = new DefaultTableModel(
@@ -354,6 +357,7 @@ public final class TaProfilePage extends JPanel {
         if (saved != null && !desc.isEmpty()) {
             data.upsertApplicant(saved.withProfile(name, email, skills, cv, desc));
         }
+        if (aiIndexController != null) aiIndexController.refreshApplicant(account);
 
         JOptionPane.showMessageDialog(this, I18n.t("ta.profile.created"));
         showHub();
@@ -380,6 +384,7 @@ public final class TaProfilePage extends JPanel {
         if (saved != null) {
             data.upsertApplicant(saved.withProfile(name, email, skills, cv, desc));
         }
+        if (aiIndexController != null) aiIndexController.refreshApplicant(account);
 
         JOptionPane.showMessageDialog(this, I18n.t("ta.profile.updated"));
         showList();
@@ -394,6 +399,7 @@ public final class TaProfilePage extends JPanel {
         Applicant a = data.getApplicant(account).orElse(null);
         if (a == null) return;
         data.upsertApplicant(a.withProfile(a.name(), "", "", "", ""));
+        if (aiIndexController != null) aiIndexController.refreshApplicant(account);
         JOptionPane.showMessageDialog(this, I18n.t("ta.profile.deleted"));
         showHub();
     }

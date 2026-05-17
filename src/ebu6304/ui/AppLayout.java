@@ -24,11 +24,11 @@ import javax.swing.JPanel;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import javax.swing.JComboBox;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import java.util.function.Supplier;
 
 public final class AppLayout extends JPanel {
@@ -400,14 +400,16 @@ public final class AppLayout extends JPanel {
                     : I18n.t("layout.notifications.none");
         }
 
-        JTextArea area = new JTextArea(text);
+        JEditorPane area = new JEditorPane();
+        area.setContentType("text/html");
+        area.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        area.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
+        area.setText(text);
         area.setEditable(false);
-        area.setLineWrap(true);
-        area.setWrapStyleWord(true);
-        area.setCaretPosition(area.getDocument().getLength());
+        area.setCaretPosition(0);
 
         JScrollPane sp = new JScrollPane(area);
-        sp.setPreferredSize(new Dimension(760, 420));
+        sp.setPreferredSize(new Dimension(820, 460));
 
         JOptionPane.showMessageDialog(this, sp, I18n.t("layout.notifications"), JOptionPane.INFORMATION_MESSAGE);
         if (unreadNotifications > 0) setUnreadNotifications(0);

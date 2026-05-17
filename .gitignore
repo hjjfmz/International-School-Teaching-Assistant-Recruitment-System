@@ -19,3 +19,5 @@ Thumbs.db
 # Secrets / local config
 deepseek.properties
 deepseek.properties.local
+.idea
+out

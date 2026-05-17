@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JFileChooser;
 
+import ebu6304.ai.controller.AiIndexController;
 import ebu6304.model.Applicant;
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
@@ -21,13 +22,15 @@ import ebu6304.ui.I18n;
 public final class TaResumePage extends JPanel {
     private final DataService data;
     private final String account;
+    private final AiIndexController aiIndexController;
 
     private final JTextField cvField = new JTextField(26);
 
-    public TaResumePage(DataService data, String account) {
+    public TaResumePage(DataService data, String account, AiIndexController aiIndexController) {
         super(new BorderLayout());
         this.data = data;
         this.account = account;
+        this.aiIndexController = aiIndexController;
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         JPanel form = new JPanel(new GridBagLayout());
@@ -88,6 +91,7 @@ public final class TaResumePage extends JPanel {
 
         Applicant updated = a.withProfile(a.name(), a.email(), a.skills(), storedCvPath);
         data.upsertApplicant(updated);
+        if (aiIndexController != null) aiIndexController.refreshApplicant(account);
         JOptionPane.showMessageDialog(this, I18n.t("msg.upload.success"));
         load();
     }
