@@ -49,7 +49,10 @@ public final class MainFrame extends JFrame {
         });
         this.loginPanel = login;
 
+        ForgotPasswordPanel forgot = new ForgotPasswordPanel(data, () -> show("login"));
+
         container.add(login, "login");
+        container.add(forgot, "forgot");
 
         show("login");
     }

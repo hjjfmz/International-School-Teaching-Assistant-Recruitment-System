@@ -22,6 +22,12 @@ public final class MiniJson {
         return sb.toString();
     }
 
+    public static String stringifyPretty(Object v) {
+        StringBuilder sb = new StringBuilder();
+        writePrettyValue(sb, v, 0);
+        return sb.toString();
+    }
+
     @SuppressWarnings("unchecked")
     private static void writeValue(StringBuilder sb, Object v) {
         if (v == null) {
@@ -61,6 +67,60 @@ public final class MiniJson {
         }
 
         sb.append('"').append(escape(String.valueOf(v))).append('"');
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void writePrettyValue(StringBuilder sb, Object v, int depth) {
+        if (v == null || v instanceof String || v instanceof Number || v instanceof Boolean) {
+            writeValue(sb, v);
+            return;
+        }
+        if (v instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) v;
+            if (map.isEmpty()) {
+                sb.append("{}");
+                return;
+            }
+            sb.append("{\n");
+            boolean first = true;
+            for (Map.Entry<String, Object> e : map.entrySet()) {
+                if (!first) sb.append(",\n");
+                first = false;
+                indent(sb, depth + 1);
+                sb.append('"').append(escape(e.getKey())).append('"').append(": ");
+                writePrettyValue(sb, e.getValue(), depth + 1);
+            }
+            sb.append('\n');
+            indent(sb, depth);
+            sb.append('}');
+            return;
+        }
+        if (v instanceof List) {
+            List<Object> list = (List<Object>) v;
+            if (list.isEmpty()) {
+                sb.append("[]");
+                return;
+            }
+            sb.append("[\n");
+            boolean first = true;
+            for (Object item : list) {
+                if (!first) sb.append(",\n");
+                first = false;
+                indent(sb, depth + 1);
+                writePrettyValue(sb, item, depth + 1);
+            }
+            sb.append('\n');
+            indent(sb, depth);
+            sb.append(']');
+            return;
+        }
+        writeValue(sb, String.valueOf(v));
+    }
+
+    private static void indent(StringBuilder sb, int depth) {
+        for (int i = 0; i < depth; i++) {
+            sb.append("  ");
+        }
     }
 
     private static String escape(String s) {

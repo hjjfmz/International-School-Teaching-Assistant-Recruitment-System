@@ -31,16 +31,14 @@ public final class ForgotPasswordPanel extends JPanel {
     }
 
     private final DataService data;
-    private static final Color BG = Color.WHITE;
-    private static final Color CARD = Color.WHITE;
-    private static final Color PRIMARY = new Color(22, 119, 255);
-    private static final Color INPUT_BORDER = new Color(226, 232, 240);
+    private static final Color PRIMARY = new Color(0, 51, 153);
+    private static final Color INPUT_BORDER = new Color(200, 200, 200);
     private static final Color LINK_COLOR = PRIMARY;
 
     public ForgotPasswordPanel(DataService data, BackHandler back) {
         super(new BorderLayout());
         this.data = data;
-        setBackground(BG);
+        setBackground(new Color(128, 128, 128));
 
         JPanel centerWrapper = new JPanel(new GridBagLayout());
         centerWrapper.setOpaque(false);
@@ -66,7 +64,7 @@ public final class ForgotPasswordPanel extends JPanel {
 
         JComboBox<Role> roleBox = new JComboBox<Role>(Role.values());
         styleInput(roleBox);
-        JLabel roleLabel = new JLabel(I18n.t("common.role"));
+        JLabel roleLabel = new JLabel(I18n.t("forgot.role"));
         roleLabel.setFont(roleLabel.getFont().deriveFont(java.awt.Font.PLAIN, 12f));
         roleLabel.setForeground(new Color(102, 102, 102));
         roleLabel.setAlignmentX(0f);
@@ -106,24 +104,31 @@ public final class ForgotPasswordPanel extends JPanel {
         backBtn.setAlignmentX(0f);
         p.add(backBtn);
 
-        RoundedPanel card = new RoundedPanel(18);
-        card.setBackground(CARD);
-        card.setLayout(new BorderLayout());
-        card.setBorder(BorderFactory.createEmptyBorder(18, 22, 18, 22));
-        card.setPreferredSize(new Dimension(520, 520));
-        card.setMinimumSize(new Dimension(480, 480));
-        card.add(p, BorderLayout.CENTER);
+        RoundedPanel sideCard = new RoundedPanel(12);
+        sideCard.setBackground(new Color(255, 255, 255, 240));
+        sideCard.setLayout(new BorderLayout());
+        sideCard.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        sideCard.setPreferredSize(new Dimension(420, 420));
+        sideCard.setMinimumSize(new Dimension(400, 380));
+        sideCard.add(p, BorderLayout.CENTER);
 
         GridBagConstraints gc = new GridBagConstraints();
-        gc.gridx = 0;
+        gc.gridx = 1;
         gc.gridy = 0;
-        gc.weightx = 1;
+        gc.weightx = 0;
         gc.weighty = 1;
-        gc.anchor = GridBagConstraints.CENTER;
+        gc.anchor = GridBagConstraints.EAST;
         gc.fill = GridBagConstraints.NONE;
-        gc.insets = new java.awt.Insets(20, 20, 20, 20);
+        gc.insets = new java.awt.Insets(20, 0, 20, 60);
 
-        centerWrapper.add(card, gc);
+        GridBagConstraints spacer = new GridBagConstraints();
+        spacer.gridx = 0;
+        spacer.gridy = 0;
+        spacer.weightx = 1;
+        spacer.fill = GridBagConstraints.HORIZONTAL;
+        centerWrapper.add(Box.createGlue(), spacer);
+
+        centerWrapper.add(sideCard, gc);
         add(centerWrapper, BorderLayout.CENTER);
 
         resetBtn.addActionListener(e -> {
