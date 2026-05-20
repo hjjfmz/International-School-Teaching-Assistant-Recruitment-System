@@ -30,3 +30,5 @@
 2026-05-18T01:50:03.725376800	INFO	actor=MO10001 action=createJob jobId=JOB10004 postedBy=MO10001 title=Java_Teaching_Assistant hoursPerWeek=2
 2026-05-18T01:50:52.644449800	INFO	actor=MO10001 action=createJob jobId=JOB10010 postedBy=MO10001 title=Teaching_Assistant_-_Python hoursPerWeek=3
 2026-05-18T02:40:04.442217900	INFO	actor=2023213332 action=resetApplicantAiScores applicantId=2023213332
+2026-05-19T16:54:15.816640	INFO	actor=MO10003 action=createJob jobId=JOB10011 postedBy=MO10003 title=Graphic_Design_Teaching_Assistant hoursPerWeek=20
+2026-05-19T17:31:30.064984100	INFO	actor=2023213371 action=resetApplicantAiScores applicantId=2023213371

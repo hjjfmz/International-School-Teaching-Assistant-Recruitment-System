@@ -23,29 +23,40 @@
       "applications": []
     },
     {
+      "id": "JOB10011",
+      "title": "Graphic Design Teaching Assistant",
+      "description": "We are seeking a qualified Graphic Design Teaching Assistant to support an undergraduate course. Responsibilities include leading weekly discussion sections, grading assignments and projects, holding office hours, and assisting the instructor with course materials and student feedback. Candidates must be currently enrolled in a relevant degree program, demonstrate strong proficiency in design software (Adobe Photoshop, Adobe InDesign, Figma, Sketch) and UI design principles, and possess excellent communication and teaching skills. Familiarity with the course content is essential. This is a 20-hour per week position. We are an equal opportunity employer and encourage applications from all qualified individuals.",
+      "requiredSkills": "adobe photoshop, adobe indesign, figma, sketch, ui design",
+      "hoursPerWeek": 20,
+      "postedBy": "MO10003",
+      "status": "OPEN",
+      "category": "",
+      "applications": []
+    },
+    {
       "id": "JOB10003",
       "title": "Invigilation Assistant",
       "description": "Help with exam invigilation",
       "requiredSkills": "Attention to detail",
       "hoursPerWeek": 4,
-      "postedBy": "Admin",
+      "postedBy": "MO10001",
       "status": "OPEN",
       "category": "",
       "applications": [
-        {
-          "id": "APP10002",
-          "applicantId": "7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1",
-          "jobId": "JOB10003",
-          "status": "REJECTED",
-          "createdAt": 1775842495030,
-          "aiScore": 11
-        },
         {
           "id": "APP10003",
           "applicantId": "1f0b1f6b-86e2-4f6e-9d0d-3c3d3a1d0e6a",
           "jobId": "JOB10003",
           "status": "ACCEPTED",
           "createdAt": 1775842495031,
+          "aiScore": 11
+        },
+        {
+          "id": "APP10002",
+          "applicantId": "7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1",
+          "jobId": "JOB10003",
+          "status": "REJECTED",
+          "createdAt": 1775842495030,
           "aiScore": 11
         },
         {
@@ -85,7 +96,15 @@
           "jobId": "JOB10005",
           "status": "ACCEPTED",
           "createdAt": 1778517539082,
-          "aiScore": 68
+          "aiScore": 39
+        },
+        {
+          "id": "APP10010",
+          "applicantId": "2023213331",
+          "jobId": "JOB10005",
+          "status": "SUBMITTED",
+          "createdAt": 1778517744527,
+          "aiScore": 32
         },
         {
           "id": "APP10011",
@@ -94,14 +113,6 @@
           "status": "SUBMITTED",
           "createdAt": 1778594733228,
           "aiScore": -1
-        },
-        {
-          "id": "APP10010",
-          "applicantId": "2023213331",
-          "jobId": "JOB10005",
-          "status": "SUBMITTED",
-          "createdAt": 1778517744527,
-          "aiScore": 58
         }
       ]
     },
@@ -121,7 +132,7 @@
           "jobId": "JOB10006",
           "status": "ACCEPTED",
           "createdAt": 1775842062240,
-          "aiScore": 16
+          "aiScore": 18
         }
       ]
     },
@@ -131,7 +142,7 @@
       "description": "Assist with Q&A and marking support",
       "requiredSkills": "SQL,Basics",
       "hoursPerWeek": 5,
-      "postedBy": "MO",
+      "postedBy": "MO10001",
       "status": "OPEN",
       "category": "",
       "applications": [
@@ -151,25 +162,17 @@
       "description": "Support EBU6304 labs and tutorials",
       "requiredSkills": "Java,Git,Agile",
       "hoursPerWeek": 6,
-      "postedBy": "MO",
+      "postedBy": "MO10001",
       "status": "OPEN",
       "category": "",
       "applications": [
-        {
-          "id": "APP10005",
-          "applicantId": "2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7",
-          "jobId": "JOB10008",
-          "status": "ACCEPTED",
-          "createdAt": 1775842495031,
-          "aiScore": 16
-        },
         {
           "id": "APP10008",
           "applicantId": "2023213371",
           "jobId": "JOB10008",
           "status": "SUBMITTED",
           "createdAt": 1775842558647,
-          "aiScore": 25
+          "aiScore": -1
         },
         {
           "id": "APP10007",
@@ -178,6 +181,14 @@
           "status": "SUBMITTED",
           "createdAt": 1775842495031,
           "aiScore": 11
+        },
+        {
+          "id": "APP10005",
+          "applicantId": "2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7",
+          "jobId": "JOB10008",
+          "status": "ACCEPTED",
+          "createdAt": 1775842495031,
+          "aiScore": 16
         }
       ]
     },

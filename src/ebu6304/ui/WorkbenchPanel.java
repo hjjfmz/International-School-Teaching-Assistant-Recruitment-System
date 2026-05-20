@@ -40,9 +40,16 @@ public final class WorkbenchPanel extends JPanel {
     private Timer notifTimer;
     private int lastReadLineCount;
     private int lastSeenLineCount;
+    private int filteredUnreadCount;
+    private final Role notifRole;
+    private final String notifAccount;
+    private final DataService notifData;
 
     public WorkbenchPanel(DataService data, Role role, String account, Runnable logout, Runnable onLanguageChange) {
         super(new BorderLayout());
+        this.notifRole = role;
+        this.notifAccount = account;
+        this.notifData = data;
 
         String[] nav;
         if (role == Role.TA) {
@@ -84,7 +91,7 @@ public final class WorkbenchPanel extends JPanel {
         layout = holder[0];
 
         layout.setUser(role, account);
-        startOperationLogNotifications(data);
+        startOperationLogNotifications();
         AiModule aiModule = new AiModule(data);
 
         if (role == Role.TA) {
@@ -144,26 +151,41 @@ public final class WorkbenchPanel extends JPanel {
         add(layout, BorderLayout.CENTER);
     }
 
-    private void startOperationLogNotifications(DataService data) {
-        if (data == null) return;
-        final Path log = data.tempOperationFile();
+    private void startOperationLogNotifications() {
+        if (notifData == null) return;
+        final Path log = notifData.tempOperationFile();
         lastReadLineCount = safeLineCount(log);
         lastSeenLineCount = lastReadLineCount;
+        filteredUnreadCount = 0;
         layout.setUnreadNotifications(0);
 
-        layout.setNotificationsTextSupplier(() -> buildNotificationsText(log, 200));
+        layout.setNotificationsTextSupplier(() -> buildNotificationsText(log, 200, notifRole, notifAccount, notifData));
 
         layout.setOnNotificationsOpened(() -> {
-            lastReadLineCount = safeLineCount(log);
-            lastSeenLineCount = lastReadLineCount;
+            filteredUnreadCount = 0;
+            lastReadLineCount = lastSeenLineCount;
             layout.setUnreadNotifications(0);
         });
 
         notifTimer = new Timer(2000, e -> {
-            int lines = safeLineCount(log);
-            if (lines > lastSeenLineCount) lastSeenLineCount = lines;
-            int unread = Math.max(0, lastSeenLineCount - lastReadLineCount);
-            layout.setUnreadNotifications(unread);
+            int totalLines = safeLineCount(log);
+            if (totalLines < lastSeenLineCount) {
+                lastSeenLineCount = totalLines;
+                lastReadLineCount = totalLines;
+                filteredUnreadCount = 0;
+            } else if (totalLines > lastSeenLineCount) {
+                try {
+                    List<String> allLines = Files.readAllLines(log, StandardCharsets.UTF_8);
+                    for (int i = lastSeenLineCount; i < Math.min(totalLines, allLines.size()); i++) {
+                        if (isLineRelevant(allLines.get(i), notifRole, notifAccount, notifData)) {
+                            filteredUnreadCount++;
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                lastSeenLineCount = totalLines;
+            }
+            layout.setUnreadNotifications(filteredUnreadCount);
         });
         notifTimer.setRepeats(true);
         notifTimer.start();
@@ -176,15 +198,6 @@ public final class WorkbenchPanel extends JPanel {
         });
     }
 
-    private static long safeSize(Path p) {
-        try {
-            if (p == null || !Files.exists(p)) return 0L;
-            return Files.size(p);
-        } catch (Exception ex) {
-            return 0L;
-        }
-    }
-
     private static int safeLineCount(Path p) {
         try {
             if (p == null || !Files.exists(p)) return 0;
@@ -195,7 +208,7 @@ public final class WorkbenchPanel extends JPanel {
         }
     }
 
-    private static String buildNotificationsText(Path p, int tailLines) {
+    private static String buildNotificationsText(Path p, int tailLines, Role role, String account, DataService data) {
         try {
             if (p == null || !Files.exists(p)) return wrapNotificationsHtml("<div style='color:#64748b;padding:12px 0;'>" + escapeHtml(I18n.t("layout.notifications.empty")) + "</div>");
             List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
@@ -204,7 +217,9 @@ public final class WorkbenchPanel extends JPanel {
             int start = Math.max(0, lines.size() - Math.max(1, tailLines));
             List<NotificationItem> items = new ArrayList<NotificationItem>();
             for (int i = start; i < lines.size(); i++) {
-                NotificationItem item = parseNotification(lines.get(i));
+                String line = lines.get(i);
+                if (!isLineRelevant(line, role, account, data)) continue;
+                NotificationItem item = parseNotification(line);
                 if (item != null) items.add(item);
             }
             if (items.isEmpty()) return wrapNotificationsHtml("<div style='color:#64748b;padding:12px 0;'>" + escapeHtml(I18n.t("layout.notifications.empty")) + "</div>");
@@ -214,23 +229,71 @@ public final class WorkbenchPanel extends JPanel {
         }
     }
 
+    private static boolean isLineRelevant(String line, Role role, String account, DataService data) {
+        if (line == null || line.trim().isEmpty()) return false;
+        String[] parts = line.split("\t", 3);
+        if (parts.length < 3) return false;
+
+        String level = parts[1];
+        Map<String, String> kv = parseKeyValues(parts[2]);
+        String action = valueOr(kv, "action", "");
+        String actor = valueOr(kv, "actor", "");
+        String applicantId = kv.get("applicantId");
+        String jobId = kv.get("jobId");
+
+        if (role == Role.TA) {
+            if ("setApplicationStatus".equals(action)) {
+                return account != null && account.equals(applicantId);
+            }
+            if ("createJob".equals(action)) {
+                return true;
+            }
+            return false;
+        }
+
+        if (role == Role.MO) {
+            if ("submitApplication".equals(action) || "withdrawApplication".equals(action)) {
+                if (jobId != null && !jobId.isEmpty() && data != null) {
+                    return data.getJob(jobId).map(j -> account != null && account.equals(j.postedBy())).orElse(false);
+                }
+                return false;
+            }
+            return false;
+        }
+
+        if (role == Role.ADMIN) {
+            if ("ERROR".equalsIgnoreCase(level) || "WARN".equalsIgnoreCase(level)) {
+                return true;
+            }
+            return account != null && account.equals(actor);
+        }
+
+        return false;
+    }
+
     private static NotificationItem parseNotification(String line) {
         if (line == null) return null;
         String[] parts = line.split("\t", 3);
         if (parts.length < 3) return null;
 
-        Map<String, String> kv = parseKeyValues(parts[2]);
-        String action = valueOr(kv, "action", "activity");
-        String actor = valueOr(kv, "actor", "System");
         String time = formatTime(parts[0]);
-        String title = buildTitle(action, actor);
-        String meta = buildMeta(parts[1], kv);
-        String detail = buildDetail(action, kv);
-        return new NotificationItem(time, title, meta, detail);
+        String level = parts[1].trim();
+        Map<String, String> kv = parseKeyValues(parts[2]);
+        String action = valueOr(kv, "action", "");
+        String actor = valueOr(kv, "actor", "System");
+
+        if (action.isEmpty() && ("ERROR".equalsIgnoreCase(level) || "WARN".equalsIgnoreCase(level))) {
+            Map<String, String> errorKv = new LinkedHashMap<>();
+            errorKv.put("action", level.toLowerCase());
+            errorKv.put("rawMessage", parts[2].trim());
+            return new NotificationItem(time, level.toLowerCase(), "System", errorKv);
+        }
+
+        return new NotificationItem(time, action.isEmpty() ? "activity" : action, actor, kv);
     }
 
     private static Map<String, String> parseKeyValues(String text) {
-        Map<String, String> out = new LinkedHashMap<String, String>();
+        Map<String, String> out = new LinkedHashMap<>();
         if (text == null) return out;
         String[] tokens = text.trim().split("\\s+");
         for (String token : tokens) {
@@ -243,89 +306,286 @@ public final class WorkbenchPanel extends JPanel {
         return out;
     }
 
-    private static String buildTitle(String action, String actor) {
-        if ("submitApplication".equals(action)) return actor + " submitted an application";
-        if ("setApplicationStatus".equals(action)) return actor + " updated an application status";
-        if ("withdrawApplication".equals(action)) return actor + " withdrew an application";
-        if ("createJob".equals(action)) return actor + " posted a new job";
-        if ("setJobStatus".equals(action)) return actor + " changed a job status";
-        return actor + " performed " + action;
-    }
-
-    private static String buildMeta(String level, Map<String, String> kv) {
-        List<String> bits = new ArrayList<String>();
-        if (level != null && !level.trim().isEmpty()) bits.add(level.trim());
-        String applicantId = kv.get("applicantId");
-        String applicationId = kv.get("applicationId");
-        String jobId = kv.get("jobId");
-        if (applicantId != null && !applicantId.isEmpty()) bits.add("Applicant " + applicantId);
-        if (applicationId != null && !applicationId.isEmpty()) bits.add("Application " + shortenId(applicationId));
-        if (jobId != null && !jobId.isEmpty()) bits.add("Job " + shortenId(jobId));
-        return joinBits(bits);
-    }
-
-    private static String buildDetail(String action, Map<String, String> kv) {
-        if ("setApplicationStatus".equals(action)) {
-            String from = kv.get("fromStatus");
-            String to = kv.get("toStatus");
-            if (from != null && to != null) return "Status changed from <b>" + escapeHtml(from) + "</b> to <b>" + escapeHtml(to) + "</b>.";
-            if (to != null) return "Status updated to <b>" + escapeHtml(to) + "</b>.";
-        }
-        if ("submitApplication".equals(action)) {
-            return "A new candidate application was submitted for review.";
-        }
-        if ("withdrawApplication".equals(action)) {
-            return "The candidate withdrew this application.";
-        }
-        if ("createJob".equals(action)) {
-            String hours = kv.get("hoursPerWeek");
-            String title = kv.get("title");
-            List<String> bits = new ArrayList<String>();
-            if (title != null && !title.isEmpty()) bits.add("Title: <b>" + escapeHtml(title) + "</b>");
-            if (hours != null && !hours.isEmpty()) bits.add("Hours/week: <b>" + escapeHtml(hours) + "</b>");
-            return bits.isEmpty() ? "A new job posting was created." : joinBits(bits) + ".";
-        }
-        String raw = kv.isEmpty() ? "" : kv.toString();
-        return raw.isEmpty() ? "Activity recorded." : escapeHtml(raw);
-    }
+    // ── Rendering ──
 
     private static String renderNotificationsHtml(List<NotificationItem> items) {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><body style='font-family:Sans-Serif;background-color:#f8fafc;padding:10px 12px;'>");
-        sb.append("<div style='color:#0f172a;font-size:16px;font-weight:bold;padding:4px 2px 12px 2px;'>Recent activity</div>");
+        sb.append("<h2><font color='#1565c0'>").append(I18n.t("notif.header")).append("</font></h2>");
+        sb.append("<hr noshade size='1' color='#dddddd'>");
         for (int i = items.size() - 1; i >= 0; i--) {
             NotificationItem item = items.get(i);
-            sb.append("<table width='100%' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border:1px solid #dbe4ee;margin:0 0 10px 0;'>");
-            sb.append("<tr><td style='padding:10px 12px;'>");
-            sb.append("<table width='100%' cellpadding='0' cellspacing='0'>");
-            sb.append("<tr>");
-            sb.append("<td style='color:#0f172a;font-size:13px;font-weight:bold;'>").append(escapeHtml(item.title)).append("</td>");
-            sb.append("<td align='right' style='color:#64748b;font-size:12px;'>").append(escapeHtml(item.time)).append("</td>");
-            sb.append("</tr></table>");
-            if (!item.meta.isEmpty()) {
-                sb.append("<div style='color:#475569;font-size:12px;padding-top:4px;'>").append(escapeHtml(item.meta)).append("</div>");
-            }
-            if (!item.detail.isEmpty()) {
-                sb.append("<div style='color:#1e293b;font-size:13px;padding-top:8px;'>").append(item.detail).append("</div>");
-            }
-            sb.append("</td></tr></table>");
+            sb.append(renderCard(item));
         }
         sb.append("</body></html>");
         return sb.toString();
     }
 
-    private static String wrapNotificationsHtml(String inner) {
-        return "<html><body style='font-family:Sans-Serif;background:#f8fafc;padding:10px 12px;'>" + inner + "</body></html>";
+    private static String renderCard(NotificationItem item) {
+        String action = item.action;
+        if ("createJob".equals(action)) return renderCreateJobCard(item);
+        if ("setApplicationStatus".equals(action)) return renderStatusChangeCard(item);
+        if ("submitApplication".equals(action) || "withdrawApplication".equals(action)) return renderSimpleActionCard(item);
+        return renderAdminCard(item);
     }
 
-    private static String joinBits(List<String> bits) {
+    private static String renderCardHeader(String actor, String verb, String time) {
         StringBuilder sb = new StringBuilder();
-        for (String bit : bits) {
-            if (bit == null || bit.isEmpty()) continue;
-            if (sb.length() > 0) sb.append("  |  ");
-            sb.append(bit);
+        sb.append("<table width='100%' cellpadding='0' cellspacing='0'>");
+        sb.append("<tr>");
+        sb.append("<td><h3><font color='#1565c0'>").append(escapeHtml(actor)).append("</font> ").append(escapeHtml(verb)).append("</h3></td>");
+        sb.append("<td align='right' valign='top'><font size='2' color='#999999'>").append(escapeHtml(time)).append("</font></td>");
+        sb.append("</tr></table>");
+        sb.append("<hr noshade size='1' color='#eeeeee'>");
+        return sb.toString();
+    }
+
+    private static String renderIdRefs(Map<String, String> kv) {
+        List<String> refs = new ArrayList<>();
+        String applicationId = kv.get("applicationId");
+        String jobId = kv.get("jobId");
+        if (applicationId != null && !applicationId.isEmpty()) refs.add("Application: " + shortenId(applicationId));
+        if (jobId != null && !jobId.isEmpty()) refs.add("Job: " + shortenId(jobId));
+        if (refs.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("<br><font size='2' color='#888888'>");
+        for (int i = 0; i < refs.size(); i++) {
+            if (i > 0) sb.append(" &nbsp; ");
+            sb.append(escapeHtml(refs.get(i)));
+        }
+        sb.append("</font>");
+        return sb.toString();
+    }
+
+    // ── Card type: createJob ──
+
+    private static String renderCreateJobCard(NotificationItem item) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table width='100%' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border:1px solid #dbe4ee;margin:0 0 12px 0;'>");
+        sb.append("<tr><td style='padding:10px 14px;'>");
+        sb.append(renderCardHeader(item.actor, I18n.t("notif.action.createJob"), item.time));
+
+        String title = item.kv.get("title");
+        String hours = item.kv.get("hoursPerWeek");
+        String jobId = item.kv.get("jobId");
+        String postedBy = item.kv.get("postedBy");
+
+        if (title != null && !title.isEmpty()) {
+            sb.append("<b>").append(I18n.t("notif.detail.title")).append(":</b> <font color='#1565c0'><b>").append(escapeHtml(title)).append("</b></font><br>");
+        }
+        if (hours != null && !hours.isEmpty()) {
+            sb.append("<b>").append(I18n.t("notif.detail.hours")).append(":</b> ").append(escapeHtml(hours)).append("<br>");
+        }
+        if (jobId != null && !jobId.isEmpty()) {
+            sb.append("<b>").append(I18n.t("notif.detail.jobId")).append(":</b> ").append(escapeHtml(shortenId(jobId))).append("<br>");
+        }
+        if (postedBy != null && !postedBy.isEmpty()) {
+            sb.append("<b>").append(I18n.t("notif.detail.postedBy")).append(":</b> ").append(escapeHtml(postedBy)).append("<br>");
+        }
+
+        sb.append("</td></tr></table>");
+        return sb.toString();
+    }
+
+    // ── Card type: setApplicationStatus ──
+
+    private static String renderStatusChangeCard(NotificationItem item) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table width='100%' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border:1px solid #dbe4ee;margin:0 0 12px 0;'>");
+        sb.append("<tr><td style='padding:10px 14px;'>");
+        sb.append(renderCardHeader(item.actor, I18n.t("notif.action.setApplicationStatus"), item.time));
+
+        String from = item.kv.get("fromStatus");
+        String to = item.kv.get("toStatus");
+
+        sb.append("<table cellpadding='0' cellspacing='0'><tr>");
+        if (from != null && !from.isEmpty()) {
+            sb.append("<td bgcolor='").append(statusBgColor(from)).append("' style='padding:3px 10px;border:1px solid ").append(statusBorderColor(from)).append(";'>");
+            sb.append("<font color='").append(statusTextColor(from)).append("'><b>").append(escapeHtml(I18n.t("notif.status." + from))).append("</b></font></td>");
+            sb.append("<td style='padding:0 8px;'>&rarr;</td>");
+        }
+        if (to != null && !to.isEmpty()) {
+            sb.append("<td bgcolor='").append(statusBgColor(to)).append("' style='padding:3px 10px;border:1px solid ").append(statusBorderColor(to)).append(";'>");
+            sb.append("<font color='").append(statusTextColor(to)).append("'><b>").append(escapeHtml(I18n.t("notif.status." + to))).append("</b></font></td>");
+        }
+        sb.append("</tr></table>");
+
+        sb.append(renderIdRefs(item.kv));
+        sb.append("</td></tr></table>");
+        return sb.toString();
+    }
+
+    private static String statusBgColor(String status) {
+        if ("ACCEPTED".equals(status)) return "#e8f5e9";
+        if ("REJECTED".equals(status)) return "#ffebee";
+        return "#e3f2fd";
+    }
+
+    private static String statusBorderColor(String status) {
+        if ("ACCEPTED".equals(status)) return "#a5d6a7";
+        if ("REJECTED".equals(status)) return "#ef9a9a";
+        return "#90caf9";
+    }
+
+    private static String statusTextColor(String status) {
+        if ("ACCEPTED".equals(status)) return "#2e7d32";
+        if ("REJECTED".equals(status)) return "#c62828";
+        return "#1565c0";
+    }
+
+    private static String jobStatusBgColor(String status) {
+        if ("COMPLETED".equals(status)) return "#e8f5e9";
+        if ("CLOSED".equals(status)) return "#ffebee";
+        return "#e3f2fd";
+    }
+
+    private static String jobStatusBorderColor(String status) {
+        if ("COMPLETED".equals(status)) return "#a5d6a7";
+        if ("CLOSED".equals(status)) return "#ef9a9a";
+        return "#90caf9";
+    }
+
+    private static String jobStatusTextColor(String status) {
+        if ("COMPLETED".equals(status)) return "#2e7d32";
+        if ("CLOSED".equals(status)) return "#c62828";
+        return "#1565c0";
+    }
+
+    // ── Card type: submitApplication / withdrawApplication ──
+
+    private static String renderSimpleActionCard(NotificationItem item) {
+        boolean isSubmit = "submitApplication".equals(item.action);
+        String verb = isSubmit ? I18n.t("notif.action.submitApplication") : I18n.t("notif.action.withdrawApplication");
+        String detail = isSubmit ? I18n.t("notif.submit.detail") : I18n.t("notif.withdraw.detail");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table width='100%' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border:1px solid #dbe4ee;margin:0 0 12px 0;'>");
+        sb.append("<tr><td style='padding:10px 14px;'>");
+        sb.append(renderCardHeader(item.actor, verb, item.time));
+        sb.append("<font color='#333333'>").append(escapeHtml(detail)).append("</font>");
+        sb.append(renderIdRefs(item.kv));
+        sb.append("</td></tr></table>");
+        return sb.toString();
+    }
+
+    // ── Card type: admin operations ──
+
+    private static String renderAdminCard(NotificationItem item) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table width='100%' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border:1px solid #dbe4ee;margin:0 0 12px 0;'>");
+        sb.append("<tr><td style='padding:10px 14px;'>");
+
+        String verb = actionVerb(item.action);
+        sb.append(renderCardHeader(item.actor, verb, item.time));
+
+        String detail = buildAdminFlowingText(item.action, item.kv);
+        sb.append(detail);
+
+        sb.append("</td></tr></table>");
+        return sb.toString();
+    }
+
+    private static String actionVerb(String action) {
+        String key = "notif.action." + action;
+        String val = I18n.t(key);
+        return val.equals(key) ? I18n.t("notif.admin.performed", action) : val;
+    }
+
+    private static String buildAdminFlowingText(String action, Map<String, String> kv) {
+        if ("setUserEnabled".equals(action)) {
+            String account = kv.get("account");
+            String enabled = kv.get("enabled");
+            if ("true".equalsIgnoreCase(enabled)) {
+                return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.setUserEnabled.enabled", account)) + "</font>";
+            }
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.setUserEnabled.disabled", account)) + "</font>";
+        }
+        if ("deleteUser".equals(action)) {
+            String role = kv.get("role");
+            String account = kv.get("account");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.deleteUser", role, account)) + "</font>";
+        }
+        if ("resetPassword".equals(action)) {
+            String role = kv.get("role");
+            String account = kv.get("account");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.resetPassword", role, account)) + "</font>";
+        }
+        if ("createMoAccount".equals(action)) {
+            String account = kv.get("account");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.createMoAccount", account)) + "</font>";
+        }
+        if ("export".equals(action)) {
+            String type = kv.get("type");
+            String format = kv.get("format");
+            String dir = kv.get("dir");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.export", type, format, dir)) + "</font>";
+        }
+        if ("exportWorkloadCsv".equals(action)) {
+            String file = kv.get("file");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.exportWorkloadCsv", file)) + "</font>";
+        }
+        if ("setJobStatus".equals(action)) {
+            String jobId = kv.get("jobId");
+            String status = kv.get("status");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.setJobStatus", shortenId(jobId))) + " </font>"
+                    + "<table cellpadding='0' cellspacing='0' style='display:inline;'><tr><td bgcolor='" + jobStatusBgColor(status) + "' style='padding:2px 8px;border:1px solid " + jobStatusBorderColor(status) + ";'>"
+                    + "<font color='" + jobStatusTextColor(status) + "'><b>" + escapeHtml(status) + "</b></font></td></tr></table>";
+        }
+        if ("setJobCategory".equals(action)) {
+            String jobId = kv.get("jobId");
+            String category = kv.get("category");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.setJobCategory", shortenId(jobId), category)) + "</font>";
+        }
+        if ("resetApplicantAiScores".equals(action)) {
+            String applicantId = kv.get("applicantId");
+            return "<font color='#333333'>" + escapeHtml(I18n.t("notif.admin.resetApplicantAiScores", applicantId)) + "</font>";
+        }
+        if ("updateConfig".equals(action)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("<font color='#333333'>").append(escapeHtml(I18n.t("notif.admin.updateConfig"))).append("</font><br>");
+            String dataPath = kv.get("dataPath");
+            String pwdLen = kv.get("passwordMinLength");
+            String cvFormats = kv.get("cvFormats");
+            String lang = kv.get("defaultLang");
+            sb.append("<table width='95%' cellpadding='6' cellspacing='0'><tr><td bgcolor='#f5f5f5'>");
+            sb.append("<font color='#333333' size='2'>");
+            sb.append(escapeHtml(I18n.t("notif.admin.updateConfig.detail",
+                    dataPath != null ? dataPath : "-",
+                    pwdLen != null ? pwdLen : "-",
+                    cvFormats != null ? cvFormats : "-",
+                    lang != null ? lang : "-")));
+            sb.append("</font></td></tr></table>");
+            return sb.toString();
+        }
+        if ("error".equals(action)) {
+            String rawMsg = kv.get("rawMessage");
+            return "<font color='#c62828'><b>" + escapeHtml(I18n.t("notif.admin.error")) + ":</b></font> " + escapeHtml(rawMsg);
+        }
+        if ("warn".equals(action)) {
+            String rawMsg = kv.get("rawMessage");
+            return "<font color='#e65100'><b>" + escapeHtml(I18n.t("notif.admin.warn")) + ":</b></font> " + escapeHtml(rawMsg);
+        }
+
+        // Generic fallback: show key-value pairs in a grey card
+        StringBuilder sb = new StringBuilder();
+        sb.append("<font color='#333333'>").append(escapeHtml(I18n.t("notif.admin.performed", action))).append("</font>");
+        if (!kv.isEmpty()) {
+            sb.append("<br><table width='95%' cellpadding='6' cellspacing='0'><tr><td bgcolor='#f5f5f5'>");
+            sb.append("<font color='#555555' size='2'>");
+            boolean first = true;
+            for (Map.Entry<String, String> e : kv.entrySet()) {
+                if ("action".equals(e.getKey()) || "actor".equals(e.getKey())) continue;
+                if (!first) sb.append(", ");
+                sb.append("<b>").append(escapeHtml(e.getKey())).append("</b>: ").append(escapeHtml(e.getValue()));
+                first = false;
+            }
+            sb.append("</font></td></tr></table>");
         }
         return sb.toString();
+    }
+
+    private static String wrapNotificationsHtml(String inner) {
+        return "<html><body style='font-family:Sans-Serif;background:#f8fafc;padding:10px 12px;'>" + inner + "</body></html>";
     }
 
     private static String formatTime(String raw) {
@@ -356,15 +616,15 @@ public final class WorkbenchPanel extends JPanel {
 
     private static final class NotificationItem {
         private final String time;
-        private final String title;
-        private final String meta;
-        private final String detail;
+        private final String action;
+        private final String actor;
+        private final Map<String, String> kv;
 
-        private NotificationItem(String time, String title, String meta, String detail) {
+        private NotificationItem(String time, String action, String actor, Map<String, String> kv) {
             this.time = time == null ? "" : time;
-            this.title = title == null ? "" : title;
-            this.meta = meta == null ? "" : meta;
-            this.detail = detail == null ? "" : detail;
+            this.action = action == null ? "" : action;
+            this.actor = actor == null ? "" : actor;
+            this.kv = kv == null ? new LinkedHashMap<>() : kv;
         }
     }
 }

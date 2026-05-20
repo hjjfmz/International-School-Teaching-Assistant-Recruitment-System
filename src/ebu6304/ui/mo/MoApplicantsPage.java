@@ -132,11 +132,7 @@ public final class MoApplicantsPage extends JPanel {
     public void reloadJobs() {
         jobsBox.removeAllItems();
         for (Job job : data.listJobs()) {
-            boolean isOwn = account.equals(job.postedBy());
-            boolean isLegacy = "MO".equalsIgnoreCase(job.postedBy()) || "Admin".equalsIgnoreCase(job.postedBy());
-            if (!isOwn && !isLegacy) continue;
-            String label = (isLegacy && !isOwn ? "[Legacy] " : "") + job.title();
-            jobsBox.addItem(new JobItem(job.id(), label));
+            jobsBox.addItem(new JobItem(job.id(), job.title()));
         }
     }
 
@@ -242,7 +238,8 @@ public final class MoApplicantsPage extends JPanel {
         sb.append(I18n.t("mo.applicants.detail.matched")).append(": ").append(formatList(match.matchedSkills())).append("\n");
         sb.append(I18n.t("mo.applicants.detail.missing")).append(": ").append(formatList(match.missingSkills())).append("\n");
         sb.append(I18n.t("mo.applicants.col.tag")).append(": ").append(nonBlank(match.recommendTag())).append("\n");
-        sb.append(I18n.t("mo.applicants.detail.reason")).append(": ").append(nonBlank(match.shortReason()));
+        sb.append(I18n.t("mo.applicants.detail.reason")).append(": ").append(nonBlank(match.shortReason())).append("\n");
+        sb.append("\n").append(I18n.t("mo.applicants.detail.source"));
         JOptionPane.showMessageDialog(this, sb.toString(), I18n.t("mo.applicants.details.title"), JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -434,7 +431,8 @@ public final class MoApplicantsPage extends JPanel {
         sb.append(I18n.t("mo.applicants.detail.seniority")).append(": ").append(match == null ? 0 : match.seniorityScore()).append("/100\n");
         sb.append(I18n.t("mo.applicants.detail.domain")).append(": ").append(match == null ? 0 : match.domainScore()).append("/100\n\n");
         sb.append(I18n.t("mo.applicants.col.tag")).append(": ").append(match == null ? "-" : nonBlank(match.recommendTag())).append("\n");
-        sb.append(I18n.t("mo.applicants.detail.reason")).append(": ").append(match == null ? "-" : nonBlank(match.shortReason())).append("\n\n");
+        sb.append(I18n.t("mo.applicants.detail.reason")).append(": ").append(match == null ? "-" : nonBlank(match.shortReason())).append("\n");
+        sb.append(I18n.t("mo.applicants.detail.source")).append("\n\n");
         sb.append(formatMultilineList(match == null ? null : match.recommendReasons()));
         return sb.toString();
     }

@@ -385,6 +385,16 @@ public final class I18n {
         zh.put("ta.jobs.detail.matched", "\u5339\u914D\u5230\u7684\u6280\u80FD\uFF1A");
         en.put("ta.jobs.detail.missing", "Missing skills:");
         zh.put("ta.jobs.detail.missing", "\u5C1A\u7F3A\u7684\u6280\u80FD\uFF1A");
+        en.put("ta.jobs.detail.section.job", "Job Information");
+        zh.put("ta.jobs.detail.section.job", "\u5C97\u4F4D\u4FE1\u606F");
+        en.put("ta.jobs.detail.section.match", "AI Match Analysis");
+        zh.put("ta.jobs.detail.section.match", "AI \u5339\u914D\u5206\u6790");
+        en.put("ta.jobs.detail.section.skills", "Skills Breakdown");
+        zh.put("ta.jobs.detail.section.skills", "\u6280\u80FD\u5206\u6790");
+        en.put("ta.jobs.detail.section.description", "Job Description");
+        zh.put("ta.jobs.detail.section.description", "\u5C97\u4F4D\u63CF\u8FF0");
+        en.put("ta.jobs.detail.source", "Source: profile skills + resume analysis");
+        zh.put("ta.jobs.detail.source", "\u6570\u636E\u6765\u6E90\uFF1A\u4E2A\u4EBA\u8D44\u6599\u6280\u80FD + \u7B80\u5386\u5206\u6790");
 
         // ── TA My Applications ──
         en.put("ta.myapps.title", "My Applications");
@@ -573,6 +583,8 @@ public final class I18n {
         zh.put("mo.applicants.detail.missing", "\u7F3A\u5931\u6280\u80FD");
         en.put("mo.applicants.detail.reason", "Recommendation reason");
         zh.put("mo.applicants.detail.reason", "\u63A8\u8350\u7406\u7531");
+        en.put("mo.applicants.detail.source", "Source: profile skills + resume analysis");
+        zh.put("mo.applicants.detail.source", "\u6570\u636E\u6765\u6E90\uFF1A\u4E2A\u4EBA\u8D44\u6599\u6280\u80FD + \u7B80\u5386\u5206\u6790");
 
         // ── MO Results ──
         en.put("mo.results.title", "Results");
@@ -763,6 +775,88 @@ public final class I18n {
         zh.put("layout.notifications.none", "\u6CA1\u6709\u65B0\u901A\u77E5\u3002");
         en.put("layout.notifications.empty", "No notifications.");
         zh.put("layout.notifications.empty", "\u6CA1\u6709\u901A\u77E5\u3002");
+
+        // -- Notification content --
+        en.put("notif.header", "Recent Activity");
+        zh.put("notif.header", "\u6700\u8FD1\u52A8\u6001");
+        en.put("notif.action.submitApplication", "submitted an application");
+        zh.put("notif.action.submitApplication", "\u63D0\u4EA4\u4E86\u7533\u8BF7");
+        en.put("notif.action.setApplicationStatus", "updated an application status");
+        zh.put("notif.action.setApplicationStatus", "\u66F4\u65B0\u4E86\u7533\u8BF7\u72B6\u6001");
+        en.put("notif.action.withdrawApplication", "withdrew an application");
+        zh.put("notif.action.withdrawApplication", "\u64A4\u56DE\u4E86\u7533\u8BF7");
+        en.put("notif.action.createJob", "posted a new job");
+        zh.put("notif.action.createJob", "\u53D1\u5E03\u4E86\u65B0\u5C97\u4F4D");
+        en.put("notif.action.setJobStatus", "changed a job status");
+        zh.put("notif.action.setJobStatus", "\u66F4\u6539\u4E86\u5C97\u4F4D\u72B6\u6001");
+        en.put("notif.action.setJobCategory", "set a job category");
+        zh.put("notif.action.setJobCategory", "\u8BBE\u7F6E\u4E86\u5C97\u4F4D\u5206\u7C7B");
+        en.put("notif.action.setUserEnabled", "changed user account status");
+        zh.put("notif.action.setUserEnabled", "\u66F4\u6539\u4E86\u7528\u6237\u8D26\u53F7\u72B6\u6001");
+        en.put("notif.action.deleteUser", "deleted a user account");
+        zh.put("notif.action.deleteUser", "\u5220\u9664\u4E86\u7528\u6237\u8D26\u53F7");
+        en.put("notif.action.resetPassword", "reset a password");
+        zh.put("notif.action.resetPassword", "\u91CD\u7F6E\u4E86\u5BC6\u7801");
+        en.put("notif.action.updateConfig", "updated system configuration");
+        zh.put("notif.action.updateConfig", "\u66F4\u65B0\u4E86\u7CFB\u7EDF\u914D\u7F6E");
+        en.put("notif.action.createMoAccount", "created an MO account");
+        zh.put("notif.action.createMoAccount", "\u521B\u5EFA\u4E86 MO \u8D26\u53F7");
+        en.put("notif.action.export", "exported data");
+        zh.put("notif.action.export", "\u5BFC\u51FA\u4E86\u6570\u636E");
+        en.put("notif.action.exportWorkloadCsv", "exported workload CSV");
+        zh.put("notif.action.exportWorkloadCsv", "\u5BFC\u51FA\u4E86\u5DE5\u4F5C\u91CF CSV");
+        en.put("notif.action.resetApplicantAiScores", "reset AI scores for an applicant");
+        zh.put("notif.action.resetApplicantAiScores", "\u91CD\u7F6E\u4E86\u7533\u8BF7\u4EBA\u7684 AI \u8BC4\u5206");
+        en.put("notif.detail.title", "Title");
+        zh.put("notif.detail.title", "\u6807\u9898");
+        en.put("notif.detail.hours", "Hours/week");
+        zh.put("notif.detail.hours", "\u5468\u5DE5\u65F6");
+        en.put("notif.detail.skills", "Skills");
+        zh.put("notif.detail.skills", "\u6280\u80FD");
+        en.put("notif.detail.jobId", "Job ID");
+        zh.put("notif.detail.jobId", "\u5C97\u4F4D ID");
+        en.put("notif.detail.postedBy", "Posted by");
+        zh.put("notif.detail.postedBy", "\u53D1\u5E03\u8005");
+        en.put("notif.status.SUBMITTED", "SUBMITTED");
+        zh.put("notif.status.SUBMITTED", "\u5DF2\u63D0\u4EA4");
+        en.put("notif.status.ACCEPTED", "ACCEPTED");
+        zh.put("notif.status.ACCEPTED", "\u5DF2\u5F55\u53D6");
+        en.put("notif.status.REJECTED", "REJECTED");
+        zh.put("notif.status.REJECTED", "\u5DF2\u62D2\u7EDD");
+        en.put("notif.submit.detail", "A new candidate application was submitted for review.");
+        zh.put("notif.submit.detail", "\u6536\u5230\u4E00\u4EFD\u65B0\u7684\u5019\u9009\u4EBA\u7533\u8BF7\u3002");
+        en.put("notif.withdraw.detail", "The candidate withdrew this application.");
+        zh.put("notif.withdraw.detail", "\u5019\u9009\u4EBA\u5DF2\u64A4\u56DE\u6B64\u7533\u8BF7\u3002");
+        en.put("notif.admin.setUserEnabled.enabled", "Enabled user account {0}");
+        zh.put("notif.admin.setUserEnabled.enabled", "\u5DF2\u542F\u7528\u7528\u6237\u8D26\u53F7 {0}");
+        en.put("notif.admin.setUserEnabled.disabled", "Disabled user account {0}");
+        zh.put("notif.admin.setUserEnabled.disabled", "\u5DF2\u7981\u7528\u7528\u6237\u8D26\u53F7 {0}");
+        en.put("notif.admin.deleteUser", "Deleted {0} account {1}");
+        zh.put("notif.admin.deleteUser", "\u5DF2\u5220\u9664 {0} \u8D26\u53F7 {1}");
+        en.put("notif.admin.resetPassword", "Reset password for {0} account {1}");
+        zh.put("notif.admin.resetPassword", "\u5DF2\u91CD\u7F6E {0} \u8D26\u53F7 {1} \u7684\u5BC6\u7801");
+        en.put("notif.admin.createMoAccount", "Created MO account {0}");
+        zh.put("notif.admin.createMoAccount", "\u5DF2\u521B\u5EFA MO \u8D26\u53F7 {0}");
+        en.put("notif.admin.export", "Exported {0} data ({1}) to {2}");
+        zh.put("notif.admin.export", "\u5DF2\u5BFC\u51FA {0} \u6570\u636E ({1}) \u81F3 {2}");
+        en.put("notif.admin.exportWorkloadCsv", "Exported workload CSV to {0}");
+        zh.put("notif.admin.exportWorkloadCsv", "\u5DF2\u5BFC\u51FA\u5DE5\u4F5C\u91CF CSV \u81F3 {0}");
+        en.put("notif.admin.setJobStatus", "Set job {0} status to");
+        zh.put("notif.admin.setJobStatus", "\u5DF2\u5C06\u5C97\u4F4D {0} \u72B6\u6001\u8BBE\u4E3A");
+        en.put("notif.admin.setJobCategory", "Set job {0} category to {1}");
+        zh.put("notif.admin.setJobCategory", "\u5DF2\u5C06\u5C97\u4F4D {0} \u5206\u7C7B\u8BBE\u4E3A {1}");
+        en.put("notif.admin.resetApplicantAiScores", "Reset AI scores for applicant {0}");
+        zh.put("notif.admin.resetApplicantAiScores", "\u5DF2\u91CD\u7F6E\u7533\u8BF7\u4EBA {0} \u7684 AI \u8BC4\u5206");
+        en.put("notif.admin.updateConfig", "Updated system configuration");
+        zh.put("notif.admin.updateConfig", "\u5DF2\u66F4\u65B0\u7CFB\u7EDF\u914D\u7F6E");
+        en.put("notif.admin.updateConfig.detail", "Data path: {0}, Min password length: {1}, CV formats: {2}, Default language: {3}");
+        zh.put("notif.admin.updateConfig.detail", "\u6570\u636E\u8DEF\u5F84: {0}, \u5BC6\u7801\u6700\u77ED\u957F\u5EA6: {1}, \u7B80\u5386\u683C\u5F0F: {2}, \u9ED8\u8BA4\u8BED\u8A00: {3}");
+        en.put("notif.admin.error", "System Error");
+        zh.put("notif.admin.error", "\u7CFB\u7EDF\u9519\u8BEF");
+        en.put("notif.admin.warn", "System Warning");
+        zh.put("notif.admin.warn", "\u7CFB\u7EDF\u8B66\u544A");
+        en.put("notif.admin.performed", "Performed: {0}");
+        zh.put("notif.admin.performed", "\u6267\u884C\u4E86: {0}");
 
         // ── ForgotPassword ──
         en.put("forgot.role", "Role");

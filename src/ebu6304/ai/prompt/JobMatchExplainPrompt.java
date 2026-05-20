@@ -26,9 +26,11 @@ public final class JobMatchExplainPrompt {
         } else {
             user.append("- Give 2 to 4 concise and specific reasons.\n");
         }
-        user.append("\nCandidate skills: ").append(candidate == null ? "" : candidate.normalizedSkills()).append("\n");
+        user.append("\nCandidate skills (from profile + resume): ").append(candidate == null ? "" : candidate.normalizedSkills()).append("\n");
         user.append("Candidate domains: ").append(candidate == null ? "" : candidate.domainTags()).append("\n");
         user.append("Candidate seniority: ").append(candidate == null ? "" : candidate.seniorityLevel().name()).append("\n");
+        user.append("Candidate years of experience: ").append(candidate == null ? 0 : candidate.yearsExperience()).append("\n");
+        user.append("Candidate summary: ").append(candidate == null ? "" : candidate.summary()).append("\n");
         user.append("Job title: ").append(job == null ? "" : job.title()).append("\n");
         user.append("Job skills: ").append(job == null ? "" : job.normalizedSkills()).append("\n");
         user.append("Job domains: ").append(job == null ? "" : job.domainTags()).append("\n");

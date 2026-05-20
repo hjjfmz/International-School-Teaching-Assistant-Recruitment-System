@@ -79,11 +79,7 @@ public final class MoResultsPage extends JPanel {
         JobItem preferred = null;
         JobItem fallback = null;
         for (Job j : data.listJobs()) {
-            // 显示当前 MO 发布的 job，以及 postedBy 为通用占位符的历史 job
-            boolean isOwn = account.equals(j.postedBy());
-            boolean isLegacy = "MO".equalsIgnoreCase(j.postedBy()) || "Admin".equalsIgnoreCase(j.postedBy());
-            if (!isOwn && !isLegacy) continue;
-            JobItem item = new JobItem(j.id(), j.title(), isLegacy && !isOwn);
+            JobItem item = new JobItem(j.id(), j.title());
             jobsBox.addItem(item);
 
             if (selectedId != null && selectedId.equals(j.id())) {
@@ -135,17 +131,15 @@ public final class MoResultsPage extends JPanel {
     private static final class JobItem {
         private final String id;
         private final String title;
-        private final boolean legacy;
 
-        private JobItem(String id, String title, boolean legacy) {
+        private JobItem(String id, String title) {
             this.id = id;
             this.title = title;
-            this.legacy = legacy;
         }
 
         @Override
         public String toString() {
-            return legacy ? "[Legacy] " + title : title;
+            return title;
         }
     }
 }

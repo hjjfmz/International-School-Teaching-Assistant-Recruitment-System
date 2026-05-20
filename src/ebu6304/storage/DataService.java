@@ -59,8 +59,6 @@ public final class DataService {
     private final Path moJobsFile;
     private final Path adminSystemFile;
     private final Path tempOperationFile;
-    private final Path legacyJobsTsvFile;
-    private final Path legacyApplicationsTsvFile;
     private final Path aiDatasetFile;
 
     private Config config = new Config("", 6, "pdf,doc,docx", "EN");
@@ -86,8 +84,6 @@ public final class DataService {
         this.moJobsFile = dataDir.resolve("mo_jobs.json");
         this.adminSystemFile = dataDir.resolve("admin_system.xml");
         this.tempOperationFile = dataDir.resolve("temp_operation.txt");
-        this.legacyJobsTsvFile = dataDir.resolve("jobs.tsv");
-        this.legacyApplicationsTsvFile = dataDir.resolve("applications.tsv");
         this.aiDatasetFile = dataDir.resolve("ai_dataset.json");
     }
 
@@ -558,73 +554,14 @@ public final class DataService {
         return sum;
     }
 
-    private void seedDemoJobs() {
-        createJob("TA - Software Engineering", "Support EBU6304 labs and tutorials", "Java,Git,Agile", 6, "MO");
-        createJob("Invigilation Assistant", "Help with exam invigilation", "Attention to detail", 4, "Admin");
-        createJob("TA - Databases (Support)", "Assist with Q&A and marking support", "SQL,Basics", 5, "MO");
-    }
-
     private void loadAll() {
         applicants.clear();
         jobs.clear();
         applications.clear();
         loadApplicants();
         loadJobs();
-        loadLegacyJobsFromTsv();
-        loadLegacyAppsFromTsv();
         normalizeJobIdsIfNeeded();
         normalizeApplicationIdsIfNeeded();
-    }
-
-    /** 从 jobs.tsv 加载历史职位（跳过已在 mo_jobs.json 中的条目） */
-    private void loadLegacyJobsFromTsv() {
-        if (!Files.exists(legacyJobsTsvFile)) return;
-        try {
-            List<String> lines = Files.readAllLines(legacyJobsTsvFile, StandardCharsets.UTF_8);
-            for (String line : lines) {
-                if (line == null || line.trim().isEmpty()) continue;
-                String[] p = line.split("\t", -1);
-                if (p.length < 6) continue;
-                String id = p[0].trim();
-                String title = p[1].trim();
-                String desc = p[2].trim();
-                String skills = p[3].trim();
-                int hours = 0;
-                try { hours = Integer.parseInt(p[4].trim()); } catch (NumberFormatException ignored) {}
-                String postedBy = p[5].trim();
-                if (id.isEmpty() || title.isEmpty()) continue;
-                if (!jobs.containsKey(id)) {
-                    jobs.put(id, new Job(id, title, desc, skills, hours, postedBy));
-                }
-            }
-        } catch (IOException e) {
-            OperationLog.append(tempOperationFile, "WARN", "Read jobs.tsv failed: " + e.getMessage());
-        }
-    }
-
-    /** 从 applications.tsv 加载历史申请（跳过已在内存中的条目） */
-    private void loadLegacyAppsFromTsv() {
-        if (!Files.exists(legacyApplicationsTsvFile)) return;
-        try {
-            List<String> lines = Files.readAllLines(legacyApplicationsTsvFile, StandardCharsets.UTF_8);
-            for (String line : lines) {
-                if (line == null || line.trim().isEmpty()) continue;
-                String[] p = line.split("\t", -1);
-                if (p.length < 4) continue;
-                String id = p[0].trim();
-                String applicantId = p[1].trim();
-                String jobId = p[2].trim();
-                String statusRaw = p[3].trim();
-                if (id.isEmpty() || applicantId.isEmpty() || jobId.isEmpty()) continue;
-                if (applications.containsKey(id)) continue;
-                Application.Status st;
-                try { st = Application.Status.valueOf(statusRaw); }
-                catch (IllegalArgumentException e) { st = Application.Status.SUBMITTED; }
-                applications.put(id, new Application(id, applicantId, jobId, st, 0L, -1));
-            }
-        } catch (IOException e) {
-            OperationLog.append(tempOperationFile, "WARN", "Read applications.tsv failed: " + e.getMessage());
-        }
     }
 
     private void loadApplicants() {
@@ -800,8 +737,6 @@ public final class DataService {
         jobs.putAll(migration.jobs());
         remapApplications(migration.aliases());
         persistJobs();
-        rewriteLegacyJobsTsv(migration.aliases());
-        rewriteLegacyApplicationsTsv(migration.aliases(), new LinkedHashMap<String, String>());
         rewriteAiDatasetJobIds(migration.aliases());
         rewriteOperationLogIds(migration.aliases(), new LinkedHashMap<String, String>());
         OperationLog.append(tempOperationFile, "INFO",
@@ -866,29 +801,6 @@ public final class DataService {
         applications.putAll(remapped);
     }
 
-    private void rewriteLegacyJobsTsv(Map<String, String> aliases) {
-        if (aliases == null || aliases.isEmpty() || !Files.exists(legacyJobsTsvFile)) return;
-        try {
-            List<String> lines = Files.readAllLines(legacyJobsTsvFile, StandardCharsets.UTF_8);
-            List<String> out = new ArrayList<String>();
-            Set<String> seenJobIds = new HashSet<String>();
-            for (String line : lines) {
-                if (line == null || line.trim().isEmpty()) continue;
-                String[] p = line.split("\t", -1);
-                if (p.length < 6) continue;
-                String targetId = aliases.containsKey(p[0].trim()) ? aliases.get(p[0].trim()) : p[0].trim();
-                Job job = jobs.get(targetId);
-                if (job == null || !seenJobIds.add(targetId)) continue;
-                out.add(joinTsv(job.id(), job.title(), job.description(), job.requiredSkills(),
-                        String.valueOf(job.hoursPerWeek()), job.postedBy()));
-            }
-            Files.write(legacyJobsTsvFile, out, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            OperationLog.append(tempOperationFile, "WARN", "Rewrite jobs.tsv failed: " + e.getMessage());
-        }
-    }
-
     private void normalizeApplicationIdsIfNeeded() {
         ApplicationIdMigration migration = planApplicationIdMigration();
         if (!migration.changed()) return;
@@ -896,7 +808,6 @@ public final class DataService {
         applications.clear();
         applications.putAll(migration.applications());
         persistApplications();
-        rewriteLegacyApplicationsTsv(new LinkedHashMap<String, String>(), migration.aliases());
         rewriteOperationLogIds(new LinkedHashMap<String, String>(), migration.aliases());
         OperationLog.append(tempOperationFile, "INFO",
                 "actor=system action=normalizeApplicationIds migrated=" + migration.aliases().size());
@@ -948,45 +859,6 @@ public final class DataService {
             }
         }
         return new ApplicationIdMigration(normalizedApps, aliases);
-    }
-
-    private void rewriteLegacyApplicationsTsv(Map<String, String> jobAliases, Map<String, String> appAliases) {
-        boolean hasJobAliases = jobAliases != null && !jobAliases.isEmpty();
-        boolean hasAppAliases = appAliases != null && !appAliases.isEmpty();
-        if ((!hasJobAliases && !hasAppAliases) || !Files.exists(legacyApplicationsTsvFile)) return;
-        try {
-            List<String> lines = Files.readAllLines(legacyApplicationsTsvFile, StandardCharsets.UTF_8);
-            List<String> out = new ArrayList<String>();
-            Set<String> seenAppIds = new HashSet<String>();
-            for (String line : lines) {
-                if (line == null || line.trim().isEmpty()) continue;
-                String[] p = line.split("\t", -1);
-                if (p.length < 4) continue;
-                String appId = p[0].trim();
-                String targetAppId = hasAppAliases && appAliases.containsKey(appId) ? appAliases.get(appId) : appId;
-                if (targetAppId.isEmpty()) continue;
-                Application app = applications.get(targetAppId);
-                if (app == null) {
-                    String applicantId = p[1].trim();
-                    String jobId = p[2].trim();
-                    String statusRaw = p[3].trim();
-                    String targetJobId = hasJobAliases && jobAliases.containsKey(jobId) ? jobAliases.get(jobId) : jobId;
-                    Application.Status st;
-                    try {
-                        st = Application.Status.valueOf(statusRaw);
-                    } catch (IllegalArgumentException ex) {
-                        st = Application.Status.SUBMITTED;
-                    }
-                    app = new Application(targetAppId, applicantId, targetJobId, st, 0L, -1);
-                }
-                if (!seenAppIds.add(app.id())) continue;
-                out.add(joinTsv(app.id(), app.applicantId(), app.jobId(), app.status().name()));
-            }
-            Files.write(legacyApplicationsTsvFile, out, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            OperationLog.append(tempOperationFile, "WARN", "Rewrite applications.tsv failed: " + e.getMessage());
-        }
     }
 
     private void rewriteAiDatasetJobIds(Map<String, String> aliases) {
@@ -1253,15 +1125,6 @@ public final class DataService {
 
     private static String normalizeKey(String value) {
         return value == null ? "" : value.trim().replaceAll("\\s+", " ").toLowerCase();
-    }
-
-    private static String joinTsv(String... values) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < values.length; i++) {
-            if (i > 0) sb.append('\t');
-            sb.append(values[i] == null ? "" : values[i].replace('\t', ' '));
-        }
-        return sb.toString();
     }
 
     private static final class JobIdMigration {

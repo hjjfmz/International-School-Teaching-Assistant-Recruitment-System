@@ -38,7 +38,7 @@ public final class CandidateProfileIndexService {
         if (cached != null && hash.equals(cached.sourceHash()) && cached.profile() != null) {
             return cached.profile();
         }
-        return resumeParseService.parseLocal(toSource(applicant, false));
+        return resumeParseService.parseLocal(toSource(applicant, true));
     }
 
     public CandidateProfileVo warmProfile(Applicant applicant) {

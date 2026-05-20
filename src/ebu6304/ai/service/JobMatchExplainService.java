@@ -56,12 +56,18 @@ public final class JobMatchExplainService {
             String candidateHash, String jobHash, boolean shortMode) {
         List<String> reasons = new ArrayList<String>();
         if (match != null && !match.matchedSkills().isEmpty()) {
-            reasons.add("Matched skills: " + join(match.matchedSkills(), shortMode ? 3 : 5));
+            reasons.add("Matched skills (profile + resume): " + join(match.matchedSkills(), shortMode ? 3 : 5));
         }
         if (match != null && match.seniorityScore() >= 90) {
             reasons.add("Experience level is aligned with the role.");
         } else if (match != null && match.seniorityScore() <= 50) {
-            reasons.add("Seniority looks lighter than the role expectation.");
+            String yearsInfo = candidate != null && candidate.yearsExperience() > 0
+                    ? " (resume indicates ~" + candidate.yearsExperience() + " years)"
+                    : "";
+            reasons.add("Seniority looks lighter than the role expectation." + yearsInfo);
+        }
+        if (candidate != null && candidate.yearsExperience() > 0 && match != null && match.seniorityScore() >= 65) {
+            reasons.add("Resume indicates ~" + candidate.yearsExperience() + " years of relevant experience.");
         }
         if (match != null && !match.missingSkills().isEmpty()) {
             reasons.add("Missing skills: " + join(match.missingSkills(), shortMode ? 2 : 4));

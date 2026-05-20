@@ -1,6 +1,7 @@
 package ebu6304.ui.ta;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +9,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -222,17 +225,128 @@ public final class TaJobsPage extends JPanel {
         Job job = recommendation.job();
         if (job == null) return;
 
-        StringBuilder msg = new StringBuilder();
-        msg.append(I18n.t("mo.post.label.title")).append(" ").append(job.title()).append("\n");
-        msg.append(I18n.t("mo.post.label.hours")).append(" ").append(job.hoursPerWeek()).append("\n");
-        msg.append(I18n.t("mo.post.label.skills")).append(" ").append(job.requiredSkills()).append("\n");
-        msg.append(I18n.t("ta.jobs.col.match")).append(" ").append(recommendation.matchScore()).append("/100\n");
-        msg.append(I18n.t("ta.jobs.col.tag")).append(" ").append(nonBlank(recommendation.recommendTag())).append("\n");
-        msg.append(I18n.t("ta.jobs.col.reason")).append(" ").append(nonBlank(recommendation.recommendReason())).append("\n\n");
-        msg.append(job.description()).append("\n\n");
-        msg.append(I18n.t("ta.jobs.detail.matched")).append(" ").append(formatList(recommendation.matchedSkills())).append("\n");
-        msg.append(I18n.t("ta.jobs.detail.missing")).append(" ").append(formatList(recommendation.missingSkills()));
-        JOptionPane.showMessageDialog(this, msg.toString(), I18n.t("common.details"), JOptionPane.INFORMATION_MESSAGE);
+        String html = buildDetailsHtml(job, recommendation);
+        JEditorPane editorPane = new JEditorPane("text/html", html);
+        editorPane.setEditable(false);
+        editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        editorPane.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+
+        JScrollPane scrollPane = new JScrollPane(editorPane);
+        scrollPane.setPreferredSize(new Dimension(580, 500));
+
+        JDialog dialog = new JDialog(JOptionPane.getFrameForComponent(this), job.title(), true);
+        dialog.getContentPane().setLayout(new BorderLayout());
+        dialog.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        JButton closeButton = new JButton(I18n.t("common.close"));
+        closeButton.addActionListener(e -> dialog.dispose());
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        footer.add(closeButton);
+        dialog.getContentPane().add(footer, BorderLayout.SOUTH);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowOpened(java.awt.event.WindowEvent e) {
+                SwingUtilities.invokeLater(() -> {
+                    editorPane.revalidate();
+                    editorPane.repaint();
+                });
+            }
+        });
+        dialog.setVisible(true);
+    }
+
+    private static String buildDetailsHtml(Job job, JobRecommendationVo rec) {
+        int score = rec.matchScore();
+        String scoreColor = score >= 85 ? "#2e7d32" : score >= 70 ? "#1565c0" : score >= 50 ? "#e65100" : "#c62828";
+
+        StringBuilder h = new StringBuilder();
+        h.append("<html>");
+
+        // ─── Job title ───
+        h.append("<h2><font color='#1565c0'>").append(escapeHtml(job.title())).append("</font></h2>");
+        h.append("<hr noshade size='1' color='#dddddd'>");
+
+        // ─── Job Information ───
+        h.append("<b>").append(I18n.t("mo.post.label.hours")).append("</b> ").append(job.hoursPerWeek());
+        h.append("&nbsp;&nbsp;&nbsp;&nbsp;");
+        h.append("<b>").append(I18n.t("mo.post.label.skills")).append("</b> ").append(escapeHtml(job.requiredSkills()));
+        if (!job.postedBy().isEmpty()) {
+            h.append("&nbsp;&nbsp;&nbsp;&nbsp;");
+            h.append("<b>").append(I18n.t("ta.jobs.col.postedby")).append("</b> ").append(escapeHtml(job.postedBy()));
+        }
+        h.append("<br><br>");
+
+        // ─── AI Match Analysis ───
+        h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.match")).append("</font></h3>");
+        h.append("<hr noshade size='1' color='#eeeeee'>");
+
+        h.append("<b>").append(I18n.t("ta.jobs.col.match")).append("</b>&nbsp;&nbsp;");
+        h.append("<font size='5' color='").append(scoreColor).append("'><b>").append(score).append("</b></font>");
+        h.append("<font color='#888888'>/100</font>");
+        int barW = (int) (120 * Math.max(0, Math.min(100, score)) / 100.0);
+        h.append("&nbsp;&nbsp;<table cellpadding='0' cellspacing='0'><tr>");
+        h.append("<td bgcolor='#e0e0e0' width='120' height='14'>");
+        h.append("<table cellpadding='0' cellspacing='0'><tr><td bgcolor='").append(scoreColor).append("' width='").append(barW).append("' height='14'></td></tr></table>");
+        h.append("</td></tr></table>");
+        h.append("<br>");
+
+        String tag = rec.recommendTag();
+        if (tag != null && !tag.isEmpty()) {
+            h.append("<b>").append(I18n.t("ta.jobs.col.tag")).append("</b>&nbsp;&nbsp;");
+            h.append("<font color='#1565c0'><b>").append(escapeHtml(tag)).append("</b></font><br>");
+        }
+
+        String reason = rec.recommendReason();
+        if (reason != null && !reason.isEmpty()) {
+            h.append("<b>").append(I18n.t("ta.jobs.col.reason")).append("</b><br>");
+            h.append("<table width='95%' cellpadding='6' cellspacing='0'><tr><td bgcolor='#f5f5f5'>");
+            h.append("<font color='#333333'>").append(escapeHtml(reason)).append("</font>");
+            h.append("</td></tr></table>");
+        }
+        h.append("<br>");
+
+        // ─── Skills Breakdown ───
+        h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.skills")).append("</font></h3>");
+        h.append("<hr noshade size='1' color='#eeeeee'>");
+
+        List<String> matched = rec.matchedSkills();
+        List<String> missing = rec.missingSkills();
+        if (!matched.isEmpty()) {
+            h.append("<font color='#2e7d32'><b>&#10003; ").append(I18n.t("ta.jobs.detail.matched")).append("</b></font><br>");
+            for (String s : matched) {
+                h.append("&nbsp;&nbsp;&nbsp;&nbsp;<font color='#2e7d32'>&#8226; ").append(escapeHtml(s)).append("</font><br>");
+            }
+        }
+        if (!missing.isEmpty()) {
+            if (!matched.isEmpty()) h.append("<br>");
+            h.append("<font color='#c62828'><b>&#10007; ").append(I18n.t("ta.jobs.detail.missing")).append("</b></font><br>");
+            for (String s : missing) {
+                h.append("&nbsp;&nbsp;&nbsp;&nbsp;<font color='#c62828'>&#8226; ").append(escapeHtml(s)).append("</font><br>");
+            }
+        }
+        h.append("<br>");
+
+        // ─── Job Description ───
+        String desc = job.description();
+        if (desc != null && !desc.isEmpty()) {
+            h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.description")).append("</font></h3>");
+            h.append("<hr noshade size='1' color='#eeeeee'>");
+            h.append(escapeHtml(desc).replace("\n", "<br>"));
+            h.append("<br>");
+        }
+
+        // Source note
+        h.append("<hr noshade size='1' color='#eeeeee'>");
+        h.append("<font size='2' color='#999999'><i>").append(I18n.t("ta.jobs.detail.source")).append("</i></font>");
+
+        h.append("</html>");
+        return h.toString();
+    }
+
+    private static String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     private void applySelected() {

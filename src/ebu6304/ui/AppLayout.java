@@ -409,7 +409,7 @@ public final class AppLayout extends JPanel {
         area.setCaretPosition(0);
 
         JScrollPane sp = new JScrollPane(area);
-        sp.setPreferredSize(new Dimension(820, 460));
+        sp.setPreferredSize(new Dimension(860, 520));
 
         JOptionPane.showMessageDialog(this, sp, I18n.t("layout.notifications"), JOptionPane.INFORMATION_MESSAGE);
         if (unreadNotifications > 0) setUnreadNotifications(0);
