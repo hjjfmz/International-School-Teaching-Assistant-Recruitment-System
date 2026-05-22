@@ -33,6 +33,7 @@ import ebu6304.model.Job;
 import ebu6304.storage.DataService;
 import ebu6304.storage.OperationLog;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class AdminWorkloadPage extends JPanel {
     private final DataService data;
@@ -50,7 +51,7 @@ public final class AdminWorkloadPage extends JPanel {
         super(new BorderLayout(10, 10));
         this.data = data;
         this.actor = actor == null ? "" : actor;
-        setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+        UiTheme.stylePage(this);
 
         model = new DefaultTableModel(new Object[] { I18n.t("admin.workload.col.key"), I18n.t("admin.workload.col.name"), I18n.t("admin.workload.col.accepted"), I18n.t("admin.workload.col.hours") }, 0) {
             @Override
@@ -59,11 +60,20 @@ public final class AdminWorkloadPage extends JPanel {
             }
         };
         table = new JTable(model);
+        UiTheme.styleTable(table);
+        UiTheme.styleCombo(view);
+        UiTheme.styleTextField(from);
+        UiTheme.styleTextField(to);
+        UiTheme.styleTextField(category);
+        from.setPreferredSize(new java.awt.Dimension(116, 36));
+        to.setPreferredSize(new java.awt.Dimension(116, 36));
+        category.setPreferredSize(new java.awt.Dimension(132, 36));
 
-        JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.workload.title")));
+        JPanel top = new JPanel(new BorderLayout(0, 8));
+        UiTheme.stylePanelCard(top, I18n.t("admin.workload.title"));
 
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        filters.setOpaque(false);
         filters.add(new JLabel(I18n.t("admin.workload.view")));
         filters.add(view);
         filters.add(new JLabel(I18n.t("admin.workload.from")));
@@ -72,16 +82,20 @@ public final class AdminWorkloadPage extends JPanel {
         filters.add(to);
         filters.add(new JLabel(I18n.t("admin.workload.category")));
         filters.add(category);
-        top.add(filters, BorderLayout.WEST);
+        top.add(filters, BorderLayout.NORTH);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        actions.setOpaque(false);
         JButton refresh = new JButton(I18n.t("common.refresh"));
         JButton export = new JButton(I18n.t("common.exportcsv"));
         JButton ai = new JButton(I18n.t("admin.workload.ai"));
+        UiTheme.styleButton(refresh);
+        UiTheme.styleButton(export);
+        UiTheme.stylePrimaryButton(ai);
         actions.add(refresh);
         actions.add(export);
         actions.add(ai);
-        top.add(actions, BorderLayout.EAST);
+        top.add(actions, BorderLayout.SOUTH);
 
         refresh.addActionListener(e -> refresh());
         export.addActionListener(e -> exportCsv());
@@ -93,7 +107,9 @@ public final class AdminWorkloadPage extends JPanel {
         category.addActionListener(e -> refresh());
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane sp = new JScrollPane(table);
+        UiTheme.styleScrollPane(sp);
+        add(sp, BorderLayout.CENTER);
 
         refresh();
     }
@@ -205,3 +221,5 @@ public final class AdminWorkloadPage extends JPanel {
         }
     }
 }
+
+

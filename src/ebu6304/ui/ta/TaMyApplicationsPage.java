@@ -23,6 +23,7 @@ import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class TaMyApplicationsPage extends JPanel {
     private final DataService data;
@@ -46,6 +47,7 @@ public final class TaMyApplicationsPage extends JPanel {
             }
         };
         table = new JTable(model);
+        UiTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JPanel top = new JPanel(new BorderLayout());
@@ -66,7 +68,9 @@ public final class TaMyApplicationsPage extends JPanel {
         export.addActionListener(e -> exportCsv());
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        UiTheme.styleScrollPane(tableScrollPane);
+        add(tableScrollPane, BorderLayout.CENTER);
 
         refresh();
     }

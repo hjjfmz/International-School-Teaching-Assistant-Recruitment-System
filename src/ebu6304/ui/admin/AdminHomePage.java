@@ -22,16 +22,17 @@ import javax.swing.JPanel;
 
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
+import ebu6304.ui.IconFactory;
 
 public final class AdminHomePage extends JPanel {
     public interface Nav {
         void go(String key);
     }
 
-    private final StatCard taCard = new StatCard("TA Registered", "0", "\uD83E\uDD1D", new Color(22, 119, 255));
-    private final StatCard userCard = new StatCard("Accounts", "0", "\uD83D\uDC64", new Color(245, 158, 11));
-    private final StatCard jobCard = new StatCard("Jobs", "0", "\uD83D\uDCCB", new Color(16, 185, 129));
-    private final StatCard appCard = new StatCard("Applications", "0", "\uD83D\uDCE8", new Color(168, 85, 247));
+    private final StatCard taCard = new StatCard("TA Registered", "0", IconFactory.check(18, new Color(22, 119, 255)), new Color(22, 119, 255));
+    private final StatCard userCard = new StatCard("Accounts", "0", IconFactory.user(18, new Color(245, 158, 11)), new Color(245, 158, 11));
+    private final StatCard jobCard = new StatCard("Jobs", "0", IconFactory.hammer(18, new Color(16, 185, 129)), new Color(16, 185, 129));
+    private final StatCard appCard = new StatCard("Applications", "0", IconFactory.envelope(18, new Color(168, 85, 247)), new Color(168, 85, 247));
 
     public AdminHomePage(DataService data, Nav nav) {
         super(new BorderLayout(10, 10));
@@ -59,9 +60,9 @@ public final class AdminHomePage extends JPanel {
         JPanel quickRow = new JPanel(new GridLayout(1, 3, 10, 10));
         quickRow.setOpaque(false);
 
-        QuickNavCard users = new QuickNavCard("\uD83D\uDC65", I18n.t("nav.admin.users"), "Manage users & permissions");
-        QuickNavCard export = new QuickNavCard("\uD83D\uDCE6", I18n.t("nav.admin.export"), "Export data snapshots");
-        QuickNavCard config = new QuickNavCard("\u2699", I18n.t("nav.admin.config"), "System configuration");
+        QuickNavCard users = new QuickNavCard(IconFactory.user(18, new Color(37, 99, 235)), I18n.t("nav.admin.users"), "Manage users & permissions", new Color(37, 99, 235));
+        QuickNavCard export = new QuickNavCard(IconFactory.download(18, new Color(245, 158, 11)), I18n.t("nav.admin.export"), "Export data snapshots", new Color(245, 158, 11));
+        QuickNavCard config = new QuickNavCard(IconFactory.gear(18, new Color(16, 185, 129)), I18n.t("nav.admin.config"), "System configuration", new Color(16, 185, 129));
 
         users.setOnClick(() -> { if (nav != null) nav.go(I18n.t("nav.admin.users")); });
         export.setOnClick(() -> { if (nav != null) nav.go(I18n.t("nav.admin.export")); });
@@ -98,19 +99,15 @@ public final class AdminHomePage extends JPanel {
         private final JLabel icon = new JLabel();
         private final Color accent;
 
-        private StatCard(String t, String v, String ic, Color accent) {
+        private StatCard(String t, String v, javax.swing.ImageIcon ic, Color accent) {
             super(16);
             this.accent = accent;
-            setBackground(Color.WHITE);
-            setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
-                    BorderFactory.createEmptyBorder(12, 12, 12, 12)));
+            setBackground(tint(accent, 0.965f));
+            setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
             setLayout(new GridBagLayout());
 
-            icon.setText(ic);
-            icon.setFont(icon.getFont().deriveFont(Font.PLAIN, 18f));
-            icon.setForeground(accent);
+            icon.setIcon(ic);
 
             title.setText(t);
             title.setForeground(new Color(100, 116, 139));
@@ -156,13 +153,14 @@ public final class AdminHomePage extends JPanel {
 
     private static final class QuickNavCard extends RoundedPanel {
         private Runnable onClick;
+        private boolean hover;
+        private final Color accent;
 
-        private QuickNavCard(String ic, String title, String subtitle) {
+        private QuickNavCard(javax.swing.ImageIcon ic, String title, String subtitle, Color accent) {
             super(18);
-            setBackground(Color.WHITE);
-            setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
-                    BorderFactory.createEmptyBorder(14, 14, 14, 14)));
+            this.accent = accent == null ? new Color(37, 99, 235) : accent;
+            setBackground(tint(this.accent, 0.965f));
+            setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
             setLayout(new BorderLayout(0, 10));
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
@@ -170,8 +168,6 @@ public final class AdminHomePage extends JPanel {
             head.setOpaque(false);
 
             JLabel icon = new JLabel(ic);
-            icon.setFont(icon.getFont().deriveFont(Font.PLAIN, 18f));
-            icon.setForeground(new Color(51, 51, 51));
 
             JPanel texts = new JPanel(new GridLayout(2, 1, 0, 2));
             texts.setOpaque(false);
@@ -197,20 +193,16 @@ public final class AdminHomePage extends JPanel {
             open.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             add(open, BorderLayout.SOUTH);
 
-            MouseAdapter hover = new MouseAdapter() {
+            MouseAdapter hoverListener = new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {
-                    setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(new Color(186, 216, 255), 1),
-                            BorderFactory.createEmptyBorder(14, 14, 14, 14)));
+                    hover = true;
                     repaint();
                 }
 
                 @Override
                 public void mouseExited(MouseEvent e) {
-                    setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
-                            BorderFactory.createEmptyBorder(14, 14, 14, 14)));
+                    hover = false;
                     repaint();
                 }
 
@@ -220,8 +212,23 @@ public final class AdminHomePage extends JPanel {
                 }
             };
 
-            addMouseListener(hover);
+            addMouseListener(hoverListener);
             open.addActionListener(e -> { if (onClick != null) onClick.run(); });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 24));
+                g2.fillRoundRect(14, Math.max(12, getHeight() - 62), Math.max(0, getWidth() - 28), 42, 20, 20);
+                g2.setColor(hover ? new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 190) : new Color(226, 232, 240, 190));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), 18, 18);
+            } finally {
+                g2.dispose();
+            }
         }
 
         private void setOnClick(Runnable r) {
@@ -229,6 +236,13 @@ public final class AdminHomePage extends JPanel {
         }
     }
 
+
+    private static Color tint(Color c, float amount) {
+        int r = (int) (255 - (255 - c.getRed()) * (1f - amount));
+        int g = (int) (255 - (255 - c.getGreen()) * (1f - amount));
+        int b = (int) (255 - (255 - c.getBlue()) * (1f - amount));
+        return new Color(Math.min(255, r), Math.min(255, g), Math.min(255, b));
+    }
     private static class RoundedPanel extends JPanel {
         private final int arc;
 
@@ -243,8 +257,12 @@ public final class AdminHomePage extends JPanel {
             Graphics2D g2 = (Graphics2D) g.create();
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(15, 23, 42, 10));
+                g2.fillRoundRect(2, 3, Math.max(0, getWidth() - 4), Math.max(0, getHeight() - 5), arc, arc);
                 g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+                g2.fillRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), arc, arc);
+                g2.setColor(new Color(226, 232, 240, 190));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), arc, arc);
             } finally {
                 g2.dispose();
             }

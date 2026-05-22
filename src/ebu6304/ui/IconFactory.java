@@ -16,7 +16,7 @@ public final class IconFactory {
 
     private IconFactory() {}
 
-    /* ── public entry points ───────────────────────────────── */
+    /* 閳光偓閳光偓 public entry points 閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓 */
 
     public static ImageIcon bell(int size, Color fg)     { return build(size, fg, IconFactory::drawBell); }
     public static ImageIcon gear(int size, Color fg)     { return build(size, fg, IconFactory::drawGear); }
@@ -29,9 +29,14 @@ public final class IconFactory {
     public static ImageIcon download(int size, Color fg) { return build(size, fg, IconFactory::drawDownload); }
     public static ImageIcon menu(int size, Color fg)     { return build(size, fg, IconFactory::drawMenu); }
     public static ImageIcon shield(int size, Color fg)   { return build(size, fg, IconFactory::drawShield); }
+    public static ImageIcon users(int size, Color fg)    { return build(size, fg, IconFactory::drawUsers); }
+    public static ImageIcon chart(int size, Color fg)    { return build(size, fg, IconFactory::drawChart); }
+    public static ImageIcon layers(int size, Color fg)   { return build(size, fg, IconFactory::drawLayers); }
+    public static ImageIcon clipboard(int size, Color fg){ return build(size, fg, IconFactory::drawClipboard); }
+    public static ImageIcon list(int size, Color fg)     { return build(size, fg, IconFactory::drawList); }
     public static ImageIcon bullet(int size, Color fg)   { return build(size, fg, IconFactory::drawBullet); }
 
-    /* ── scaffolding ───────────────────────────────────────── */
+    /* 閳光偓閳光偓 scaffolding 閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓 */
 
     @FunctionalInterface
     private interface Painter { void paint(Graphics2D g, int s); }
@@ -53,7 +58,7 @@ public final class IconFactory {
         return new ImageIcon(img);
     }
 
-    /* ── individual icon painters ──────────────────────────── */
+    /* 閳光偓閳光偓 individual icon painters 閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓 */
 
     private static void drawBell(Graphics2D g, int s) {
         float m = s * 0.15f;
@@ -249,6 +254,64 @@ public final class IconFactory {
         g.drawLine((int) m, (int)(s * 0.72f), (int) r, (int)(s * 0.72f));
     }
 
+    private static void drawUsers(Graphics2D g, int s) {
+        g.fillOval((int)(s * 0.18f), (int)(s * 0.18f), (int)(s * 0.26f), (int)(s * 0.26f));
+        g.fillOval((int)(s * 0.56f), (int)(s * 0.14f), (int)(s * 0.24f), (int)(s * 0.24f));
+
+        GeneralPath left = new GeneralPath();
+        left.moveTo(s * 0.10f, s * 0.86f);
+        left.quadTo(s * 0.12f, s * 0.58f, s * 0.34f, s * 0.56f);
+        left.quadTo(s * 0.56f, s * 0.58f, s * 0.58f, s * 0.86f);
+        left.closePath();
+        g.fill(left);
+
+        GeneralPath right = new GeneralPath();
+        right.moveTo(s * 0.42f, s * 0.86f);
+        right.quadTo(s * 0.46f, s * 0.60f, s * 0.68f, s * 0.58f);
+        right.quadTo(s * 0.88f, s * 0.60f, s * 0.90f, s * 0.84f);
+        right.closePath();
+        g.fill(right);
+    }
+
+    private static void drawChart(Graphics2D g, int s) {
+        float base = s * 0.82f;
+        float w = s * 0.14f;
+        g.fillRoundRect((int)(s * 0.16f), (int)(s * 0.50f), (int)w, (int)(base - s * 0.50f), 4, 4);
+        g.fillRoundRect((int)(s * 0.41f), (int)(s * 0.34f), (int)w, (int)(base - s * 0.34f), 4, 4);
+        g.fillRoundRect((int)(s * 0.66f), (int)(s * 0.20f), (int)w, (int)(base - s * 0.20f), 4, 4);
+        g.setStroke(new BasicStroke(Math.max(1.5f, s / 11f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        GeneralPath line = new GeneralPath();
+        line.moveTo(s * 0.18f, s * 0.46f);
+        line.lineTo(s * 0.48f, s * 0.28f);
+        line.lineTo(s * 0.72f, s * 0.16f);
+        g.draw(line);
+    }
+
+    private static void drawLayers(Graphics2D g, int s) {
+        g.fillRoundRect((int)(s * 0.20f), (int)(s * 0.18f), (int)(s * 0.54f), (int)(s * 0.20f), 5, 5);
+        g.fillRoundRect((int)(s * 0.28f), (int)(s * 0.40f), (int)(s * 0.54f), (int)(s * 0.20f), 5, 5);
+        g.fillRoundRect((int)(s * 0.16f), (int)(s * 0.62f), (int)(s * 0.54f), (int)(s * 0.20f), 5, 5);
+    }
+
+    private static void drawClipboard(Graphics2D g, int s) {
+        g.fillRoundRect((int)(s * 0.22f), (int)(s * 0.16f), (int)(s * 0.56f), (int)(s * 0.70f), 7, 7);
+        g.setComposite(java.awt.AlphaComposite.Clear);
+        g.fillRoundRect((int)(s * 0.38f), (int)(s * 0.08f), (int)(s * 0.24f), (int)(s * 0.16f), 5, 5);
+        g.fillRect((int)(s * 0.34f), (int)(s * 0.34f), (int)(s * 0.32f), (int)(s * 0.05f));
+        g.fillRect((int)(s * 0.34f), (int)(s * 0.47f), (int)(s * 0.24f), (int)(s * 0.05f));
+        g.fillRect((int)(s * 0.34f), (int)(s * 0.60f), (int)(s * 0.30f), (int)(s * 0.05f));
+        g.setComposite(java.awt.AlphaComposite.SrcOver);
+        g.drawRoundRect((int)(s * 0.38f), (int)(s * 0.08f), (int)(s * 0.24f), (int)(s * 0.16f), 5, 5);
+    }
+
+    private static void drawList(Graphics2D g, int s) {
+        g.setStroke(new BasicStroke(Math.max(1.4f, s / 10f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        float[] ys = { s * 0.26f, s * 0.50f, s * 0.74f };
+        for (float y : ys) {
+            g.fillOval((int)(s * 0.16f), (int)(y - s * 0.05f), (int)(s * 0.10f), (int)(s * 0.10f));
+            g.drawLine((int)(s * 0.34f), (int)y, (int)(s * 0.82f), (int)y);
+        }
+    }
     private static void drawShield(Graphics2D g, int s) {
         float cx = s / 2f;
         GeneralPath p = new GeneralPath();

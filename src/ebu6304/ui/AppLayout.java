@@ -44,8 +44,8 @@ public final class AppLayout extends JPanel {
     private final JLabel roleLabel = new JLabel(" ");
     private final JLabel accountLabel = new JLabel(" ");
     private final JButton logoutBtn = new JButton(I18n.t("common.logout"));
-    private final BadgeIconButton notifBtn = new BadgeIconButton(IconFactory.bell(32, new Color(90, 98, 110)));
-    private final BadgeIconButton settingsBtn = new BadgeIconButton(IconFactory.gear(32, new Color(90, 98, 110)));
+    private final BadgeIconButton notifBtn = new BadgeIconButton(IconFactory.bell(22, new Color(71, 85, 105)));
+    private final BadgeIconButton settingsBtn = new BadgeIconButton(IconFactory.gear(22, new Color(71, 85, 105)));
 
     private int unreadNotifications = 0;
 
@@ -104,19 +104,20 @@ public final class AppLayout extends JPanel {
         left.add(titleLabel, BorderLayout.CENTER);
         top.add(left, BorderLayout.WEST);
 
-        JPanel right = new JPanel();
+        JPanel right = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 10, 0));
         right.setOpaque(false);
-        roleLabel.setForeground(new Color(110, 118, 130));
-        accountLabel.setForeground(new Color(110, 118, 130));
-        roleLabel.setFont(roleLabel.getFont().deriveFont(Font.PLAIN, 12f));
-        accountLabel.setFont(accountLabel.getFont().deriveFont(Font.PLAIN, 12f));
+        roleLabel.setForeground(new Color(37, 99, 235));
+        accountLabel.setForeground(new Color(15, 23, 42));
+        roleLabel.setFont(roleLabel.getFont().deriveFont(Font.BOLD, 12f));
+        accountLabel.setFont(accountLabel.getFont().deriveFont(Font.BOLD, 12f));
         styleTopIconButton(notifBtn);
         styleTopIconButton(settingsBtn);
 
-        right.add(roleLabel);
-        right.add(Box.createHorizontalStrut(6));
-        right.add(accountLabel);
-        right.add(Box.createHorizontalStrut(10));
+        UserChipPanel userChip = new UserChipPanel(accent);
+        userChip.add(roleLabel);
+        userChip.add(Box.createHorizontalStrut(8));
+        userChip.add(accountLabel);
+        right.add(userChip);
         right.add(notifBtn);
         right.add(settingsBtn);
         top.add(right, BorderLayout.EAST);
@@ -137,13 +138,15 @@ public final class AppLayout extends JPanel {
 
         navPanel = new GradientPanel(theme1, theme2);
         navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
-        navPanel.setBorder(BorderFactory.createEmptyBorder(18, 14, 18, 14));
-        navPanel.setPreferredSize(new Dimension(260, 0));
+        navPanel.setBorder(BorderFactory.createEmptyBorder(18, 12, 18, 12));
+        int navWidth = computeNavWidth(navItems, role == null ? "" : I18n.t(role.displayKey()));
+        navPanel.setPreferredSize(new Dimension(navWidth, 0));
+        navPanel.setMinimumSize(new Dimension(navWidth, 0));
 
         navTitle = new JLabel(role == null ? "" : I18n.t(role.displayKey()), SwingConstants.LEFT);
-        navTitle.setForeground(Color.WHITE);
-        navTitle.setFont(navTitle.getFont().deriveFont(Font.BOLD, 18f));
-        navTitle.setBorder(BorderFactory.createEmptyBorder(0, 10, 12, 10));
+        navTitle.setForeground(new Color(15, 23, 42));
+        navTitle.setFont(navTitle.getFont().deriveFont(Font.BOLD, 15f));
+        navTitle.setBorder(BorderFactory.createEmptyBorder(0, 8, 14, 8));
         navTitle.setAlignmentX(0f);
         navPanel.add(navTitle);
 
@@ -153,15 +156,16 @@ public final class AppLayout extends JPanel {
                 if (key == null) continue;
                 ImageIcon navIcon = iconFor(key, role);
                 NavItemButton b = new NavItemButton(key, navIcon);
-                b.setForeground(Color.WHITE);
+                b.setForeground(new Color(71, 85, 105));
                 b.setFocusPainted(false);
                 b.setBorderPainted(false);
                 b.setContentAreaFilled(false);
                 b.setHorizontalAlignment(SwingConstants.LEFT);
                 b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                b.setMargin(new Insets(12, 14, 12, 14));
+                b.setMargin(new Insets(9, 42, 9, 16));
                 b.setAlignmentX(0f);
-                b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+                b.setPreferredSize(new Dimension(Integer.MAX_VALUE, 42));
+                b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
                 b.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseEntered(MouseEvent e) {
@@ -182,18 +186,18 @@ public final class AppLayout extends JPanel {
                 });
                 navButtons.add(b);
                 navPanel.add(b);
-                navPanel.add(Box.createVerticalStrut(8));
+                navPanel.add(Box.createVerticalStrut(6));
             }
         }
         navPanel.add(Box.createVerticalGlue());
 
-        JPanel centerHolder = new JPanel(new BorderLayout());
+        JPanel centerHolder = new AccentBackgroundPanel(theme1, theme2);
         centerHolder.setBackground(APP_BG);
         centerHolder.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
 
         content.setOpaque(false);
         contentCard = new RoundedPanel(20, true);
-        contentCard.setBackground(CARD_BG);
+        contentCard.setBackground(new Color(255, 255, 255, 248));
         contentCard.setLayout(new BorderLayout());
         contentCard.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
         contentCard.add(content, BorderLayout.CENTER);
@@ -254,47 +258,85 @@ public final class AppLayout extends JPanel {
         b.setContentAreaFilled(false);
         b.setOpaque(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setForeground(new Color(90, 98, 110));
-        b.setFont(b.getFont().deriveFont(Font.PLAIN, 16f));
+        b.setForeground(new Color(71, 85, 105));
+        b.setPreferredSize(new Dimension(38, 38));
+        b.setMinimumSize(new Dimension(38, 38));
+        b.setFont(b.getFont().deriveFont(Font.PLAIN, 15f));
+        b.setRolloverEnabled(true);
     }
 
+    private static int computeNavWidth(String[] navItems, String title) {
+        Font titleFont = new Font(Font.SANS_SERIF, Font.BOLD, 15);
+        Font itemFont = new Font(Font.SANS_SERIF, Font.BOLD, 13);
+        JLabel probe = new JLabel();
+        int maxTextWidth = 0;
+
+        if (title != null && !title.isEmpty()) {
+            maxTextWidth = Math.max(maxTextWidth, probe.getFontMetrics(titleFont).stringWidth(title));
+        }
+        if (navItems != null) {
+            java.awt.FontMetrics metrics = probe.getFontMetrics(itemFont);
+            for (String item : navItems) {
+                if (item == null) continue;
+                maxTextWidth = Math.max(maxTextWidth, metrics.stringWidth(item));
+            }
+        }
+
+        int width = maxTextWidth + 86;
+        if (width < 226) width = 226;
+        if (width > 288) width = 288;
+        return width;
+    }
     private static ImageIcon iconFor(String key, Role role) {
-        Color fg = Color.WHITE;
-        int sz = 32;
-        String k = key == null ? "" : key.toLowerCase();
-        if (k.contains("home")) return IconFactory.home(sz, fg);
-        if (k.contains("profile") || k.contains("user")) return IconFactory.user(sz, fg);
-        if (k.contains("resume")) return IconFactory.document(sz, fg);
-        if (k.contains("job")) return IconFactory.hammer(sz, fg);
-        if (k.contains("application")) return IconFactory.envelope(sz, fg);
-        if (k.contains("result")) return IconFactory.check(sz, fg);
-        if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
-        if (k.contains("export")) return IconFactory.download(sz, fg);
-        if (k.contains("log")) return IconFactory.menu(sz, fg);
-        if (role == Role.ADMIN) return IconFactory.shield(sz, fg);
-        return IconFactory.bullet(sz, fg);
+        return iconForColor(key, role, new Color(71, 85, 105));
     }
 
     private static ImageIcon iconForColor(String key, Role role, Color fg) {
-        int sz = 32;
+        int sz = 22;
         String k = key == null ? "" : key.toLowerCase();
+
         if (k.contains("home")) return IconFactory.home(sz, fg);
+
+        if (role == Role.TA) {
+            if (k.contains("profile")) return IconFactory.user(sz, fg);
+            if (k.contains("resume")) return IconFactory.document(sz, fg);
+            if (k.contains("jobs")) return IconFactory.hammer(sz, fg);
+            if (k.contains("my applications")) return IconFactory.envelope(sz, fg);
+            if (k.contains("status")) return IconFactory.clipboard(sz, fg);
+        }
+
+        if (role == Role.MO) {
+            if (k.contains("post")) return IconFactory.hammer(sz, fg);
+            if (k.contains("applicant")) return IconFactory.users(sz, fg);
+            if (k.contains("result")) return IconFactory.chart(sz, fg);
+            if (k.contains("my posts")) return IconFactory.layers(sz, fg);
+        }
+
+        if (role == Role.ADMIN) {
+            if (k.contains("user")) return IconFactory.users(sz, fg);
+            if (k.contains("workload")) return IconFactory.chart(sz, fg);
+            if (k.contains("job")) return IconFactory.layers(sz, fg);
+            if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
+            if (k.contains("export")) return IconFactory.download(sz, fg);
+            if (k.contains("log")) return IconFactory.list(sz, fg);
+            return IconFactory.shield(sz, fg);
+        }
+
         if (k.contains("profile") || k.contains("user")) return IconFactory.user(sz, fg);
         if (k.contains("resume")) return IconFactory.document(sz, fg);
         if (k.contains("job")) return IconFactory.hammer(sz, fg);
         if (k.contains("application")) return IconFactory.envelope(sz, fg);
-        if (k.contains("result")) return IconFactory.check(sz, fg);
+        if (k.contains("result")) return IconFactory.chart(sz, fg);
         if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
         if (k.contains("export")) return IconFactory.download(sz, fg);
-        if (k.contains("log")) return IconFactory.menu(sz, fg);
-        if (role == Role.ADMIN) return IconFactory.shield(sz, fg);
+        if (k.contains("log")) return IconFactory.list(sz, fg);
         return IconFactory.bullet(sz, fg);
     }
 
     public void setUser(Role role, String account) {
         currentRole = role;
         currentAccount = account;
-        roleLabel.setText("[" + I18n.t(role.displayKey()) + "]");
+        roleLabel.setText(I18n.t(role.displayKey()));
         accountLabel.setText(account == null ? "" : account);
         navTitle.setText(role == null ? "" : I18n.t(role.displayKey()));
     }
@@ -310,6 +352,7 @@ public final class AppLayout extends JPanel {
 
     public void addContent(String key, JPanel panel) {
         if (key == null || panel == null) return;
+        UiTheme.styleTree(panel);
         content.add(panel, key);
     }
 
@@ -334,14 +377,14 @@ public final class AppLayout extends JPanel {
         JPanel p = new JPanel(new BorderLayout(10, 10));
         p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        // 账号信息区
+        // 闂傚倷娴囧畷鍨叏閻㈢绀夌憸蹇曞垝婵犳艾绠ｉ柨婵嗗暕濮规姊洪崷顓х劸婵炲鍏橀崺鐐差吋婢跺鍘撻梺瀹犳〃缁€渚€寮抽弴鐘电＜閺夊牄鍔庢晶鐢告煛?
         String r = currentRole == null ? "" : I18n.t(currentRole.displayKey());
         String a = currentAccount == null ? "" : currentAccount;
         JLabel profileLabel = new JLabel("<html><b>" + r + "</b>&nbsp;&nbsp;" + a + "</html>");
         profileLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
         p.add(profileLabel, BorderLayout.NORTH);
 
-        // 语言切换区
+        // 闂傚倷娴囧畷鍨叏閺夋嚚褰掑磼閻愯尙鐓戦梺閫炲苯澧撮柡灞界Ф閹风娀鎳犻鈧埅鐢告倵鐟欏嫭绀冪€光偓缁嬭法鏆﹂柛顐ｆ礀鎯熼梺闈涱槶閸庢娊宕惔銊︹拻?
         JPanel row = new JPanel(new BorderLayout(10, 10));
         row.add(new JLabel(I18n.t("layout.language")), BorderLayout.WEST);
         JComboBox<I18n.Lang> langBox = new JComboBox<I18n.Lang>(I18n.Lang.values());
@@ -353,11 +396,11 @@ public final class AppLayout extends JPanel {
         int res = JOptionPane.showOptionDialog(this, p, I18n.t("layout.settings"),
                 JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 
-        if (res == 1) { // 退出登录
+        if (res == 1) { // 闂傚倸鍊搁崐椋庢閿熺姴纾婚柍褜鍓熼弻娑氣偓锝庡亝瀹曞矂鏌＄仦鍓ф创妤犵偛顑夐弫鎰板幢閳衡偓閸濇绻濋悽闈涗粶闁瑰啿鐭傚畷鏇㈠箻椤斿槈?
             logoutBtn.doClick();
             return;
         }
-        if (res != 0) return; // 取消
+        if (res != 0) return; // 闂傚倸鍊风粈渚€骞夐敓鐘冲仭闁挎洖鍊归崑瀣繆閵堝懎鏆熼柣?
 
         I18n.Lang selected = (I18n.Lang) langBox.getSelectedItem();
         if (selected != null && selected != I18n.lang()) {
@@ -374,7 +417,7 @@ public final class AppLayout extends JPanel {
         titleLabel.setText(I18n.t("app.title"));
         logoutBtn.setText(I18n.t("common.logout"));
         if (currentRole != null) {
-            roleLabel.setText("[" + I18n.t(currentRole.displayKey()) + "]");
+            roleLabel.setText(I18n.t(currentRole.displayKey()));
             navTitle.setText(I18n.t(currentRole.displayKey()));
         }
         statusBar.setLeftText(I18n.t("status.ready"));
@@ -426,7 +469,7 @@ public final class AppLayout extends JPanel {
             super(key);
             this.key = key;
             this.icon = icon;
-            setFont(getFont().deriveFont(14f));
+            setFont(getFont().deriveFont(Font.BOLD, 12.5f));
         }
 
         public void setSelected(boolean selected) {
@@ -445,8 +488,8 @@ public final class AppLayout extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 try {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(new Color(255, 255, 255, 60));
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                    g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 22));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
                 } finally {
                     g2.dispose();
                 }
@@ -455,16 +498,16 @@ public final class AppLayout extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 try {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(new Color(255, 255, 255, 235));
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                    g2.setColor(accent);
-                    g2.fillRoundRect(6, 6, 4, getHeight() - 12, 6, 6);
+                    g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 28));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                    g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 235));
+                    g2.fillRoundRect(4, 8, 4, getHeight() - 16, 6, 6);
                 } finally {
                     g2.dispose();
                 }
                 setForeground(new Color(accent.getRed(), accent.getGreen(), accent.getBlue()));
             } else {
-                setForeground(Color.WHITE);
+                setForeground(new Color(71, 85, 105));
             }
 
             if (icon != null) {
@@ -473,12 +516,12 @@ public final class AppLayout extends JPanel {
                     toDraw = iconForColor(key, currentRole,
                             new Color(accent.getRed(), accent.getGreen(), accent.getBlue()));
                 }
-                int ix = 14;
+                int ix = 11;
                 int iy = (getHeight() - toDraw.getIconHeight()) / 2;
                 toDraw.paintIcon(this, g, ix, iy);
                 Insets m = getMargin();
-                if (m == null || m.left < 34) {
-                    setMargin(new Insets(12, 40, 12, 14));
+                if (m == null || m.left < 42 || m.right < 16) {
+                    setMargin(new Insets(9, 42, 9, 16));
                 }
             }
             super.paintComponent(g);
@@ -501,11 +544,14 @@ public final class AppLayout extends JPanel {
             Graphics2D g2 = (Graphics2D) g.create();
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(0, 0, 0, 18));
-                g2.fillRoundRect(4, 6, getWidth() - 6, getHeight() - 6, 28, 28);
-                java.awt.GradientPaint gp = new java.awt.GradientPaint(0, 0, c1, 0, getHeight(), c2);
-                g2.setPaint(gp);
-                g2.fillRoundRect(0, 0, getWidth() - 2, getHeight() - 2, 28, 28);
+                g2.setColor(new Color(15, 23, 42, 14));
+                g2.fillRoundRect(4, 6, Math.max(0, getWidth() - 8), Math.max(0, getHeight() - 10), 24, 24);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, Math.max(0, getWidth() - 2), Math.max(0, getHeight() - 2), 24, 24);
+                g2.setPaint(new java.awt.GradientPaint(0, 0, new Color(c1.getRed(), c1.getGreen(), c1.getBlue(), 160), getWidth(), 0, new Color(c2.getRed(), c2.getGreen(), c2.getBlue(), 120)));
+                g2.fillRoundRect(14, 14, Math.max(24, getWidth() - 28), 4, 8, 8);
+                g2.setColor(new Color(226, 232, 240, 170));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 2), Math.max(0, getHeight() - 2), 24, 24);
             } finally {
                 g2.dispose();
             }
@@ -513,12 +559,79 @@ public final class AppLayout extends JPanel {
         }
     }
 
+
+    private static final class AccentBackgroundPanel extends JPanel {
+        private final Color c1;
+        private final Color c2;
+
+        private AccentBackgroundPanel(Color c1, Color c2) {
+            super(new BorderLayout());
+            this.c1 = c1 == null ? new Color(37, 99, 235) : c1;
+            this.c2 = c2 == null ? new Color(16, 185, 129) : c2;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setPaint(new java.awt.GradientPaint(0, 0, new Color(248, 251, 255), getWidth(), getHeight(), new Color(238, 246, 255)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.setColor(new Color(c1.getRed(), c1.getGreen(), c1.getBlue(), 20));
+                g2.fillRoundRect(26, 24, Math.max(0, getWidth() - 80), 74, 34, 34);
+                g2.setColor(new Color(c2.getRed(), c2.getGreen(), c2.getBlue(), 14));
+                g2.fillRoundRect(Math.max(0, getWidth() - 390), Math.max(0, getHeight() - 138), 340, 88, 34, 34);
+                g2.setColor(new Color(37, 99, 235, 10));
+                g2.fillRoundRect(64, Math.max(0, getHeight() - 112), 390, 58, 26, 26);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    }
+    private static final class UserChipPanel extends JPanel {
+        private final Color accent;
+
+        private UserChipPanel(Color accent) {
+            super(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 0));
+            this.accent = accent == null ? new Color(37, 99, 235) : accent;
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(8, 42, 8, 16));
+            setPreferredSize(new Dimension(170, 38));
+            setMinimumSize(new Dimension(160, 38));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(15, 23, 42, 10));
+                g2.fillRoundRect(2, 3, Math.max(0, getWidth() - 4), Math.max(0, getHeight() - 5), 18, 18);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), 18, 18);
+                g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 18));
+                g2.fillOval(12, 10, 18, 18);
+                g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 210));
+                g2.fillOval(18, 16, 6, 6);
+                g2.setColor(new Color(226, 232, 240, 170));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), 18, 18);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    }
     private static final class BadgeIconButton extends JButton {
         private boolean badgeVisible;
 
         private BadgeIconButton(ImageIcon icon) {
             super();
             setIcon(icon);
+            setPreferredSize(new Dimension(38, 38));
+            setMinimumSize(new Dimension(38, 38));
+            setRolloverEnabled(true);
         }
 
         public void setBadgeVisible(boolean visible) {
@@ -528,15 +641,28 @@ public final class AppLayout extends JPanel {
 
         @Override
         protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (!badgeVisible) return;
             Graphics2D g2 = (Graphics2D) g.create();
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color fill = getModel().isRollover() ? new Color(241, 245, 249) : Color.WHITE;
+                g2.setColor(new Color(15, 23, 42, 10));
+                g2.fillRoundRect(2, 3, getWidth() - 4, getHeight() - 5, 18, 18);
+                g2.setColor(fill);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+                g2.setColor(new Color(226, 232, 240, 170));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+            if (!badgeVisible) return;
+            g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int d = 8;
-                int x = getWidth() - d - 4;
-                int y = 4;
-                g2.setColor(new Color(255, 59, 48));
+                int x = getWidth() - d - 5;
+                int y = 6;
+                g2.setColor(new Color(255, 79, 79));
                 g2.fillOval(x, y, d, d);
                 g2.setColor(Color.WHITE);
                 g2.drawOval(x, y, d, d);
@@ -575,3 +701,4 @@ public final class AppLayout extends JPanel {
         }
     }
 }
+

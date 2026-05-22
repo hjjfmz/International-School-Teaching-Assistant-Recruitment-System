@@ -33,6 +33,7 @@ import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class MoApplicantsPage extends JPanel {
     private final DataService data;
@@ -82,6 +83,7 @@ public final class MoApplicantsPage extends JPanel {
         };
 
         table = new JTable(model);
+        UiTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         sorter = new TableRowSorter<DefaultTableModel>(model);
         table.setRowSorter(sorter);
@@ -123,7 +125,9 @@ public final class MoApplicantsPage extends JPanel {
         rejectButton.addActionListener(e -> updateSelectedStatus(Application.Status.REJECTED));
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        UiTheme.styleScrollPane(tableScrollPane);
+        add(tableScrollPane, BorderLayout.CENTER);
 
         reloadJobs();
         refresh();

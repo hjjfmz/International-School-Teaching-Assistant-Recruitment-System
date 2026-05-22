@@ -14,6 +14,7 @@ import javax.swing.table.DefaultTableModel;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class MoMyPostsPage extends JPanel {
     private final DataService data;
@@ -35,6 +36,7 @@ public final class MoMyPostsPage extends JPanel {
             }
         };
         table = new JTable(model);
+        UiTheme.styleTable(table);
 
         JPanel top = new JPanel(new BorderLayout());
         top.setBorder(BorderFactory.createTitledBorder(I18n.t("mo.myposts.title")));
@@ -48,7 +50,9 @@ public final class MoMyPostsPage extends JPanel {
         refresh.addActionListener(e -> refresh());
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        UiTheme.styleScrollPane(tableScrollPane);
+        add(tableScrollPane, BorderLayout.CENTER);
 
         refresh();
     }

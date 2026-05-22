@@ -19,6 +19,7 @@ import ebu6304.model.Application;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class AdminJobDataPage extends JPanel {
     private final DataService data;
@@ -43,6 +44,7 @@ public final class AdminJobDataPage extends JPanel {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         table = new JTable(model);
+        UiTheme.styleTable(table);
 
         JPanel top = new JPanel(new BorderLayout(10, 10));
         top.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.jobdata.title")));
@@ -83,7 +85,9 @@ public final class AdminJobDataPage extends JPanel {
         setCategory.addActionListener(e -> setCategorySelected());
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        UiTheme.styleScrollPane(tableScrollPane);
+        add(tableScrollPane, BorderLayout.CENTER);
 
         refresh();
     }
