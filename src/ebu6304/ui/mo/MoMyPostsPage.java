@@ -1,0 +1,67 @@
+package ebu6304.ui.mo;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
+import ebu6304.model.Job;
+import ebu6304.storage.DataService;
+import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
+
+public final class MoMyPostsPage extends JPanel {
+    private final DataService data;
+    private final String account;
+
+    private final DefaultTableModel model;
+    private final JTable table;
+
+    public MoMyPostsPage(DataService data, String account) {
+        super(new BorderLayout(10, 10));
+        this.data = data;
+        this.account = account;
+        setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+
+        model = new DefaultTableModel(new Object[] { I18n.t("mo.myposts.col.id"), I18n.t("mo.myposts.col.title"), I18n.t("mo.myposts.col.hours"), I18n.t("mo.myposts.col.skills") }, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        table = new JTable(model);
+        UiTheme.styleTable(table);
+
+        JPanel top = new JPanel(new BorderLayout());
+        top.setBorder(BorderFactory.createTitledBorder(I18n.t("mo.myposts.title")));
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton refresh = new JButton(I18n.t("common.refresh"));
+        actions.add(refresh);
+        top.add(new JLabel(I18n.t("mo.myposts.hint")), BorderLayout.WEST);
+        top.add(actions, BorderLayout.EAST);
+
+        refresh.addActionListener(e -> refresh());
+
+        add(top, BorderLayout.NORTH);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        UiTheme.styleScrollPane(tableScrollPane);
+        add(tableScrollPane, BorderLayout.CENTER);
+
+        refresh();
+    }
+
+    public void refresh() {
+        model.setRowCount(0);
+        for (Job j : data.listJobs()) {
+            if (!account.equals(j.postedBy())) continue;
+            model.addRow(new Object[] { j.id(), j.title(), Integer.valueOf(j.hoursPerWeek()), j.requiredSkills() });
+        }
+    }
+}

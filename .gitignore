@@ -1,0 +1,23 @@
+# Compiled class files
+*.class
+out/
+bin/
+build/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Secrets / local config
+deepseek.properties
+deepseek.properties.local
+.idea
+out

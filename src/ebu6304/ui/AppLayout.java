@@ -1,0 +1,704 @@
+package ebu6304.ui;
+
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JEditorPane;
+import javax.swing.JOptionPane;
+import javax.swing.SwingConstants;
+import javax.swing.JComboBox;
+import javax.swing.JScrollPane;
+import java.util.function.Supplier;
+
+public final class AppLayout extends JPanel {
+    public interface LogoutHandler {
+        void onLogout();
+    }
+
+    public interface NavHandler {
+        void onNavigate(String key);
+    }
+
+    private final JLabel titleLabel = new JLabel(I18n.t("app.title"));
+    private final JLabel roleLabel = new JLabel(" ");
+    private final JLabel accountLabel = new JLabel(" ");
+    private final JButton logoutBtn = new JButton(I18n.t("common.logout"));
+    private final BadgeIconButton notifBtn = new BadgeIconButton(IconFactory.bell(22, new Color(71, 85, 105)));
+    private final BadgeIconButton settingsBtn = new BadgeIconButton(IconFactory.gear(22, new Color(71, 85, 105)));
+
+    private int unreadNotifications = 0;
+
+    private Role currentRole;
+    private String currentAccount;
+
+    private Runnable onNotificationsOpened;
+    private Supplier<String> notificationsTextSupplier;
+    private Runnable onLanguageChange;
+
+    private final StatusBar statusBar = new StatusBar();
+
+    private final CardLayout contentLayout = new CardLayout();
+    private final JPanel content = new JPanel(contentLayout);
+
+    private final List<NavItemButton> navButtons = new ArrayList<NavItemButton>();
+    private final GradientPanel navPanel;
+    private final RoundedPanel contentCard;
+    private final JLabel navTitle;
+
+    private Color theme1 = new Color(21, 101, 192);
+    private Color theme2 = new Color(13, 71, 161);
+    private Color accent = new Color(22, 119, 255);
+    private static final Color APP_BG = new Color(245, 247, 250);
+    private static final Color CARD_BG = Color.WHITE;
+
+    public AppLayout(Role role, String[] navItems, LogoutHandler logout, NavHandler nav, Runnable onLanguageChange) {
+        super(new BorderLayout());
+
+        this.onLanguageChange = onLanguageChange;
+        applyTheme(role);
+        setBackground(APP_BG);
+
+        JPanel top = new JPanel(new BorderLayout(12, 12));
+        top.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(232, 236, 242)),
+                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+        top.setBackground(CARD_BG);
+
+        JPanel left = new JPanel(new BorderLayout(8, 8));
+        left.setOpaque(false);
+        JLabel appIcon = new JLabel("");
+        try {
+            java.io.File f = new java.io.File(ebu6304.App.projectRoot(), "1.jpg");
+            if (f.isFile()) {
+                java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
+                if (img != null) {
+                    java.awt.Image scaled = img.getScaledInstance(22, 22, java.awt.Image.SCALE_SMOOTH);
+                    appIcon.setIcon(new ImageIcon(scaled));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
+        left.add(appIcon, BorderLayout.WEST);
+        left.add(titleLabel, BorderLayout.CENTER);
+        top.add(left, BorderLayout.WEST);
+
+        JPanel right = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 10, 0));
+        right.setOpaque(false);
+        roleLabel.setForeground(new Color(37, 99, 235));
+        accountLabel.setForeground(new Color(15, 23, 42));
+        roleLabel.setFont(roleLabel.getFont().deriveFont(Font.BOLD, 12f));
+        accountLabel.setFont(accountLabel.getFont().deriveFont(Font.BOLD, 12f));
+        styleTopIconButton(notifBtn);
+        styleTopIconButton(settingsBtn);
+
+        UserChipPanel userChip = new UserChipPanel(accent);
+        userChip.add(roleLabel);
+        userChip.add(Box.createHorizontalStrut(8));
+        userChip.add(accountLabel);
+        right.add(userChip);
+        right.add(notifBtn);
+        right.add(settingsBtn);
+        top.add(right, BorderLayout.EAST);
+
+        logoutBtn.addActionListener(e -> {
+            if (logout != null) logout.onLogout();
+        });
+
+        notifBtn.addActionListener(e -> {
+            openNotifications();
+        });
+        settingsBtn.addActionListener(e -> {
+            openSettings();
+        });
+
+        notifBtn.setBadgeVisible(false);
+        settingsBtn.setBadgeVisible(false);
+
+        navPanel = new GradientPanel(theme1, theme2);
+        navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
+        navPanel.setBorder(BorderFactory.createEmptyBorder(18, 12, 18, 12));
+        int navWidth = computeNavWidth(navItems, role == null ? "" : I18n.t(role.displayKey()));
+        navPanel.setPreferredSize(new Dimension(navWidth, 0));
+        navPanel.setMinimumSize(new Dimension(navWidth, 0));
+
+        navTitle = new JLabel(role == null ? "" : I18n.t(role.displayKey()), SwingConstants.LEFT);
+        navTitle.setForeground(new Color(15, 23, 42));
+        navTitle.setFont(navTitle.getFont().deriveFont(Font.BOLD, 15f));
+        navTitle.setBorder(BorderFactory.createEmptyBorder(0, 8, 14, 8));
+        navTitle.setAlignmentX(0f);
+        navPanel.add(navTitle);
+
+        if (navItems != null) {
+            for (int i = 0; i < navItems.length; i++) {
+                String key = navItems[i];
+                if (key == null) continue;
+                ImageIcon navIcon = iconFor(key, role);
+                NavItemButton b = new NavItemButton(key, navIcon);
+                b.setForeground(new Color(71, 85, 105));
+                b.setFocusPainted(false);
+                b.setBorderPainted(false);
+                b.setContentAreaFilled(false);
+                b.setHorizontalAlignment(SwingConstants.LEFT);
+                b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                b.setMargin(new Insets(9, 42, 9, 16));
+                b.setAlignmentX(0f);
+                b.setPreferredSize(new Dimension(Integer.MAX_VALUE, 42));
+                b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+                b.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        b.setHover(true);
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        b.setHover(false);
+                    }
+                });
+                b.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        selectNav(b);
+                        if (nav != null) nav.onNavigate(b.key);
+                    }
+                });
+                navButtons.add(b);
+                navPanel.add(b);
+                navPanel.add(Box.createVerticalStrut(6));
+            }
+        }
+        navPanel.add(Box.createVerticalGlue());
+
+        JPanel centerHolder = new AccentBackgroundPanel(theme1, theme2);
+        centerHolder.setBackground(APP_BG);
+        centerHolder.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+
+        content.setOpaque(false);
+        contentCard = new RoundedPanel(20, true);
+        contentCard.setBackground(new Color(255, 255, 255, 248));
+        contentCard.setLayout(new BorderLayout());
+        contentCard.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+        contentCard.add(content, BorderLayout.CENTER);
+        centerHolder.add(contentCard, BorderLayout.CENTER);
+
+        add(top, BorderLayout.NORTH);
+        add(navPanel, BorderLayout.WEST);
+        add(centerHolder, BorderLayout.CENTER);
+        add(statusBar, BorderLayout.SOUTH);
+
+        statusBar.setLeftText(I18n.t("status.ready"));
+    }
+
+    private void applyTheme(Role role) {
+        if (role == Role.ADMIN) {
+            theme1 = new Color(255, 126, 0);
+            theme2 = new Color(255, 87, 34);
+            accent = new Color(255, 110, 64);
+        } else if (role == Role.MO) {
+            theme1 = new Color(0, 191, 165);
+            theme2 = new Color(0, 150, 136);
+            accent = new Color(0, 191, 165);
+        } else {
+            theme1 = new Color(21, 101, 192);
+            theme2 = new Color(13, 71, 161);
+            accent = new Color(22, 119, 255);
+        }
+    }
+
+    public void setOnNotificationsOpened(Runnable r) {
+        this.onNotificationsOpened = r;
+    }
+
+    public void setNotificationsTextSupplier(Supplier<String> s) {
+        this.notificationsTextSupplier = s;
+    }
+
+    private void selectNav(NavItemButton selected) {
+        for (NavItemButton b : navButtons) {
+            b.setSelected(b == selected);
+        }
+        navPanel.repaint();
+    }
+
+    private void selectNavByKey(String key) {
+        if (key == null) return;
+        for (NavItemButton b : navButtons) {
+            if (key.equals(b.key)) {
+                selectNav(b);
+                return;
+            }
+        }
+    }
+
+    private static void styleTopIconButton(JButton b) {
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setOpaque(false);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setForeground(new Color(71, 85, 105));
+        b.setPreferredSize(new Dimension(38, 38));
+        b.setMinimumSize(new Dimension(38, 38));
+        b.setFont(b.getFont().deriveFont(Font.PLAIN, 15f));
+        b.setRolloverEnabled(true);
+    }
+
+    private static int computeNavWidth(String[] navItems, String title) {
+        Font titleFont = new Font(Font.SANS_SERIF, Font.BOLD, 15);
+        Font itemFont = new Font(Font.SANS_SERIF, Font.BOLD, 13);
+        JLabel probe = new JLabel();
+        int maxTextWidth = 0;
+
+        if (title != null && !title.isEmpty()) {
+            maxTextWidth = Math.max(maxTextWidth, probe.getFontMetrics(titleFont).stringWidth(title));
+        }
+        if (navItems != null) {
+            java.awt.FontMetrics metrics = probe.getFontMetrics(itemFont);
+            for (String item : navItems) {
+                if (item == null) continue;
+                maxTextWidth = Math.max(maxTextWidth, metrics.stringWidth(item));
+            }
+        }
+
+        int width = maxTextWidth + 86;
+        if (width < 226) width = 226;
+        if (width > 288) width = 288;
+        return width;
+    }
+    private static ImageIcon iconFor(String key, Role role) {
+        return iconForColor(key, role, new Color(71, 85, 105));
+    }
+
+    private static ImageIcon iconForColor(String key, Role role, Color fg) {
+        int sz = 22;
+        String k = key == null ? "" : key.toLowerCase();
+
+        if (k.contains("home")) return IconFactory.home(sz, fg);
+
+        if (role == Role.TA) {
+            if (k.contains("profile")) return IconFactory.user(sz, fg);
+            if (k.contains("resume")) return IconFactory.document(sz, fg);
+            if (k.contains("jobs")) return IconFactory.hammer(sz, fg);
+            if (k.contains("my applications")) return IconFactory.envelope(sz, fg);
+            if (k.contains("status")) return IconFactory.clipboard(sz, fg);
+        }
+
+        if (role == Role.MO) {
+            if (k.contains("post")) return IconFactory.hammer(sz, fg);
+            if (k.contains("applicant")) return IconFactory.users(sz, fg);
+            if (k.contains("result")) return IconFactory.chart(sz, fg);
+            if (k.contains("my posts")) return IconFactory.layers(sz, fg);
+        }
+
+        if (role == Role.ADMIN) {
+            if (k.contains("user")) return IconFactory.users(sz, fg);
+            if (k.contains("workload")) return IconFactory.chart(sz, fg);
+            if (k.contains("job")) return IconFactory.layers(sz, fg);
+            if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
+            if (k.contains("export")) return IconFactory.download(sz, fg);
+            if (k.contains("log")) return IconFactory.list(sz, fg);
+            return IconFactory.shield(sz, fg);
+        }
+
+        if (k.contains("profile") || k.contains("user")) return IconFactory.user(sz, fg);
+        if (k.contains("resume")) return IconFactory.document(sz, fg);
+        if (k.contains("job")) return IconFactory.hammer(sz, fg);
+        if (k.contains("application")) return IconFactory.envelope(sz, fg);
+        if (k.contains("result")) return IconFactory.chart(sz, fg);
+        if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
+        if (k.contains("export")) return IconFactory.download(sz, fg);
+        if (k.contains("log")) return IconFactory.list(sz, fg);
+        return IconFactory.bullet(sz, fg);
+    }
+
+    public void setUser(Role role, String account) {
+        currentRole = role;
+        currentAccount = account;
+        roleLabel.setText(I18n.t(role.displayKey()));
+        accountLabel.setText(account == null ? "" : account);
+        navTitle.setText(role == null ? "" : I18n.t(role.displayKey()));
+    }
+
+    public StatusBar statusBar() {
+        return statusBar;
+    }
+
+    public void setNavSelectedIndex(int idx) {
+        if (idx < 0 || idx >= navButtons.size()) return;
+        selectNav(navButtons.get(idx));
+    }
+
+    public void addContent(String key, JPanel panel) {
+        if (key == null || panel == null) return;
+        UiTheme.styleTree(panel);
+        content.add(panel, key);
+    }
+
+    public void showContent(String key) {
+        if (key == null) return;
+        selectNavByKey(key);
+        contentLayout.show(content, key);
+    }
+
+    public void setUnreadNotifications(int unreadCount) {
+        unreadNotifications = Math.max(0, unreadCount);
+        notifBtn.setBadgeVisible(unreadNotifications > 0);
+        if (unreadNotifications > 0) {
+            notifBtn.setToolTipText(I18n.t("layout.notifications.unread", unreadNotifications));
+        } else {
+            notifBtn.setToolTipText(I18n.t("layout.notifications"));
+        }
+    }
+
+    private void openSettings() {
+        statusBar.setLeftText(I18n.t("layout.settings"));
+        JPanel p = new JPanel(new BorderLayout(10, 10));
+        p.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        // 闂傚倷娴囧畷鍨叏閻㈢绀夌憸蹇曞垝婵犳艾绠ｉ柨婵嗗暕濮规姊洪崷顓х劸婵炲鍏橀崺鐐差吋婢跺鍘撻梺瀹犳〃缁€渚€寮抽弴鐘电＜閺夊牄鍔庢晶鐢告煛?
+        String r = currentRole == null ? "" : I18n.t(currentRole.displayKey());
+        String a = currentAccount == null ? "" : currentAccount;
+        JLabel profileLabel = new JLabel("<html><b>" + r + "</b>&nbsp;&nbsp;" + a + "</html>");
+        profileLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+        p.add(profileLabel, BorderLayout.NORTH);
+
+        // 闂傚倷娴囧畷鍨叏閺夋嚚褰掑磼閻愯尙鐓戦梺閫炲苯澧撮柡灞界Ф閹风娀鎳犻鈧埅鐢告倵鐟欏嫭绀冪€光偓缁嬭法鏆﹂柛顐ｆ礀鎯熼梺闈涱槶閸庢娊宕惔銊︹拻?
+        JPanel row = new JPanel(new BorderLayout(10, 10));
+        row.add(new JLabel(I18n.t("layout.language")), BorderLayout.WEST);
+        JComboBox<I18n.Lang> langBox = new JComboBox<I18n.Lang>(I18n.Lang.values());
+        langBox.setSelectedItem(I18n.lang());
+        row.add(langBox, BorderLayout.CENTER);
+        p.add(row, BorderLayout.CENTER);
+
+        String[] options = { I18n.t("common.save"), I18n.t("common.logout"), I18n.t("common.cancel") };
+        int res = JOptionPane.showOptionDialog(this, p, I18n.t("layout.settings"),
+                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+
+        if (res == 1) { // 闂傚倸鍊搁崐椋庢閿熺姴纾婚柍褜鍓熼弻娑氣偓锝庡亝瀹曞矂鏌＄仦鍓ф创妤犵偛顑夐弫鎰板幢閳衡偓閸濇绻濋悽闈涗粶闁瑰啿鐭傚畷鏇㈠箻椤斿槈?
+            logoutBtn.doClick();
+            return;
+        }
+        if (res != 0) return; // 闂傚倸鍊风粈渚€骞夐敓鐘冲仭闁挎洖鍊归崑瀣繆閵堝懎鏆熼柣?
+
+        I18n.Lang selected = (I18n.Lang) langBox.getSelectedItem();
+        if (selected != null && selected != I18n.lang()) {
+            I18n.setLang(selected);
+            if (onLanguageChange != null) {
+                onLanguageChange.run();
+            } else {
+                refreshI18nTexts();
+            }
+        }
+    }
+
+    private void refreshI18nTexts() {
+        titleLabel.setText(I18n.t("app.title"));
+        logoutBtn.setText(I18n.t("common.logout"));
+        if (currentRole != null) {
+            roleLabel.setText(I18n.t(currentRole.displayKey()));
+            navTitle.setText(I18n.t(currentRole.displayKey()));
+        }
+        statusBar.setLeftText(I18n.t("status.ready"));
+        revalidate();
+        repaint();
+    }
+
+    private void openNotifications() {
+        statusBar.setLeftText(I18n.t("layout.notifications"));
+
+        String text = "";
+        if (notificationsTextSupplier != null) {
+            try {
+                String v = notificationsTextSupplier.get();
+                if (v != null) text = v;
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (text.trim().isEmpty()) {
+            text = unreadNotifications > 0
+                    ? I18n.t("layout.notifications.hasunread", unreadNotifications)
+                    : I18n.t("layout.notifications.none");
+        }
+
+        JEditorPane area = new JEditorPane();
+        area.setContentType("text/html");
+        area.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        area.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
+        area.setText(text);
+        area.setEditable(false);
+        area.setCaretPosition(0);
+
+        JScrollPane sp = new JScrollPane(area);
+        sp.setPreferredSize(new Dimension(860, 520));
+
+        JOptionPane.showMessageDialog(this, sp, I18n.t("layout.notifications"), JOptionPane.INFORMATION_MESSAGE);
+        if (unreadNotifications > 0) setUnreadNotifications(0);
+        if (onNotificationsOpened != null) onNotificationsOpened.run();
+    }
+
+    private final class NavItemButton extends JButton {
+        private final String key;
+        private final ImageIcon icon;
+        private boolean selected;
+        private boolean hover;
+
+        private NavItemButton(String key, ImageIcon icon) {
+            super(key);
+            this.key = key;
+            this.icon = icon;
+            setFont(getFont().deriveFont(Font.BOLD, 12.5f));
+        }
+
+        public void setSelected(boolean selected) {
+            this.selected = selected;
+            repaint();
+        }
+
+        public void setHover(boolean hover) {
+            this.hover = hover;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (hover && !selected) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 22));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                } finally {
+                    g2.dispose();
+                }
+            }
+            if (selected) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 28));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                    g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 235));
+                    g2.fillRoundRect(4, 8, 4, getHeight() - 16, 6, 6);
+                } finally {
+                    g2.dispose();
+                }
+                setForeground(new Color(accent.getRed(), accent.getGreen(), accent.getBlue()));
+            } else {
+                setForeground(new Color(71, 85, 105));
+            }
+
+            if (icon != null) {
+                ImageIcon toDraw = icon;
+                if (selected) {
+                    toDraw = iconForColor(key, currentRole,
+                            new Color(accent.getRed(), accent.getGreen(), accent.getBlue()));
+                }
+                int ix = 11;
+                int iy = (getHeight() - toDraw.getIconHeight()) / 2;
+                toDraw.paintIcon(this, g, ix, iy);
+                Insets m = getMargin();
+                if (m == null || m.left < 42 || m.right < 16) {
+                    setMargin(new Insets(9, 42, 9, 16));
+                }
+            }
+            super.paintComponent(g);
+        }
+    }
+
+    private static final class GradientPanel extends JPanel {
+        private final Color c1;
+        private final Color c2;
+
+        private GradientPanel(Color c1, Color c2) {
+            super();
+            this.c1 = c1;
+            this.c2 = c2;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(15, 23, 42, 14));
+                g2.fillRoundRect(4, 6, Math.max(0, getWidth() - 8), Math.max(0, getHeight() - 10), 24, 24);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, Math.max(0, getWidth() - 2), Math.max(0, getHeight() - 2), 24, 24);
+                g2.setPaint(new java.awt.GradientPaint(0, 0, new Color(c1.getRed(), c1.getGreen(), c1.getBlue(), 160), getWidth(), 0, new Color(c2.getRed(), c2.getGreen(), c2.getBlue(), 120)));
+                g2.fillRoundRect(14, 14, Math.max(24, getWidth() - 28), 4, 8, 8);
+                g2.setColor(new Color(226, 232, 240, 170));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 2), Math.max(0, getHeight() - 2), 24, 24);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    }
+
+
+    private static final class AccentBackgroundPanel extends JPanel {
+        private final Color c1;
+        private final Color c2;
+
+        private AccentBackgroundPanel(Color c1, Color c2) {
+            super(new BorderLayout());
+            this.c1 = c1 == null ? new Color(37, 99, 235) : c1;
+            this.c2 = c2 == null ? new Color(16, 185, 129) : c2;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setPaint(new java.awt.GradientPaint(0, 0, new Color(248, 251, 255), getWidth(), getHeight(), new Color(238, 246, 255)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.setColor(new Color(c1.getRed(), c1.getGreen(), c1.getBlue(), 20));
+                g2.fillRoundRect(26, 24, Math.max(0, getWidth() - 80), 74, 34, 34);
+                g2.setColor(new Color(c2.getRed(), c2.getGreen(), c2.getBlue(), 14));
+                g2.fillRoundRect(Math.max(0, getWidth() - 390), Math.max(0, getHeight() - 138), 340, 88, 34, 34);
+                g2.setColor(new Color(37, 99, 235, 10));
+                g2.fillRoundRect(64, Math.max(0, getHeight() - 112), 390, 58, 26, 26);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    }
+    private static final class UserChipPanel extends JPanel {
+        private final Color accent;
+
+        private UserChipPanel(Color accent) {
+            super(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 0));
+            this.accent = accent == null ? new Color(37, 99, 235) : accent;
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(8, 42, 8, 16));
+            setPreferredSize(new Dimension(170, 38));
+            setMinimumSize(new Dimension(160, 38));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(15, 23, 42, 10));
+                g2.fillRoundRect(2, 3, Math.max(0, getWidth() - 4), Math.max(0, getHeight() - 5), 18, 18);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), 18, 18);
+                g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 18));
+                g2.fillOval(12, 10, 18, 18);
+                g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 210));
+                g2.fillOval(18, 16, 6, 6);
+                g2.setColor(new Color(226, 232, 240, 170));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), 18, 18);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    }
+    private static final class BadgeIconButton extends JButton {
+        private boolean badgeVisible;
+
+        private BadgeIconButton(ImageIcon icon) {
+            super();
+            setIcon(icon);
+            setPreferredSize(new Dimension(38, 38));
+            setMinimumSize(new Dimension(38, 38));
+            setRolloverEnabled(true);
+        }
+
+        public void setBadgeVisible(boolean visible) {
+            this.badgeVisible = visible;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color fill = getModel().isRollover() ? new Color(241, 245, 249) : Color.WHITE;
+                g2.setColor(new Color(15, 23, 42, 10));
+                g2.fillRoundRect(2, 3, getWidth() - 4, getHeight() - 5, 18, 18);
+                g2.setColor(fill);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+                g2.setColor(new Color(226, 232, 240, 170));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+            if (!badgeVisible) return;
+            g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int d = 8;
+                int x = getWidth() - d - 5;
+                int y = 6;
+                g2.setColor(new Color(255, 79, 79));
+                g2.fillOval(x, y, d, d);
+                g2.setColor(Color.WHITE);
+                g2.drawOval(x, y, d, d);
+            } finally {
+                g2.dispose();
+            }
+        }
+    }
+
+    private static final class RoundedPanel extends JPanel {
+        private final int arc;
+        private final boolean shadow;
+
+        private RoundedPanel(int arc, boolean shadow) {
+            super();
+            this.arc = arc;
+            this.shadow = shadow;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (shadow) {
+                    g2.setColor(new Color(0, 0, 0, 16));
+                    g2.fillRoundRect(4, 6, getWidth() - 8, getHeight() - 8, arc, arc);
+                }
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+            } finally {
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    }
+}
+

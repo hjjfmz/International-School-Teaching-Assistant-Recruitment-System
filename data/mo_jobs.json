@@ -1,0 +1,218 @@
+{
+  "jobs": [
+    {
+      "id": "JOB10001",
+      "title": "11",
+      "description": "111",
+      "requiredSkills": "11",
+      "hoursPerWeek": 11,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": []
+    },
+    {
+      "id": "JOB10002",
+      "title": "111",
+      "description": "11",
+      "requiredSkills": "111",
+      "hoursPerWeek": 111,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": []
+    },
+    {
+      "id": "JOB10011",
+      "title": "Graphic Design Teaching Assistant",
+      "description": "We are seeking a qualified Graphic Design Teaching Assistant to support an undergraduate course. Responsibilities include leading weekly discussion sections, grading assignments and projects, holding office hours, and assisting the instructor with course materials and student feedback. Candidates must be currently enrolled in a relevant degree program, demonstrate strong proficiency in design software (Adobe Photoshop, Adobe InDesign, Figma, Sketch) and UI design principles, and possess excellent communication and teaching skills. Familiarity with the course content is essential. This is a 20-hour per week position. We are an equal opportunity employer and encourage applications from all qualified individuals.",
+      "requiredSkills": "adobe photoshop, adobe indesign, figma, sketch, ui design",
+      "hoursPerWeek": 20,
+      "postedBy": "MO10003",
+      "status": "OPEN",
+      "category": "",
+      "applications": []
+    },
+    {
+      "id": "JOB10003",
+      "title": "Invigilation Assistant",
+      "description": "Help with exam invigilation",
+      "requiredSkills": "Attention to detail",
+      "hoursPerWeek": 4,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": [
+        {
+          "id": "APP10003",
+          "applicantId": "1f0b1f6b-86e2-4f6e-9d0d-3c3d3a1d0e6a",
+          "jobId": "JOB10003",
+          "status": "ACCEPTED",
+          "createdAt": 1775842495031,
+          "aiScore": 11
+        },
+        {
+          "id": "APP10002",
+          "applicantId": "7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1",
+          "jobId": "JOB10003",
+          "status": "REJECTED",
+          "createdAt": 1775842495030,
+          "aiScore": 11
+        },
+        {
+          "id": "APP10004",
+          "applicantId": "2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7",
+          "jobId": "JOB10003",
+          "status": "SUBMITTED",
+          "createdAt": 1775842495031,
+          "aiScore": 11
+        }
+      ]
+    },
+    {
+      "id": "JOB10004",
+      "title": "Java Teaching Assistant",
+      "description": "We are seeking a Java Teaching Assistant to support students in a Java programming course. This is a part-time role requiring 2 hours per week. Responsibilities include assisting during lab sessions, conducting office hours, grading assignments, and providing guidance on Java concepts. Ideal candidates should have a strong grasp of Java and a willingness to help others learn.",
+      "requiredSkills": "java",
+      "hoursPerWeek": 2,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": []
+    },
+    {
+      "id": "JOB10005",
+      "title": "JAVA助教",
+      "description": "计算机相关专业，Java 基础扎实，熟练掌握语法、OOP、MySQL、SpringBoot 基础；\n能看懂并调试基础 Java 代码，会配置 IDEA、Maven 等开发环境；\n表达清晰有耐心，善于沟通讲解，愿意帮带零基础同学；\n有 Java 项目开发、课程助教、社团教学经验者优先。",
+      "requiredSkills": "JAVA",
+      "hoursPerWeek": 3,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": [
+        {
+          "id": "APP10009",
+          "applicantId": "2023213330",
+          "jobId": "JOB10005",
+          "status": "ACCEPTED",
+          "createdAt": 1778517539082,
+          "aiScore": 39
+        },
+        {
+          "id": "APP10010",
+          "applicantId": "2023213331",
+          "jobId": "JOB10005",
+          "status": "SUBMITTED",
+          "createdAt": 1778517744527,
+          "aiScore": 32
+        },
+        {
+          "id": "APP10011",
+          "applicantId": "2023213332",
+          "jobId": "JOB10005",
+          "status": "SUBMITTED",
+          "createdAt": 1778594733228,
+          "aiScore": -1
+        }
+      ]
+    },
+    {
+      "id": "JOB10006",
+      "title": "Lab Assistant for “Digital Electronics Lab”",
+      "description": "- Support instructors during lab hours: help students debug TTL/CMOS circuits (e.g., counters, multiplexers).\n- Demonstrate experiment procedures (e.g., Verilog code implementation, hardware debugging steps).\n- Review student lab reports for accuracy (e.g., timing diagrams, truth tables) and logical reasoning.\n- Design mini-projects (e.g., 4-bit ALU design) to enhance students’ practical skills",
+      "requiredSkills": "circuit testing, digital logic design, experiences with FPGA boards",
+      "hoursPerWeek": 6,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": [
+        {
+          "id": "APP10001",
+          "applicantId": "2023213371",
+          "jobId": "JOB10006",
+          "status": "ACCEPTED",
+          "createdAt": 1775842062240,
+          "aiScore": 18
+        }
+      ]
+    },
+    {
+      "id": "JOB10007",
+      "title": "TA - Databases (Support)",
+      "description": "Assist with Q&A and marking support",
+      "requiredSkills": "SQL,Basics",
+      "hoursPerWeek": 5,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": [
+        {
+          "id": "APP10006",
+          "applicantId": "7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1",
+          "jobId": "JOB10007",
+          "status": "ACCEPTED",
+          "createdAt": 1775842495031,
+          "aiScore": 11
+        }
+      ]
+    },
+    {
+      "id": "JOB10008",
+      "title": "TA - Software Engineering",
+      "description": "Support EBU6304 labs and tutorials",
+      "requiredSkills": "Java,Git,Agile",
+      "hoursPerWeek": 6,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": [
+        {
+          "id": "APP10008",
+          "applicantId": "2023213371",
+          "jobId": "JOB10008",
+          "status": "SUBMITTED",
+          "createdAt": 1775842558647,
+          "aiScore": -1
+        },
+        {
+          "id": "APP10007",
+          "applicantId": "9a2de5a0-0d7a-4bcb-9e8a-2f2ab2b6a2d5",
+          "jobId": "JOB10008",
+          "status": "SUBMITTED",
+          "createdAt": 1775842495031,
+          "aiScore": 11
+        },
+        {
+          "id": "APP10005",
+          "applicantId": "2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7",
+          "jobId": "JOB10008",
+          "status": "ACCEPTED",
+          "createdAt": 1775842495031,
+          "aiScore": 16
+        }
+      ]
+    },
+    {
+      "id": "JOB10009",
+      "title": "teacher",
+      "description": "111111",
+      "requiredSkills": "ai",
+      "hoursPerWeek": 10,
+      "postedBy": "MO10003",
+      "status": "OPEN",
+      "category": "",
+      "applications": []
+    },
+    {
+      "id": "JOB10010",
+      "title": "Teaching Assistant - Python",
+      "description": "We are seeking a Teaching Assistant to support a Python course. Responsibilities include assisting students with Python exercises and projects, grading assignments, and holding office hours. Requires strong proficiency in Python and effective communication skills. The role involves 3 hours per week of commitment.",
+      "requiredSkills": "Python",
+      "hoursPerWeek": 3,
+      "postedBy": "MO10001",
+      "status": "OPEN",
+      "category": "",
+      "applications": []
+    }
+  ]
+}

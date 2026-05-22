@@ -1,0 +1,35 @@
+2026-03-19T01:18:34.192891200	INFO	actor=admin action=createPresetMoAccount account=MO10004
+2026-03-19T01:19:52.621306400	INFO	actor=admin action=setUserEnabled role=MO account=MO10004 enabled=false ok=true
+2026-03-19T13:35:42.980264700	INFO	actor=admin action=deleteTaAccount account=0123321 deletedUser=false deletedTa=false removedApps=0
+2026-03-19T13:35:57.360285	INFO	actor=admin action=deleteTaAccount account=2023213330 deletedUser=true deletedTa=true removedApps=3
+2026-03-19T13:36:00.768239300	INFO	actor=admin action=deleteTaAccount account=0123321 deletedUser=false deletedTa=false removedApps=0
+2026-03-19T13:40:31.104524600	INFO	actor=admin action=deleteTaAccount account=0123321 deletedUser=true deletedMo=false removedApps=0
+2026-03-19T14:46:21.933513	INFO	actor=admin action=deleteTaAccount account=111111 deletedUser=true deletedTa=true removedApps=0
+2026-03-19T14:46:37.351751	INFO	actor=admin action=deleteTaAccount account=testdelete deletedUser=true deletedTa=false removedApps=0
+2026-03-22T18:42:34.126055200	INFO	actor=admin action=setUserEnabled role=TA account=2023213330 enabled=false ok=true
+2026-03-22T18:42:35.990770800	INFO	actor=admin action=setUserEnabled role=TA account=2023213330 enabled=true ok=true
+2026-04-07T16:21:17.521418200	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=EN
+2026-04-07T16:21:22.890213200	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=EN
+2026-04-07T16:22:51.367100100	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=EN
+2026-04-11T00:40:00.658602	INFO	actor=MO10001 action=createJob jobId=JOB10006 postedBy=MO10001 title=Lab_Assistant_for_“Digital_Electronics_Lab” hoursPerWeek=6
+2026-04-11T01:27:42.250409200	INFO	actor=2023213371 action=submitApplication applicationId=APP10001 applicantId=2023213371 jobId=JOB10006
+2026-04-11T01:29:54.665075400	INFO	actor=MO10001 action=setApplicationStatus applicationId=APP10001 applicantId=2023213371 jobId=JOB10006 fromStatus=SUBMITTED toStatus=ACCEPTED
+2026-04-11T01:35:58.662934400	INFO	actor=2023213371 action=submitApplication applicationId=APP10008 applicantId=2023213371 jobId=JOB10008
+2026-04-11T01:44:49.244414400	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=ZH
+2026-04-11T14:15:02.154581100	INFO	actor=2023213371 action=registerTa role=TA account=2023213371
+2026-05-11T22:46:38.829537500	INFO	actor=admin action=updateConfig ok=true dataPath= passwordMinLength=6 cvFormats=pdf,doc,docx defaultLang=EN
+2026-05-11T23:50:36.038676400	INFO	actor=admin action=createMoAccount role=MO account=MO1005 name=job
+2026-05-12T00:16:05.112062100	INFO	actor=MO10001 action=createJob jobId=JOB10005 postedBy=MO10001 title=JAVA助教 hoursPerWeek=3
+2026-05-12T00:38:59.109454700	INFO	actor=2023213330 action=submitApplication applicationId=APP10009 applicantId=2023213330 jobId=JOB10005
+2026-05-12T00:42:24.531094	INFO	actor=2023213331 action=submitApplication applicationId=APP10010 applicantId=2023213331 jobId=JOB10005
+2026-05-12T01:29:36.613190	INFO	actor=MO10001 action=setApplicationStatus applicationId=APP10009 applicantId=2023213330 jobId=JOB10005 fromStatus=SUBMITTED toStatus=ACCEPTED
+2026-05-12T01:30:12.711922700	INFO	actor=MO10001 action=setApplicationStatus applicationId=APP10009 applicantId=2023213330 jobId=JOB10005 fromStatus=ACCEPTED toStatus=ACCEPTED
+2026-05-12T22:05:33.248127700	INFO	actor=2023213332 action=submitApplication applicationId=APP10011 applicantId=2023213332 jobId=JOB10005
+2026-05-12T23:07:20.672564600	INFO	actor=MO10001 action=setApplicationStatus applicationId=APP10009 applicantId=2023213330 jobId=JOB10005 fromStatus=ACCEPTED toStatus=REJECTED
+2026-05-12T23:07:23.382484	INFO	actor=MO10001 action=setApplicationStatus applicationId=APP10009 applicantId=2023213330 jobId=JOB10005 fromStatus=REJECTED toStatus=ACCEPTED
+2026-05-18T01:50:03.725376800	INFO	actor=MO10001 action=createJob jobId=JOB10004 postedBy=MO10001 title=Java_Teaching_Assistant hoursPerWeek=2
+2026-05-18T01:50:52.644449800	INFO	actor=MO10001 action=createJob jobId=JOB10010 postedBy=MO10001 title=Teaching_Assistant_-_Python hoursPerWeek=3
+2026-05-18T02:40:04.442217900	INFO	actor=2023213332 action=resetApplicantAiScores applicantId=2023213332
+2026-05-19T16:54:15.816640	INFO	actor=MO10003 action=createJob jobId=JOB10011 postedBy=MO10003 title=Graphic_Design_Teaching_Assistant hoursPerWeek=20
+2026-05-19T17:31:30.064984100	INFO	actor=2023213371 action=resetApplicantAiScores applicantId=2023213371
+2026-05-23T02:17:12.532651800	INFO	actor=2023213341 action=registerTa role=TA account=2023213341

@@ -1,0 +1,853 @@
+{
+  "candidateProfiles": [
+    {
+      "candidateId": "2023213330",
+      "sourceHash": "5b25fad8",
+      "updatedAt": 1779177047392,
+      "profile": {
+        "candidateId": "2023213330",
+        "normalizedSkills": [
+          "java",
+          "springboot",
+          "19582058759 3407696431 qq.com z3407696431",
+          "https",
+          "github.com",
+          "6zyy6",
+          "ai",
+          "2023-09 2027-06",
+          "python",
+          "oop",
+          "langchain4j",
+          "ai agent",
+          "rag",
+          "embedding",
+          "agent",
+          "langgraph4j",
+          "spring boot",
+          "spring",
+          "sql"
+        ],
+        "domainTags": [
+          "software-development",
+          "databases",
+          "data-analysis"
+        ],
+        "seniorityLevel": "UNKNOWN",
+        "yearsExperience": 0,
+        "summary": "Java 基础扎实，熟悉面向对象、数据库及 SpringBoot 基础，会基础代码调试，有耐心、善于沟通"
+      }
+    },
+    {
+      "candidateId": "2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7",
+      "sourceHash": "8f631cfc",
+      "updatedAt": 1779040275278,
+      "profile": {
+        "candidateId": "2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7",
+        "normalizedSkills": [
+          "python"
+        ],
+        "domainTags": [
+          "programming",
+          "software-development"
+        ],
+        "seniorityLevel": "UNKNOWN",
+        "yearsExperience": 0,
+        "summary": "Skills: [python]. Domains: [software-development]"
+      }
+    },
+    {
+      "candidateId": "7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1",
+      "sourceHash": "231e42",
+      "updatedAt": 1779040279176,
+      "profile": {
+        "candidateId": "7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1",
+        "normalizedSkills": [
+          "java"
+        ],
+        "domainTags": [
+          "java",
+          "software-development"
+        ],
+        "seniorityLevel": "UNKNOWN",
+        "yearsExperience": 0,
+        "summary": "Candidate proficient in Java."
+      }
+    },
+    {
+      "candidateId": "1f0b1f6b-86e2-4f6e-9d0d-3c3d3a1d0e6a",
+      "sourceHash": "141ae",
+      "updatedAt": 1779040282366,
+      "profile": {
+        "candidateId": "1f0b1f6b-86e2-4f6e-9d0d-3c3d3a1d0e6a",
+        "normalizedSkills": [
+          "sql"
+        ],
+        "domainTags": [
+          "database",
+          "databases"
+        ],
+        "seniorityLevel": "UNKNOWN",
+        "yearsExperience": 0,
+        "summary": "Skills: [sql]. Domains: [databases]"
+      }
+    },
+    {
+      "candidateId": "2023213371",
+      "sourceHash": "df8ad273",
+      "updatedAt": 1779183099607,
+      "profile": {
+        "candidateId": "2023213371",
+        "normalizedSkills": [
+          "python",
+          "pytorch",
+          "opencv",
+          "torchvision",
+          "react",
+          "bm25",
+          "llm-as-judge",
+          "react agent",
+          "transfer learning",
+          "image classification",
+          "document classification",
+          "retrieval-augmented generation",
+          "hybrid retrieval",
+          "re-ranking",
+          "17762308387",
+          "hjj1904211461 bupt.edu.cn",
+          "10",
+          "hjjfmz justin he",
+          "bupt",
+          "international school 20 23 .09-202 7 .07",
+          "internet of things",
+          "overall gpa 88.15 major gpa 87.75",
+          "93",
+          "92",
+          "94",
+          "97",
+          "99",
+          "573",
+          "541",
+          "1",
+          "resnet 2025.4-2025.5"
+        ],
+        "domainTags": [
+          "internet of things",
+          "computer vision",
+          "machine learning",
+          "natural language processing",
+          "document processing",
+          "retrieval-augmented generation",
+          "teaching-support",
+          "software-development",
+          "databases",
+          "exam-operations",
+          "communication"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "yearsExperience": 0,
+        "summary": "Undergraduate student at Beijing University of Posts and Telecommunications majoring in Internet of Things with strong machine learning and system building skills. Experienced in fine-tuning ResNet for document classification and building an end-to-end RAG system from scratch."
+      }
+    },
+    {
+      "candidateId": "2023213331",
+      "sourceHash": "fa1fa0ac",
+      "updatedAt": 1779179186864,
+      "profile": {
+        "candidateId": "2023213331",
+        "normalizedSkills": [
+          "python",
+          "19582058759 3407696431 qq.com z3407696431",
+          "https",
+          "github.com",
+          "6zyy6",
+          "ai",
+          "2023-09 2027-06",
+          "java",
+          "oop",
+          "langchain4j",
+          "ai agent",
+          "rag",
+          "embedding",
+          "agent",
+          "langgraph4j",
+          "spring boot",
+          "spring",
+          "sql"
+        ],
+        "domainTags": [
+          "software-development",
+          "databases",
+          "data-analysis"
+        ],
+        "seniorityLevel": "UNKNOWN",
+        "yearsExperience": 0,
+        "summary": "Python基础扎实，熟悉面向对象、数据库，会基础代码调试，有耐心、善于沟通"
+      }
+    },
+    {
+      "candidateId": "2023213332",
+      "sourceHash": "61fa0d07",
+      "updatedAt": 1779043233558,
+      "profile": {
+        "candidateId": "2023213332",
+        "normalizedSkills": [
+          "java",
+          "python",
+          "spring boot",
+          "mybatis",
+          "mysql",
+          "redis",
+          "langchain4j",
+          "agent",
+          "rag",
+          "docker",
+          "19582058759 3407696431 qq.com z3407696431",
+          "https",
+          "github.com",
+          "6zyy6",
+          "ai",
+          "2023-09 2027-06",
+          "oop",
+          "spring",
+          "sql",
+          "session",
+          "redisson",
+          "ai agent"
+        ],
+        "domainTags": [
+          "ai",
+          "backend",
+          "database",
+          "agent",
+          "software-development",
+          "databases",
+          "data-analysis"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "yearsExperience": 0,
+        "summary": "在读AI后端开发工程师，精通Java和Python，具备AI Agent和RAG系统开发经验。"
+      }
+    },
+    {
+      "candidateId": "9a2de5a0-0d7a-4bcb-9e8a-2f2ab2b6a2d5",
+      "sourceHash": "100e3",
+      "updatedAt": 1779040403974,
+      "profile": {
+        "candidateId": "9a2de5a0-0d7a-4bcb-9e8a-2f2ab2b6a2d5",
+        "normalizedSkills": [
+          "c++"
+        ],
+        "domainTags": [
+          "computer science"
+        ],
+        "seniorityLevel": "UNKNOWN",
+        "yearsExperience": 0,
+        "summary": "C++ programming skill."
+      }
+    },
+    {
+      "candidateId": "2023213341",
+      "sourceHash": "bc87426b",
+      "updatedAt": 1779473844736,
+      "profile": {
+        "candidateId": "2023213341",
+        "normalizedSkills": [],
+        "domainTags": [],
+        "seniorityLevel": "UNKNOWN",
+        "yearsExperience": 0,
+        "summary": ""
+      }
+    }
+  ],
+  "jobProfiles": [
+    {
+      "jobId": "JOB10001",
+      "sourceHash": "2e3cd7b9",
+      "updatedAt": 1779040110231,
+      "profile": {
+        "jobId": "JOB10001",
+        "title": "11",
+        "normalizedSkills": [
+          "11"
+        ],
+        "domainTags": [
+          "education"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 11,
+        "keywords": [
+          "11",
+          "111"
+        ],
+        "summary": "Teaching assistant position with required skill 11."
+      }
+    },
+    {
+      "jobId": "JOB10002",
+      "sourceHash": "990c8619",
+      "updatedAt": 1779040112872,
+      "profile": {
+        "jobId": "JOB10002",
+        "title": "111",
+        "normalizedSkills": [
+          "111"
+        ],
+        "domainTags": [
+          "education"
+        ],
+        "seniorityLevel": "UNKNOWN",
+        "hoursPerWeek": 111,
+        "keywords": [
+          "111",
+          "11"
+        ],
+        "summary": "Teaching assistant position with minimal details provided."
+      }
+    },
+    {
+      "jobId": "JOB10003",
+      "sourceHash": "27728c74",
+      "updatedAt": 1779040114512,
+      "profile": {
+        "jobId": "JOB10003",
+        "title": "Invigilation Assistant",
+        "normalizedSkills": [
+          "attention to detail",
+          "invigilation assistant"
+        ],
+        "domainTags": [
+          "education",
+          "assessment",
+          "exam-operations"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 4,
+        "keywords": [
+          "invigilation",
+          "exam",
+          "assistant",
+          "invigilation assistant",
+          "help with exam invigilation"
+        ],
+        "summary": "Help with exam invigilation"
+      }
+    },
+    {
+      "jobId": "JOB10005",
+      "sourceHash": "14398cb7",
+      "updatedAt": 1779043762199,
+      "profile": {
+        "jobId": "JOB10005",
+        "title": "JAVA助教",
+        "normalizedSkills": [
+          "java",
+          "oop",
+          "mysql",
+          "springboot",
+          "debugging",
+          "maven",
+          "intellij idea",
+          "communication",
+          "patience"
+        ],
+        "domainTags": [
+          "education",
+          "tutoring",
+          "java programming",
+          "software-development",
+          "databases"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 3,
+        "keywords": [
+          "java",
+          "助教",
+          "教学",
+          "springboot",
+          "mysql",
+          "oop",
+          "idea",
+          "maven"
+        ],
+        "summary": "Computer-related major with strong Java basics, OOP, MySQL, SpringBoot; able to debug code and configure development environments; patient and good communicator; experience as TA or in teaching preferred."
+      }
+    },
+    {
+      "jobId": "JOB10006",
+      "sourceHash": "e178d9e9",
+      "updatedAt": 1779040128104,
+      "profile": {
+        "jobId": "JOB10006",
+        "title": "Lab Assistant for “Digital Electronics Lab”",
+        "normalizedSkills": [
+          "circuit testing",
+          "digital logic design",
+          "fpga boards",
+          "verilog",
+          "circuit debugging",
+          "ttl/cmos circuits",
+          "lab report review",
+          "alu design",
+          "timing diagrams",
+          "truth tables",
+          "experiences with fpga boards",
+          "lab assistant for digital electronics lab"
+        ],
+        "domainTags": [
+          "digital electronics",
+          "computer engineering",
+          "circuit design",
+          "fpga",
+          "verilog",
+          "embedded systems",
+          "teaching-support",
+          "software-development"
+        ],
+        "seniorityLevel": "MID",
+        "hoursPerWeek": 6,
+        "keywords": [
+          "lab assistant",
+          "digital electronics lab",
+          "fpga",
+          "verilog",
+          "circuit debugging",
+          "lab reports",
+          "mini-projects",
+          "4-bit alu",
+          "lab assistant for digital electronics lab",
+          "- support instructors during lab hours help students debug ttl",
+          "cmos circuits e.g.",
+          "counters",
+          "multiplexers .",
+          "- demonstrate experiment procedures e.g.",
+          "verilog code implementation",
+          "hardware debugging steps .",
+          "- review student lab reports for accuracy e.g.",
+          "timing diagrams",
+          "truth tables and logical reasoning.",
+          "- design mini-projects e.g.",
+          "4-bit alu design to enhance students practical skills"
+        ],
+        "summary": "Support instructors in a digital electronics lab: help students debug TTL/CMOS circuits, demonstrate Verilog and hardware debugging, review lab reports, and design mini-projects like a 4-bit ALU."
+      }
+    },
+    {
+      "jobId": "JOB10007",
+      "sourceHash": "c0364e1e",
+      "updatedAt": 1779040130704,
+      "profile": {
+        "jobId": "JOB10007",
+        "title": "TA - Databases (Support)",
+        "normalizedSkills": [
+          "sql",
+          "basics",
+          "ta - databases support"
+        ],
+        "domainTags": [
+          "databases",
+          "sql",
+          "teaching",
+          "teaching-support"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 5,
+        "keywords": [
+          "ta",
+          "databases",
+          "support",
+          "sql",
+          "basics",
+          "ta - databases support",
+          "assist with q a and marking support"
+        ],
+        "summary": "Assist with Q&A and marking support for databases course."
+      }
+    },
+    {
+      "jobId": "JOB10008",
+      "sourceHash": "b110e11e",
+      "updatedAt": 1779040137205,
+      "profile": {
+        "jobId": "JOB10008",
+        "title": "TA - Software Engineering",
+        "normalizedSkills": [
+          "java",
+          "git",
+          "agile",
+          "ta - software engineering"
+        ],
+        "domainTags": [
+          "software-engineering",
+          "education",
+          "teaching-support",
+          "software-development"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 6,
+        "keywords": [
+          "java",
+          "git",
+          "agile",
+          "software engineering",
+          "teaching assistant",
+          "ebu6304",
+          "labs",
+          "tutorials",
+          "ta - software engineering",
+          "support ebu6304 labs and tutorials"
+        ],
+        "summary": "Teaching assistant supporting EBU6304 software engineering labs and tutorials."
+      }
+    },
+    {
+      "jobId": "JOB10009",
+      "sourceHash": "3e04f0f",
+      "updatedAt": 1779043767286,
+      "profile": {
+        "jobId": "JOB10009",
+        "title": "teacher",
+        "normalizedSkills": [
+          "ai",
+          "teacher"
+        ],
+        "domainTags": [
+          "education",
+          "artificial intelligence"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 10,
+        "keywords": [
+          "ai",
+          "teacher",
+          "teaching",
+          "111111"
+        ],
+        "summary": "Part-time teacher with skills in artificial intelligence."
+      }
+    },
+    {
+      "jobId": "JOB10004",
+      "sourceHash": "aaf0d115",
+      "updatedAt": 1779043775326,
+      "profile": {
+        "jobId": "JOB10004",
+        "title": "Java Teaching Assistant",
+        "normalizedSkills": [
+          "java",
+          "java teaching assistant"
+        ],
+        "domainTags": [
+          "education",
+          "java",
+          "programming",
+          "teaching-support",
+          "software-development"
+        ],
+        "seniorityLevel": "MID",
+        "hoursPerWeek": 2,
+        "keywords": [
+          "java",
+          "teaching assistant",
+          "grading",
+          "lab sessions",
+          "office hours",
+          "java teaching assistant",
+          "we are seeking a java teaching assistant to support students in a java programming course. this is a part-time role requiring 2 hours per week. responsibilities include assisting during lab sessions",
+          "conducting office hours",
+          "grading assignments",
+          "and providing guidance on java concepts. ideal candidates should have a strong grasp of java and a willingness to help others learn."
+        ],
+        "summary": "Part-time Java teaching assistant to support students in a Java programming course; assists in labs, office hours, and grading."
+      }
+    },
+    {
+      "jobId": "JOB10010",
+      "sourceHash": "cdb0d1da",
+      "updatedAt": 1779040257622,
+      "profile": {
+        "jobId": "JOB10010",
+        "title": "Teaching Assistant - Python",
+        "normalizedSkills": [
+          "python",
+          "communication",
+          "teaching assistant - python"
+        ],
+        "domainTags": [
+          "education",
+          "python",
+          "teaching",
+          "teaching-support",
+          "software-development",
+          "communication"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 3,
+        "keywords": [
+          "teaching assistant",
+          "python",
+          "grading",
+          "office hours",
+          "teaching assistant - python",
+          "we are seeking a teaching assistant to support a python course. responsibilities include assisting students with python exercises and projects",
+          "grading assignments",
+          "and holding office hours. requires strong proficiency in python and effective communication skills. the role involves 3 hours per week of commitment."
+        ],
+        "summary": "Teaching assistant for a Python course, assisting students with exercises and projects, grading assignments, and holding office hours."
+      }
+    },
+    {
+      "jobId": "JOB10011",
+      "sourceHash": "ec73a019",
+      "updatedAt": 1779180863350,
+      "profile": {
+        "jobId": "JOB10011",
+        "title": "Graphic Design Teaching Assistant",
+        "normalizedSkills": [
+          "adobe photoshop",
+          "adobe indesign",
+          "figma",
+          "sketch",
+          "ui design",
+          "communication",
+          "teaching",
+          "graphic design teaching assistant"
+        ],
+        "domainTags": [
+          "graphic design",
+          "education",
+          "higher education",
+          "ui/ux",
+          "teaching-support",
+          "software-development",
+          "data-analysis",
+          "communication"
+        ],
+        "seniorityLevel": "JUNIOR",
+        "hoursPerWeek": 20,
+        "keywords": [
+          "graphic design",
+          "teaching assistant",
+          "undergraduate",
+          "adobe",
+          "figma",
+          "sketch",
+          "ui design",
+          "graphic design teaching assistant",
+          "we are seeking a qualified graphic design teaching assistant to support an undergraduate course. responsibilities include leading weekly discussion sections",
+          "grading assignments and projects",
+          "holding office hours",
+          "and assisting the instructor with course materials and student feedback. candidates must be currently enrolled in a relevant degree program",
+          "demonstrate strong proficiency in design software adobe photoshop",
+          "adobe indesign",
+          "sketch and ui design principles",
+          "and possess excellent communication and teaching skills. familiarity with the course content is essential. this is a 20-hour per week position. we are an equal opportunity employer and encourage applications from all qualified individuals."
+        ],
+        "summary": "Seeking a Graphic Design TA to lead discussion sections, grade assignments, hold office hours, and assist with course materials; requires enrollment in a relevant degree program and proficiency in design software and UI principles."
+      }
+    }
+  ],
+  "recommendationNotes": [
+    {
+      "candidateId": "2023213330",
+      "jobId": "JOB10005",
+      "candidateSourceHash": "ebd4b45c",
+      "jobSourceHash": "14398cb7",
+      "recommendTag": "Junior TA Fit",
+      "recommendReason": "Seniority is ideal for a junior teaching assistant role.",
+      "recommendReasons": [
+        "Perfect seniority match (100/100) aligns with junior TA expectations.",
+        "Core skills like Java, Spring Boot, MySQL, and OOP are all matched."
+      ]
+    },
+    {
+      "candidateId": "2023213330",
+      "jobId": "JOB10009",
+      "candidateSourceHash": "ebd4b45c",
+      "jobSourceHash": "3e04f0f",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Strong seniority match but missing key teaching skills.",
+      "recommendReasons": [
+        "Skill score 50% due to missing teacher skill.",
+        "Domain score 50% as candidate expertise is tech-focused."
+      ]
+    },
+    {
+      "candidateId": "2023213330",
+      "jobId": "JOB10004",
+      "candidateSourceHash": "ebd4b45c",
+      "jobSourceHash": "aaf0d115",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Partial skill match with low domain alignment.",
+      "recommendReasons": [
+        "Matched skill: Java only.",
+        "Missing required skill: java teaching assistant."
+      ]
+    },
+    {
+      "candidateId": "2023213331",
+      "jobId": "JOB10004",
+      "candidateSourceHash": "8ace5a18",
+      "jobSourceHash": "aaf0d115",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Candidate has Java but lacks teaching assistant experience.",
+      "recommendReasons": [
+        "Matches Java skill.",
+        "Missing teaching assistant experience."
+      ]
+    },
+    {
+      "candidateId": "2023213331",
+      "jobId": "JOB10005",
+      "candidateSourceHash": "8ace5a18",
+      "jobSourceHash": "14398cb7",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Strong core Java skills but missing key teaching tools.",
+      "recommendReasons": [
+        "Solid foundation in Java, OOP, and MySQL.",
+        "Lacks Spring Boot, IntelliJ IDEA, and Maven experience."
+      ]
+    },
+    {
+      "candidateId": "2023213331",
+      "jobId": "JOB10008",
+      "candidateSourceHash": "8ace5a18",
+      "jobSourceHash": "b110e11e",
+      "recommendTag": "Partial Skill Match",
+      "recommendReason": "Good seniority but missing key job-specific skills like agile and TA experience.",
+      "recommendReasons": [
+        "Matched on Java and Git, fundamental for the role.",
+        "Candidate is junior with maximum seniority fit."
+      ]
+    },
+    {
+      "candidateId": "2023213332",
+      "jobId": "JOB10004",
+      "candidateSourceHash": "61fa0d07",
+      "jobSourceHash": "aaf0d115",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Candidate has Java skill but lacks teaching assistant experience.",
+      "recommendReasons": [
+        "Java skill matches job requirement.",
+        "Domain mismatch suggests limited teaching background."
+      ]
+    },
+    {
+      "candidateId": "2023213332",
+      "jobId": "JOB10005",
+      "candidateSourceHash": "61fa0d07",
+      "jobSourceHash": "14398cb7",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Solid core skills but missing key tools for teaching.",
+      "recommendReasons": [
+        "Strong in Java, MySQL, OOP with full seniority match.",
+        "Lacks Spring Boot, debugging, Maven, and IDEA experience."
+      ]
+    },
+    {
+      "candidateId": "2023213332",
+      "jobId": "JOB10008",
+      "candidateSourceHash": "60bbb62e",
+      "jobSourceHash": "b110e11e",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Strong seniority match but skill and domain gaps exist.",
+      "recommendReasons": [
+        "High seniority alignment (100%)",
+        "Missing critical skills: agile, TA experience"
+      ]
+    },
+    {
+      "candidateId": "2023213332",
+      "jobId": "JOB10009",
+      "candidateSourceHash": "61fa0d07",
+      "jobSourceHash": "3e04f0f",
+      "recommendTag": "Partial Match",
+      "recommendReason": "Strong AI skill and seniority, but missing teaching experience.",
+      "recommendReasons": [
+        "Seniority matches perfectly.",
+        "Matched skill: ai, but missing teacher."
+      ]
+    },
+    {
+      "candidateId": "2023213371",
+      "jobId": "JOB10002",
+      "candidateSourceHash": "197cd687",
+      "jobSourceHash": "990c8619",
+      "recommendTag": "Low Match",
+      "recommendReason": "High seniority but skills and domain do not match job requirements.",
+      "recommendReasons": [
+        "No skill match: job requires 111.",
+        "Domain mismatch: candidate in teaching-support vs education."
+      ]
+    },
+    {
+      "candidateId": "2023213371",
+      "jobId": "JOB10007",
+      "candidateSourceHash": "df8ad273",
+      "jobSourceHash": "c0364e1e",
+      "recommendTag": "Skill Gap",
+      "recommendReason": "Seniority matches but lacks all required SQL and database skills.",
+      "recommendReasons": [
+        "Skill match: 0% – missing SQL, basics, TA support.",
+        "Domain match: 50% – teaching-support aligns partially."
+      ]
+    },
+    {
+      "candidateId": "2023213371",
+      "jobId": "JOB10008",
+      "candidateSourceHash": "df8ad273",
+      "jobSourceHash": "b110e11e",
+      "recommendTag": "Skill Gap",
+      "recommendReason": "Candidate lacks required Java and Git experience for Software Engineering TA role.",
+      "recommendReasons": [
+        "Missing all required skills: Java, Git, Agile, and TA-SE.",
+        "Overall score low (30) due to zero skill match."
+      ]
+    },
+    {
+      "candidateId": "2023213371",
+      "jobId": "JOB10010",
+      "candidateSourceHash": "df8ad273",
+      "jobSourceHash": "cdb0d1da",
+      "recommendTag": "Partial Skill Match",
+      "recommendReason": "Python skill matches but lacks teaching and communication experience.",
+      "recommendReasons": [
+        "Python skill matches job requirement.",
+        "Missing communication and teaching-specific experience."
+      ]
+    },
+    {
+      "candidateId": "2023213341",
+      "jobId": "JOB10002",
+      "candidateSourceHash": "bc87426b",
+      "jobSourceHash": "990c8619",
+      "recommendTag": "One skill away",
+      "recommendReason": "Experience level is aligned with the role.",
+      "recommendReasons": [
+        "Experience level is aligned with the role.",
+        "Missing skills: 111"
+      ]
+    },
+    {
+      "candidateId": "2023213341",
+      "jobId": "JOB10001",
+      "candidateSourceHash": "bc87426b",
+      "jobSourceHash": "2e3cd7b9",
+      "recommendTag": "One skill away",
+      "recommendReason": "Missing skills: 11",
+      "recommendReasons": [
+        "Missing skills: 11"
+      ]
+    },
+    {
+      "candidateId": "2023213341",
+      "jobId": "JOB10011",
+      "candidateSourceHash": "bc87426b",
+      "jobSourceHash": "ec73a019",
+      "recommendTag": "Needs review",
+      "recommendReason": "Missing skills: adobe photoshop, adobe indesign",
+      "recommendReasons": [
+        "Missing skills: adobe photoshop, adobe indesign"
+      ]
+    }
+  ]
+}
