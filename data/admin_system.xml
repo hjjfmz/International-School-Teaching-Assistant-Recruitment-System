@@ -225,7 +225,9 @@
         
         <user account="MO1005" enabled="true" name="job" passwordHash="pbkdf2$sha256$120000$qEklzT8vrLYBCUiw/KpZig==$JVFQ+ZpGW7fZmMvqtmq8ul3Ppulaz5w/tW7CqhLG2iM=" role="MO"/>
             
-    </users>
+    <user account="MO10005" enabled="true" name="Jack" passwordHash="pbkdf2$sha256$120000$FjE0AAzY7B20lXsdegDKoA==$zGI4syiFiS8GmxoDYzGdrDHi+/soUkBAXDbiOs5FkzE=" role="MO"/>
+<user account="2023213347" enabled="true" name="David" passwordHash="pbkdf2$sha256$120000$xFGHl0iNMh3Ljsvg6/4nig==$GBvCyGkVikaEXPhyAHOlFAzH0Yvzs0aEzjvwKzsDGqY=" role="TA"/>
+</users>
                                                                             
                     
     

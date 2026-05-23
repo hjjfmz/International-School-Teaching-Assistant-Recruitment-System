@@ -3,10 +3,8 @@ id,name,email,skills,cvPath,description
 2023213330,张艺赢,2023213330@bupt.cn,java,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213330.pdf,Java 基础扎实，熟悉面向对象、数据库及 SpringBoot 基础，会基础代码调试，有耐心、善于沟通
 2023213331,Alice,2023213331@bupt.cn,python,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213331.pdf,Python基础扎实，熟悉面向对象、数据库，会基础代码调试，有耐心、善于沟通
 2023213332,Bob,123,java，python,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213332.pdf,python
+2023213347,David,123456@edu,,E:\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213347.docx,
 2023213371,He Junjie,1904211461@qq.com,,D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213371.docx,
-2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7,Demo User A,a@example.com,Python,,
-7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1,Demo User B,b@example.com,Java,,
-9a2de5a0-0d7a-4bcb-9e8a-2f2ab2b6a2d5,Demo User D,d@example.com,C++,,
 2023213380,Chen Li,chenli@bupt.cn,Python, D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213380.pdf,熟悉Python编程，擅长数据分析与自动化脚本编写，有助教经验
 2023213391,Li Hua,lihua@bupt.cn,Java;SpringBoot, D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213391.pdf,Java基础扎实，熟悉SpringBoot与MySQL，具备良好沟通能力
 2023213402,Wang Wei,wangwei@bupt.cn,Front-end, D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213402.pdf,熟练掌握HTML/CSS/JavaScript，了解React框架，善于帮助学生解决前端问题
@@ -23,3 +21,6 @@ id,name,email,skills,cvPath,description
 2023213491,Huang Lei,huanglei@bupt.cn,Big Data, D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213491.pdf,擅长大数据处理与Hadoop/Spark工具，能够支持数据工程相关课程
 2023213492,Lin Jie,linjie@bupt.cn,Digital Media, D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213492.pdf,擅长数字媒体与视频内容制作，能够帮助学生完成多媒体项目
 2023213493,Yang Qian,yangqian@bupt.cn,Project Management, D:\code\International-School-Teaching-Assistant-Recruitment-System\data\cv\2023213493.pdf,熟悉项目管理流程与工具，能够支持课程项目规划与团队协作指导
+2c8c3d51-7f0a-4a7c-a6be-40fba30bb7d7,Demo User A,a@example.com,Python,,
+7c3eacb8-1a2f-4c7b-8b2c-6c70a8b2c2b1,Demo User B,b@example.com,Java,,
+9a2de5a0-0d7a-4bcb-9e8a-2f2ab2b6a2d5,Demo User D,d@example.com,C++,,
