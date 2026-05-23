@@ -19,14 +19,12 @@ import ebu6304.storage.DataService;
 import ebu6304.ui.ta.TaApplicationStatusPage;
 import ebu6304.ui.ta.TaHomePage;
 import ebu6304.ui.ta.TaJobsPage;
-import ebu6304.ui.ta.TaMyApplicationsPage;
 import ebu6304.ui.ta.TaProfilePage;
 import ebu6304.ui.ta.TaResumePage;
 import ebu6304.ui.mo.MoApplicantsPage;
 import ebu6304.ui.mo.MoHomePage;
 import ebu6304.ui.mo.MoMyPostsPage;
 import ebu6304.ui.mo.MoPostJobPage;
-import ebu6304.ui.mo.MoResultsPage;
 import ebu6304.ui.admin.AdminConfigPage;
 import ebu6304.ui.admin.AdminExportPage;
 import ebu6304.ui.admin.AdminHomePage;
@@ -59,7 +57,6 @@ public final class WorkbenchPanel extends JPanel {
                 I18n.t("nav.ta.profile"),
                 I18n.t("nav.ta.resume"),
                 I18n.t("nav.ta.jobs"),
-                I18n.t("nav.ta.myapps"),
                 I18n.t("nav.ta.status")
             };
         } else if (role == Role.MO) {
@@ -67,7 +64,6 @@ public final class WorkbenchPanel extends JPanel {
                 I18n.t("nav.mo.home"),
                 I18n.t("nav.mo.post"),
                 I18n.t("nav.mo.applicants"),
-                I18n.t("nav.mo.results"),
                 I18n.t("nav.mo.myposts")
             };
         } else {
@@ -102,14 +98,12 @@ public final class WorkbenchPanel extends JPanel {
             TaResumePage resume = new TaResumePage(data, account, aiModule.aiIndexController());
             TaJobsPage jobs = new TaJobsPage(data, account, aiModule.jobRecommendationController(),
                     () -> { layout.showContent(I18n.t("nav.ta.home")); layout.setNavSelectedIndex(0); });
-            TaMyApplicationsPage myApps = new TaMyApplicationsPage(data, account);
             TaApplicationStatusPage status = new TaApplicationStatusPage(data, account, () -> { layout.showContent(I18n.t("nav.ta.home")); layout.setNavSelectedIndex(0); });
 
             layout.addContent(I18n.t("nav.ta.home"), home);
             layout.addContent(I18n.t("nav.ta.profile"), profile);
             layout.addContent(I18n.t("nav.ta.resume"), resume);
             layout.addContent(I18n.t("nav.ta.jobs"), jobs);
-            layout.addContent(I18n.t("nav.ta.myapps"), myApps);
             layout.addContent(I18n.t("nav.ta.status"), status);
 
             layout.showContent(I18n.t("nav.ta.home"));
@@ -118,13 +112,11 @@ public final class WorkbenchPanel extends JPanel {
             MoHomePage home = new MoHomePage(data, account, k -> layout.showContent(k));
             MoPostJobPage post = new MoPostJobPage(data, account, aiModule.jdAssistantController(), aiModule.aiIndexController());
             MoApplicantsPage applicants = new MoApplicantsPage(data, account, aiModule.applicantMatchController());
-            MoResultsPage results = new MoResultsPage(data, account);
             MoMyPostsPage myPosts = new MoMyPostsPage(data, account);
 
             layout.addContent(I18n.t("nav.mo.home"), home);
             layout.addContent(I18n.t("nav.mo.post"), post);
             layout.addContent(I18n.t("nav.mo.applicants"), applicants);
-            layout.addContent(I18n.t("nav.mo.results"), results);
             layout.addContent(I18n.t("nav.mo.myposts"), myPosts);
 
             layout.showContent(I18n.t("nav.mo.home"));

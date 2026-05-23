@@ -96,8 +96,6 @@ public final class I18n {
         zh.put("nav.ta.resume", "\u7B80\u5386");
         en.put("nav.ta.jobs", "Job Search");
         zh.put("nav.ta.jobs", "\u5C97\u4F4D\u641C\u7D22");
-        en.put("nav.ta.myapps", "My Applications");
-        zh.put("nav.ta.myapps", "\u6211\u7684\u7533\u8BF7");
         en.put("nav.ta.status", "Application Status");
         zh.put("nav.ta.status", "\u7533\u8BF7\u72B6\u6001");
 
@@ -107,8 +105,6 @@ public final class I18n {
         zh.put("nav.mo.post", "\u53D1\u5E03\u5C97\u4F4D");
         en.put("nav.mo.applicants", "Applicants");
         zh.put("nav.mo.applicants", "\u7533\u8BF7\u8005");
-        en.put("nav.mo.results", "Results");
-        zh.put("nav.mo.results", "\u7ED3\u679C");
         en.put("nav.mo.myposts", "My Posts");
         zh.put("nav.mo.myposts", "\u6211\u7684\u53D1\u5E03");
 
@@ -424,24 +420,6 @@ public final class I18n {
         en.put("ta.jobs.detail.source", "Source: profile skills + resume analysis");
         zh.put("ta.jobs.detail.source", "\u6570\u636E\u6765\u6E90\uFF1A\u4E2A\u4EBA\u8D44\u6599\u6280\u80FD + \u7B80\u5386\u5206\u6790");
 
-        // ── TA My Applications ──
-        en.put("ta.myapps.title", "My Applications");
-        zh.put("ta.myapps.title", "\u6211\u7684\u7533\u8BF7");
-        en.put("ta.myapps.hint", "Only pending applications can be withdrawn");
-        zh.put("ta.myapps.hint", "\u53EA\u6709\u5F85\u5BA1\u6838\u7684\u7533\u8BF7\u53EF\u4EE5\u64A4\u56DE");
-        en.put("ta.myapps.confirm.withdraw", "Withdraw this application?");
-        zh.put("ta.myapps.confirm.withdraw", "\u64A4\u56DE\u6B64\u7533\u8BF7\uFF1F");
-        en.put("ta.myapps.cannot.withdraw", "Only pending applications can be withdrawn");
-        zh.put("ta.myapps.cannot.withdraw", "\u53EA\u6709\u5F85\u5BA1\u6838\u7684\u7533\u8BF7\u53EF\u4EE5\u64A4\u56DE");
-        en.put("ta.myapps.col.appid", "Application ID");
-        zh.put("ta.myapps.col.appid", "\u7533\u8BF7 ID");
-        en.put("ta.myapps.col.jobid", "Job ID");
-        zh.put("ta.myapps.col.jobid", "\u5C97\u4F4D ID");
-        en.put("ta.myapps.col.jobtitle", "Job Title");
-        zh.put("ta.myapps.col.jobtitle", "\u5C97\u4F4D\u540D\u79F0");
-        en.put("ta.myapps.col.status", "Status");
-        zh.put("ta.myapps.col.status", "\u72B6\u6001");
-
         // ── TA Application Status ──
         en.put("ta.status.title", "Application Status");
         zh.put("ta.status.title", "\u7533\u8BF7\u72B6\u6001");
@@ -613,18 +591,6 @@ public final class I18n {
         zh.put("mo.applicants.detail.reason", "\u63A8\u8350\u7406\u7531");
         en.put("mo.applicants.detail.source", "Source: profile skills + resume analysis");
         zh.put("mo.applicants.detail.source", "\u6570\u636E\u6765\u6E90\uFF1A\u4E2A\u4EBA\u8D44\u6599\u6280\u80FD + \u7B80\u5386\u5206\u6790");
-
-        // ── MO Results ──
-        en.put("mo.results.title", "Results");
-        zh.put("mo.results.title", "\u7ED3\u679C");
-        en.put("mo.results.send", "Send notice (placeholder)");
-        zh.put("mo.results.send", "\u53D1\u9001\u901A\u77E5\uFF08\u5360\u4F4D\uFF09");
-        en.put("mo.results.col.appid", "Application ID");
-        zh.put("mo.results.col.appid", "\u7533\u8BF7 ID");
-        en.put("mo.results.col.taaccount", "TA Name");
-        zh.put("mo.results.col.taaccount", "TA \u59D3\u540D");
-        en.put("mo.results.col.status", "Status");
-        zh.put("mo.results.col.status", "\u72B6\u6001");
 
         // ── MO My Posts ──
         en.put("mo.myposts.title", "My Posts");

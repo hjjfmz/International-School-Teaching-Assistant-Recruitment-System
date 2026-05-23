@@ -32,3 +32,6 @@
 2026-05-18T02:40:04.442217900	INFO	actor=2023213332 action=resetApplicantAiScores applicantId=2023213332
 2026-05-19T16:54:15.816640	INFO	actor=MO10003 action=createJob jobId=JOB10011 postedBy=MO10003 title=Graphic_Design_Teaching_Assistant hoursPerWeek=20
 2026-05-19T17:31:30.064984100	INFO	actor=2023213371 action=resetApplicantAiScores applicantId=2023213371
+2026-05-24T00:41:18.363	INFO	actor=admin action=createMoAccount role=MO account=MO10005 name=Jack
+2026-05-24T00:43:40.668	INFO	actor=2023213347 action=registerTa role=TA account=2023213347
+2026-05-24T01:13:39.206	INFO	actor=2023213347 action=submitApplication applicationId=APP10012 applicantId=2023213347 jobId=JOB10020
