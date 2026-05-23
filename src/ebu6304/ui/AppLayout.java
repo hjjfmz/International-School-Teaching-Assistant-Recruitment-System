@@ -314,6 +314,7 @@ public final class AppLayout extends JPanel {
         if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
         if (k.contains("export")) return IconFactory.download(sz, fg);
         if (k.contains("log")) return IconFactory.menu(sz, fg);
+        if (k.contains("ai") || k.contains("assistant")) return IconFactory.spark(sz, fg);
         if (role == Role.ADMIN) return IconFactory.shield(sz, fg);
         return IconFactory.bullet(sz, fg);
     }
@@ -330,6 +331,7 @@ public final class AppLayout extends JPanel {
         if (k.contains("config") || k.contains("system")) return IconFactory.gear(sz, fg);
         if (k.contains("export")) return IconFactory.download(sz, fg);
         if (k.contains("log")) return IconFactory.menu(sz, fg);
+        if (k.contains("ai") || k.contains("assistant")) return IconFactory.spark(sz, fg);
         if (role == Role.ADMIN) return IconFactory.shield(sz, fg);
         return IconFactory.bullet(sz, fg);
     }

@@ -28,6 +28,7 @@ import ebu6304.ui.admin.AdminJobDataPage;
 import ebu6304.ui.admin.AdminLogPage;
 import ebu6304.ui.admin.AdminUserManagementPage;
 import ebu6304.ui.admin.AdminWorkloadPage;
+import ebu6304.ui.admin.AdminAiPage;
 
 public final class WorkbenchPanel extends JPanel {
     private final AppLayout layout;
@@ -64,7 +65,8 @@ public final class WorkbenchPanel extends JPanel {
                 I18n.t("nav.admin.jobdata"),
                 I18n.t("nav.admin.config"),
                 I18n.t("nav.admin.export"),
-                I18n.t("nav.admin.logs")
+                I18n.t("nav.admin.logs"),
+                I18n.t("nav.admin.ai")
             };
         }
 
@@ -120,6 +122,7 @@ public final class WorkbenchPanel extends JPanel {
             AdminConfigPage config = new AdminConfigPage(data, account);
             AdminExportPage export = new AdminExportPage(data, account);
             AdminLogPage logs = new AdminLogPage(data);
+            AdminAiPage ai = new AdminAiPage(data);
 
             layout.addContent(I18n.t("nav.admin.home"), home);
             layout.addContent(I18n.t("nav.admin.users"), users);
@@ -128,6 +131,7 @@ public final class WorkbenchPanel extends JPanel {
             layout.addContent(I18n.t("nav.admin.config"), config);
             layout.addContent(I18n.t("nav.admin.export"), export);
             layout.addContent(I18n.t("nav.admin.logs"), logs);
+            layout.addContent(I18n.t("nav.admin.ai"), ai);
 
             layout.showContent(I18n.t("nav.admin.home"));
             layout.setNavSelectedIndex(0);

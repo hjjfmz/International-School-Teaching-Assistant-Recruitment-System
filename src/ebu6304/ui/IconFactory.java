@@ -30,6 +30,7 @@ public final class IconFactory {
     public static ImageIcon menu(int size, Color fg)     { return build(size, fg, IconFactory::drawMenu); }
     public static ImageIcon shield(int size, Color fg)   { return build(size, fg, IconFactory::drawShield); }
     public static ImageIcon bullet(int size, Color fg)   { return build(size, fg, IconFactory::drawBullet); }
+    public static ImageIcon spark(int size, Color fg)    { return build(size, fg, IconFactory::drawSpark); }
 
     /* ── scaffolding ───────────────────────────────────────── */
 
@@ -264,5 +265,23 @@ public final class IconFactory {
         float r = s * 0.20f;
         float cx = s / 2f;
         g.fillOval((int)(cx - r), (int)(cx - r), (int)(r * 2), (int)(r * 2));
+    }
+
+    private static void drawSpark(Graphics2D g, int s) {
+        float cx = s / 2f;
+        float cy = s / 2f;
+        float outer = s * 0.42f;
+        float inner = s * 0.14f;
+        int points = 4;
+        GeneralPath p = new GeneralPath();
+        for (int i = 0; i < points * 2; i++) {
+            double angle = Math.PI / points * i - Math.PI / 2;
+            float r = (i % 2 == 0) ? outer : inner;
+            float x = cx + (float)(r * Math.cos(angle));
+            float y = cy + (float)(r * Math.sin(angle));
+            if (i == 0) p.moveTo(x, y); else p.lineTo(x, y);
+        }
+        p.closePath();
+        g.fill(p);
     }
 }

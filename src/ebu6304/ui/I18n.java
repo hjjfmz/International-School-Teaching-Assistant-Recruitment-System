@@ -655,6 +655,28 @@ public final class I18n {
         zh.put("msg.agree.required", "\u8BF7\u63A5\u53D7\u6CE8\u518C\u6761\u6B3E");
         en.put("msg.account.exists", "Account already exists");
         zh.put("msg.account.exists", "\u8D26\u53F7\u5DF2\u5B58\u5728");
+
+        // ── Admin AI Assistant ──
+        en.put("nav.admin.ai", "AI Assistant");
+        zh.put("nav.admin.ai", "AI \u52A9\u624B");
+        en.put("admin.ai.config.title", "API Config");
+        zh.put("admin.ai.config.title", "API \u914D\u7F6E");
+        en.put("admin.ai.endpoint", "Endpoint:");
+        zh.put("admin.ai.endpoint", "\u63A5\u53E3\u5730\u5740\uFF1A");
+        en.put("admin.ai.apikey", "API Key:");
+        zh.put("admin.ai.apikey", "API Key\uFF1A");
+        en.put("admin.ai.model", "Model:");
+        zh.put("admin.ai.model", "\u6A21\u578B\uFF1A");
+        en.put("admin.ai.send", "Send");
+        zh.put("admin.ai.send", "\u53D1\u9001");
+        en.put("admin.ai.clear", "Clear");
+        zh.put("admin.ai.clear", "\u6E05\u7A7A\u5BF9\u8BDD");
+        en.put("admin.ai.thinking", "AI is thinking...");
+        zh.put("admin.ai.thinking", "AI \u6B63\u5728\u601D\u8003\u4E2D\u2026");
+        en.put("admin.ai.error", "Error: {0}");
+        zh.put("admin.ai.error", "\u9519\u8BEF\uFF1A{0}");
+        en.put("admin.ai.welcome", "Hello! I am your AI assistant for the TA recruitment system. You can ask me about users, jobs, applications, or system operations.");
+        zh.put("admin.ai.welcome", "\u4F60\u597D\uFF01\u6211\u662F TA \u62DB\u8058\u7CFB\u7EDF\u7684 AI \u52A9\u624B\u3002\u60A8\u53EF\u4EE5\u5411\u6211\u8BE2\u95EE\u7528\u6237\u3001\u5C97\u4F4D\u3001\u7533\u8BF7\u6216\u7CFB\u7EDF\u64CD\u4F5C\u7B49\u76F8\u5173\u95EE\u9898\u3002");
     }
 
     private I18n() {}
