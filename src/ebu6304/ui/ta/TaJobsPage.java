@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
@@ -27,6 +29,7 @@ import ebu6304.ai.vo.JobRecommendationVo;
 import ebu6304.model.Job;
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class TaJobsPage extends JPanel {
     private final DataService data;
@@ -67,20 +70,35 @@ public final class TaJobsPage extends JPanel {
         };
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+        UiTheme.styleTable(table);
 
-        JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder(I18n.t("ta.jobs.title")));
-        top.add(new JLabel(I18n.t("ta.jobs.hint")), BorderLayout.WEST);
+        JPanel top = new JPanel(new BorderLayout(0, 10));
+        UiTheme.stylePanelCard(top, I18n.t("ta.jobs.title"));
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JLabel hintLabel = new JLabel(I18n.t("ta.jobs.hint"));
+        hintLabel.setForeground(UiTheme.MUTED);
+        JPanel summary = new JPanel();
+        summary.setOpaque(false);
+        summary.setLayout(new BoxLayout(summary, BoxLayout.Y_AXIS));
+        hintLabel.setAlignmentX(0f);
+        statusLabel.setAlignmentX(0f);
+        summary.add(hintLabel);
+        summary.add(Box.createVerticalStrut(8));
+        summary.add(statusLabel);
+        top.add(summary, BorderLayout.NORTH);
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        actions.setOpaque(false);
         JButton backBtn = new JButton(I18n.t("common.back"));
+        UiTheme.styleButton(backBtn);
+        UiTheme.styleButton(refreshButton);
+        UiTheme.styleButton(detailsButton);
+        UiTheme.stylePrimaryButton(applyButton);
         actions.add(backBtn);
         actions.add(refreshButton);
         actions.add(detailsButton);
         actions.add(applyButton);
-        top.add(actions, BorderLayout.EAST);
-        top.add(statusLabel, BorderLayout.SOUTH);
+        top.add(actions, BorderLayout.SOUTH);
 
         backBtn.addActionListener(e -> { if (onBack != null) onBack.run(); });
         refreshButton.addActionListener(e -> refresh());
@@ -88,7 +106,9 @@ public final class TaJobsPage extends JPanel {
         applyButton.addActionListener(e -> applySelected());
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        UiTheme.styleScrollPane(tableScrollPane);
+        add(tableScrollPane, BorderLayout.CENTER);
 
         refresh();
     }
@@ -208,7 +228,6 @@ public final class TaJobsPage extends JPanel {
         };
         worker.execute();
     }
-
     private void updateStreamingStatus(final int version, final String text) {
         SwingUtilities.invokeLater(() -> {
             if (version == refreshVersion) statusLabel.setText(text);
@@ -263,12 +282,10 @@ public final class TaJobsPage extends JPanel {
         StringBuilder h = new StringBuilder();
         h.append("<html>");
 
-        // ─── Job title ───
-        h.append("<h2><font color='#1565c0'>").append(escapeHtml(job.title())).append("</font></h2>");
+                h.append("<h2><font color='#1565c0'>").append(escapeHtml(job.title())).append("</font></h2>");
         h.append("<hr noshade size='1' color='#dddddd'>");
 
-        // ─── Job Information ───
-        h.append("<b>").append(I18n.t("mo.post.label.hours")).append("</b> ").append(job.hoursPerWeek());
+                h.append("<b>").append(I18n.t("mo.post.label.hours")).append("</b> ").append(job.hoursPerWeek());
         h.append("&nbsp;&nbsp;&nbsp;&nbsp;");
         h.append("<b>").append(I18n.t("mo.post.label.skills")).append("</b> ").append(escapeHtml(job.requiredSkills()));
         if (!job.postedBy().isEmpty()) {
@@ -277,8 +294,7 @@ public final class TaJobsPage extends JPanel {
         }
         h.append("<br><br>");
 
-        // ─── AI Match Analysis ───
-        h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.match")).append("</font></h3>");
+                h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.match")).append("</font></h3>");
         h.append("<hr noshade size='1' color='#eeeeee'>");
 
         h.append("<b>").append(I18n.t("ta.jobs.col.match")).append("</b>&nbsp;&nbsp;");
@@ -306,8 +322,7 @@ public final class TaJobsPage extends JPanel {
         }
         h.append("<br>");
 
-        // ─── Skills Breakdown ───
-        h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.skills")).append("</font></h3>");
+                h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.skills")).append("</font></h3>");
         h.append("<hr noshade size='1' color='#eeeeee'>");
 
         List<String> matched = rec.matchedSkills();
@@ -327,8 +342,7 @@ public final class TaJobsPage extends JPanel {
         }
         h.append("<br>");
 
-        // ─── Job Description ───
-        String desc = job.description();
+                String desc = job.description();
         if (desc != null && !desc.isEmpty()) {
             h.append("<h3><font color='#333333'>").append(I18n.t("ta.jobs.detail.section.description")).append("</font></h3>");
             h.append("<hr noshade size='1' color='#eeeeee'>");

@@ -38,6 +38,7 @@ import javax.swing.table.JTableHeader;
 
 import ebu6304.storage.DataService;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class AdminLogPage extends JPanel {
     private final DataService data;
@@ -72,27 +73,7 @@ public final class AdminLogPage extends JPanel {
         this.data = data;
         setBorder(BorderFactory.createTitledBorder(I18n.t("admin.logs.title")));
 
-        table.setRowHeight(34);
-        table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setFillsViewportHeight(true);
-        table.setSelectionBackground(new Color(232, 242, 255));
-        table.setSelectionForeground(new Color(30, 41, 59));
-        table.setDefaultRenderer(Object.class, new ZebraRenderer());
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-
-        JTableHeader header = table.getTableHeader();
-        header.setReorderingAllowed(false);
-        header.setBackground(new Color(245, 247, 250));
-        header.setForeground(new Color(51, 51, 51));
-        header.setFont(header.getFont().deriveFont(Font.BOLD, 12f));
-        ((DefaultTableCellRenderer) header.getDefaultRenderer()).setHorizontalAlignment(SwingConstants.LEFT);
-
-        table.getColumnModel().getColumn(0).setPreferredWidth(180);
-        table.getColumnModel().getColumn(1).setPreferredWidth(80);
-        table.getColumnModel().getColumn(2).setPreferredWidth(120);
-        table.getColumnModel().getColumn(3).setPreferredWidth(140);
-        table.getColumnModel().getColumn(4).setPreferredWidth(700);
+        UiTheme.styleTable(table);
 
         JPanel top = new JPanel(new BorderLayout(10, 10));
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
@@ -129,6 +110,7 @@ public final class AdminLogPage extends JPanel {
 
         add(top, BorderLayout.NORTH);
         JScrollPane sp = new JScrollPane(table);
+        UiTheme.styleScrollPane(sp);
         sp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);

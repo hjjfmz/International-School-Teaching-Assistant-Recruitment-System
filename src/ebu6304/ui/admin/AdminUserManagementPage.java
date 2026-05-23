@@ -25,6 +25,7 @@ import ebu6304.storage.AuthStore;
 import ebu6304.storage.DataService;
 import ebu6304.storage.OperationLog;
 import ebu6304.ui.I18n;
+import ebu6304.ui.UiTheme;
 
 public final class AdminUserManagementPage extends JPanel {
     private final DataService data;
@@ -39,7 +40,7 @@ public final class AdminUserManagementPage extends JPanel {
         super(new BorderLayout(10, 10));
         this.data = data;
         this.actor = actor == null ? "" : actor;
-        setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+        UiTheme.stylePage(this);
 
         model = new DefaultTableModel(new Object[] {
                 I18n.t("admin.users.col.role"), I18n.t("admin.users.col.account"), I18n.t("admin.users.col.name"), I18n.t("admin.users.col.status")
@@ -51,21 +52,20 @@ public final class AdminUserManagementPage extends JPanel {
         };
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        styleTable(table);
-        table.setDefaultRenderer(Object.class, new ZebraRenderer());
+        UiTheme.styleTable(table);
 
-        JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(BorderFactory.createTitledBorder(I18n.t("admin.users.title")));
-        top.setOpaque(false);
+        JPanel top = new JPanel(new BorderLayout(0, 8));
+        UiTheme.stylePanelCard(top, I18n.t("admin.users.title"));
 
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        left.setOpaque(false);
-        left.add(new JLabel(I18n.t("admin.users.rolefilter")));
-        styleCombo(roleFilter);
-        left.add(roleFilter);
-        top.add(left, BorderLayout.WEST);
+        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        filters.setOpaque(false);
+        filters.add(new JLabel(I18n.t("admin.users.rolefilter")));
+        UiTheme.styleCombo(roleFilter);
+        roleFilter.setPreferredSize(new Dimension(150, 36));
+        filters.add(roleFilter);
+        top.add(filters, BorderLayout.NORTH);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
         JButton refresh = new JButton(I18n.t("common.refresh"));
         JButton enable = new JButton(I18n.t("common.enable"));
@@ -73,18 +73,18 @@ public final class AdminUserManagementPage extends JPanel {
         JButton addMo = new JButton(I18n.t("admin.users.addmo"));
         JButton delete = new JButton(I18n.t("common.delete"));
 
-        styleActionButton(refresh);
-        styleActionButton(enable);
-        styleActionButton(disable);
-        styleActionButton(addMo);
-        styleDangerButton(delete);
+        UiTheme.styleButton(refresh);
+        UiTheme.stylePrimaryButton(enable);
+        UiTheme.styleButton(disable);
+        UiTheme.styleButton(addMo);
+        UiTheme.styleDangerButton(delete);
 
         actions.add(refresh);
         actions.add(enable);
         actions.add(disable);
         actions.add(addMo);
         actions.add(delete);
-        top.add(actions, BorderLayout.EAST);
+        top.add(actions, BorderLayout.SOUTH);
 
         refresh.addActionListener(e -> refresh());
         roleFilter.addActionListener(e -> refresh());
@@ -96,8 +96,7 @@ public final class AdminUserManagementPage extends JPanel {
         add(top, BorderLayout.NORTH);
 
         JScrollPane sp = new JScrollPane(table);
-        sp.setBorder(BorderFactory.createEmptyBorder());
-        if (sp.getViewport() != null) sp.getViewport().setBackground(Color.WHITE);
+        UiTheme.styleScrollPane(sp);
         add(sp, BorderLayout.CENTER);
 
         refresh();
@@ -240,3 +239,5 @@ public final class AdminUserManagementPage extends JPanel {
         JOptionPane.showMessageDialog(this, I18n.t("msg.deleted"));
     }
 }
+
+

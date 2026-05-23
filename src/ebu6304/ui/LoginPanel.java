@@ -45,19 +45,18 @@ public final class LoginPanel extends JPanel {
     private PlaceholderTextField accountField;
     private PlaceholderPasswordField passField;
 
-    private static final Color PRIMARY = new Color(0, 51, 153);
-    private static final Color HEADER_BG = new Color(0, 51, 153, 200);
-    private static final Color CARD_BG = new Color(255, 255, 255, 240);
-    private static final Color FOOTER_BG = new Color(0, 0, 0, 100);
-    private static final Color INPUT_BORDER = new Color(200, 200, 200);
-    private static final Color LINK_COLOR = PRIMARY;
+    private static final Color PRIMARY = UiTheme.PRIMARY;
+    private static final Color HEADER_BG = new Color(255, 255, 255, 232);
+    private static final Color CARD_BG = new Color(255, 255, 255, 246);
+    private static final Color FOOTER_BG = new Color(15, 23, 42, 118);
+    private static final Color LINK_COLOR = UiTheme.PRIMARY;
 
     private BufferedImage bgImage;
 
     public LoginPanel(DataService data, LoginHandler handler) {
         super(new BorderLayout());
         this.data = data;
-        setBackground(new Color(128, 128, 128));
+        setBackground(UiTheme.APP_BG);
 
         loadBackground();
 
@@ -80,12 +79,12 @@ public final class LoginPanel extends JPanel {
         cardPanel.add(forgotTab, "forgot");
         cards.show(cardPanel, "login");
 
-        RoundedPanel sideCard = new RoundedPanel(12);
+        RoundedPanel sideCard = new RoundedPanel(24);
         sideCard.setBackground(CARD_BG);
         sideCard.setLayout(new BorderLayout());
         sideCard.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        sideCard.setPreferredSize(new Dimension(420, 520));
-        sideCard.setMinimumSize(new Dimension(380, 280));
+        sideCard.setPreferredSize(new Dimension(430, 540));
+        sideCard.setMinimumSize(new Dimension(390, 320));
         sideCard.add(cardPanel, BorderLayout.CENTER);
 
         GridBagConstraints gc = new GridBagConstraints();
@@ -113,9 +112,10 @@ public final class LoginPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        if (bgImage != null) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            try {
+        Graphics2D g2 = (Graphics2D) g.create();
+        try {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            if (bgImage != null) {
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 int pw = getWidth(), ph = getHeight();
                 int iw = bgImage.getWidth(), ih = bgImage.getHeight();
@@ -123,9 +123,20 @@ public final class LoginPanel extends JPanel {
                 int sw = (int) (iw * scale), sh = (int) (ih * scale);
                 int x = (pw - sw) / 2, y = (ph - sh) / 2;
                 g2.drawImage(bgImage, x, y, sw, sh, null);
-            } finally {
-                g2.dispose();
+                g2.setColor(new Color(15, 23, 42, 58));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            } else {
+                g2.setPaint(new java.awt.GradientPaint(0, 0, new Color(248, 251, 255), getWidth(), getHeight(), new Color(226, 242, 255)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.setColor(new Color(37, 99, 235, 24));
+                g2.fillRoundRect(-90, 96, 520, 120, 34, 34);
+                g2.setColor(new Color(16, 185, 129, 22));
+                g2.fillRoundRect(90, 260, 520, 92, 30, 30);
+                g2.setColor(new Color(245, 158, 11, 22));
+                g2.fillRoundRect(0, 430, 430, 78, 28, 28);
             }
+        } finally {
+            g2.dispose();
         }
     }
 
@@ -179,7 +190,7 @@ public final class LoginPanel extends JPanel {
         } catch (IOException ignored) {}
 
         JLabel titleLabel = new JLabel(I18n.t("app.title"));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(UiTheme.TEXT);
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
 
         logoRow.add(logoLabel);
@@ -206,7 +217,7 @@ public final class LoginPanel extends JPanel {
         footer.setOpaque(false);
         footer.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
         JLabel copy = new JLabel(I18n.t("login.footer"));
-        copy.setForeground(new Color(220, 220, 220));
+        copy.setForeground(new Color(226, 232, 240));
         copy.setFont(copy.getFont().deriveFont(Font.PLAIN, 11f));
         footer.add(copy);
         return footer;
@@ -646,27 +657,18 @@ public final class LoginPanel extends JPanel {
     }
 
     private static void styleInput(JTextField tf) {
-        tf.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(INPUT_BORDER, 1),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        UiTheme.styleTextField(tf);
         tf.setFont(tf.getFont().deriveFont(Font.PLAIN, 14f));
     }
 
     private static void styleInput(JComboBox<?> cb) {
-        cb.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(INPUT_BORDER, 1),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        UiTheme.styleCombo(cb);
         cb.setFont(cb.getFont().deriveFont(Font.PLAIN, 14f));
     }
 
     private static void stylePrimaryButton(JButton b) {
-        b.setBackground(PRIMARY);
-        b.setForeground(Color.WHITE);
-        b.setFocusPainted(false);
-        b.setBorderPainted(false);
-        b.setOpaque(true);
+        UiTheme.stylePrimaryButton(b);
         b.setFont(b.getFont().deriveFont(Font.BOLD, 15f));
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setPreferredSize(new Dimension(0, 42));
     }
 
@@ -676,7 +678,7 @@ public final class LoginPanel extends JPanel {
         b.setContentAreaFilled(false);
         b.setOpaque(false);
         b.setForeground(LINK_COLOR);
-        b.setFont(b.getFont().deriveFont(Font.PLAIN, 12f));
+        b.setFont(b.getFont().deriveFont(Font.BOLD, 12f));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
@@ -694,8 +696,12 @@ public final class LoginPanel extends JPanel {
             Graphics2D g2 = (Graphics2D) g.create();
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(15, 23, 42, 26));
+                g2.fillRoundRect(5, 7, Math.max(0, getWidth() - 10), Math.max(0, getHeight() - 12), arc, arc);
                 g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+                g2.fillRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), arc, arc);
+                g2.setColor(new Color(148, 163, 184, 70));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), arc, arc);
             } finally {
                 g2.dispose();
             }

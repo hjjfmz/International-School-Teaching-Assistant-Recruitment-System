@@ -31,14 +31,13 @@ public final class ForgotPasswordPanel extends JPanel {
     }
 
     private final DataService data;
-    private static final Color PRIMARY = new Color(0, 51, 153);
-    private static final Color INPUT_BORDER = new Color(200, 200, 200);
-    private static final Color LINK_COLOR = PRIMARY;
+    private static final Color PRIMARY = UiTheme.PRIMARY;
+    private static final Color LINK_COLOR = UiTheme.PRIMARY;
 
     public ForgotPasswordPanel(DataService data, BackHandler back) {
         super(new BorderLayout());
         this.data = data;
-        setBackground(new Color(128, 128, 128));
+        setBackground(UiTheme.APP_BG);
 
         JPanel centerWrapper = new JPanel(new GridBagLayout());
         centerWrapper.setOpaque(false);
@@ -104,7 +103,7 @@ public final class ForgotPasswordPanel extends JPanel {
         backBtn.setAlignmentX(0f);
         p.add(backBtn);
 
-        RoundedPanel sideCard = new RoundedPanel(12);
+        RoundedPanel sideCard = new RoundedPanel(24);
         sideCard.setBackground(new Color(255, 255, 255, 240));
         sideCard.setLayout(new BorderLayout());
         sideCard.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -196,27 +195,18 @@ public final class ForgotPasswordPanel extends JPanel {
     }
 
     private static void styleInput(JTextField tf) {
-        tf.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(INPUT_BORDER, 1),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        UiTheme.styleTextField(tf);
         tf.setFont(tf.getFont().deriveFont(java.awt.Font.PLAIN, 14f));
     }
 
     private static void styleInput(JComboBox<?> cb) {
-        cb.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(INPUT_BORDER, 1),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        UiTheme.styleCombo(cb);
         cb.setFont(cb.getFont().deriveFont(java.awt.Font.PLAIN, 14f));
     }
 
     private static void stylePrimaryButton(JButton b) {
-        b.setBackground(PRIMARY);
-        b.setForeground(Color.WHITE);
-        b.setFocusPainted(false);
-        b.setBorderPainted(false);
-        b.setOpaque(true);
+        UiTheme.stylePrimaryButton(b);
         b.setFont(b.getFont().deriveFont(java.awt.Font.BOLD, 15f));
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setPreferredSize(new Dimension(0, 42));
     }
 
@@ -226,7 +216,7 @@ public final class ForgotPasswordPanel extends JPanel {
         b.setContentAreaFilled(false);
         b.setOpaque(false);
         b.setForeground(LINK_COLOR);
-        b.setFont(b.getFont().deriveFont(java.awt.Font.PLAIN, 12f));
+        b.setFont(b.getFont().deriveFont(java.awt.Font.BOLD, 12f));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
@@ -244,8 +234,12 @@ public final class ForgotPasswordPanel extends JPanel {
             Graphics2D g2 = (Graphics2D) g.create();
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(15, 23, 42, 26));
+                g2.fillRoundRect(5, 7, Math.max(0, getWidth() - 10), Math.max(0, getHeight() - 12), arc, arc);
                 g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+                g2.fillRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), arc, arc);
+                g2.setColor(new Color(148, 163, 184, 70));
+                g2.drawRoundRect(0, 0, Math.max(0, getWidth() - 1), Math.max(0, getHeight() - 1), arc, arc);
             } finally {
                 g2.dispose();
             }
